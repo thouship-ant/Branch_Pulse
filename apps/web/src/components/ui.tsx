@@ -1,0 +1,151 @@
+'use client';
+
+import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { cleanAmount } from '@/lib/money';
+import { useT, type MessageKey } from '@/lib/i18n';
+import { useOutbox } from '@/lib/outbox';
+import type { Warning } from '@/lib/api';
+
+// ------------------------------------------------------------------ status: colour + icon + word, never colour alone
+const STATUS: Record<string, { icon: string; cls: string; key: MessageKey }> = {
+  PENDING: { icon: '○', cls: 'border-slate-300 bg-slate-100 text-slate-700', key: 'pending' },
+  SUBMITTED: { icon: '◔', cls: 'border-amber-300 bg-amber-50 text-amber-800', key: 'submitted' },
+  APPROVED: { icon: '✓', cls: 'border-emerald-300 bg-emerald-50 text-emerald-800', key: 'approved' },
+  REJECTED: { icon: '✕', cls: 'border-red-300 bg-red-50 text-red-800', key: 'rejected' },
+  REOPENED: { icon: '↺', cls: 'border-violet-300 bg-violet-50 text-violet-800', key: 'reopened' },
+};
+
+export function StatusPill({ status }: { status: string }) {
+  const { t } = useT();
+  const s = STATUS[status] ?? STATUS.PENDING;
+  return (
+    <span className={`chip ${s.cls}`}>
+      <span aria-hidden>{s.icon}</span>
+      {t(s.key)}
+    </span>
+  );
+}
+
+// ------------------------------------------------------------------ inputs
+export function MoneyInput({
+  value, onChange, label, id, required, hint, disabled,
+}: {
+  value: string; onChange: (v: string) => void; label: string; id: string; required?: boolean; hint?: string; disabled?: boolean;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="label">
+        {label}{required && <span className="text-red-600"> *</span>}
+      </label>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
+        <input
+          id={id}
+          className="field pl-8 text-lg tabular-nums"
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="0"
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(cleanAmount(e.target.value))}
+        />
+      </div>
+      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
+export function TextField({ label, id, ...rest }: { label: string; id: string } & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <label htmlFor={id} className="label">{label}</label>
+      <input id={id} className="field" {...rest} />
+    </div>
+  );
+}
+
+export function Chips<T extends string>({
+  options, value, onChange, label,
+}: { options: Array<{ value: T; label: string }>; value: T | ''; onChange: (v: T) => void; label?: string }) {
+  return (
+    <div>
+      {label && <span className="label">{label}</span>}
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+        {options.map((o) => (
+          <button
+            key={o.value} type="button" role="radio" aria-checked={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={`min-h-touch rounded-card border px-4 text-base font-medium ${value === o.value ? 'border-brand bg-brand text-white' : 'border-slate-300 bg-surface'}`}
+          >
+            {value === o.value && <span aria-hidden>✓ </span>}{o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ feedback
+export function Skeleton({ className = 'h-20' }: { className?: string }) {
+  return <div className={`skeleton ${className}`} aria-hidden />;
+}
+
+export function Warnings({ items }: { items?: Warning[] }) {
+  if (!items?.length) return null;
+  return (
+    <ul className="space-y-1" role="status">
+      {items.map((w, i) => (
+        <li key={i} className="rounded-card border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <span aria-hidden>⚠ </span>{w.message}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ErrorBox({ error }: { error: string | null }) {
+  if (!error) return null;
+  return (
+    <div role="alert" className="rounded-card border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+      <span aria-hidden>✕ </span>{error}
+    </div>
+  );
+}
+
+/** Bottom sheet on phones, centred dialog on desktop. */
+export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    ref.current?.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+      <div
+        ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-xl outline-none sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ sync banner ("3 entries waiting to sync")
+export function SyncBanner({ locationId, businessDate }: { locationId?: string; businessDate?: string }) {
+  const { t } = useT();
+  const { waiting, online } = useOutbox(locationId, businessDate);
+  if (online && waiting === 0) return null;
+  return (
+    <div role="status" className={`px-4 py-2 text-sm ${online ? 'bg-amber-50 text-amber-900' : 'bg-[#1e293b] text-white'}`}>
+      {!online && <span>⚡ {t('offline')}</span>}
+      {waiting > 0 && <span>{online ? '' : ' · '}⟳ {waiting} {t('waiting')}</span>}
+    </div>
+  );
+}

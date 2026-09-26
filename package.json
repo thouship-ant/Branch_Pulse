@@ -1,0 +1,22 @@
+{
+  "name": "branch-pulse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Multi-branch shop management system (PWA + API) - see docs/",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:migrate": "npm -w apps/api run db:migrate",
+    "db:seed": "npm -w apps/api run db:seed",
+    "dev:api": "npm -w apps/api run start:dev",
+    "dev:web": "npm -w apps/web run dev",
+    "build": "npm -w apps/api run build && npm -w apps/web run build",
+    "test": "npm -w apps/api test"
+  }
+}

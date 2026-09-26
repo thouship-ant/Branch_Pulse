@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- theme tokens (RGB channels so Tailwind opacity modifiers keep working) ---- */
+:root {
+  color-scheme: light;
+  --surface: 255 255 255;
+  --ink: 30 41 59;
+
+  --slate-50: 245 247 251;  /* page background */
+  --slate-100: 238 241 246;
+  --slate-200: 227 232 239;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+
+  --emerald-50: 236 253 245; --emerald-300: 110 231 183; --emerald-800: 6 95 70;   --emerald-900: 6 78 59;
+  --amber-50: 255 251 235;   --amber-300: 252 211 77;   --amber-800: 146 64 14;   --amber-900: 120 53 15;
+  --red-50: 254 242 242;     --red-300: 252 165 165;    --red-800: 153 27 27;     --red-900: 127 29 29;
+  --violet-50: 245 243 255;  --violet-300: 196 181 253; --violet-800: 91 33 182;  --violet-900: 76 29 149;
+  --sky-50: 240 249 255;     --sky-300: 125 211 252;    --sky-900: 12 74 110;
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: 23 32 51;
+  --ink: 226 232 240;
+
+  /* slate scale is inverted so existing bg-slate-50 / text-slate-600 classes just work */
+  --slate-50: 15 23 41;
+  --slate-100: 28 39 64;
+  --slate-200: 38 50 72;
+  --slate-300: 51 65 92;
+  --slate-400: 125 138 165;
+  --slate-500: 148 163 184;
+  --slate-600: 180 192 212;
+  --slate-700: 203 213 225;
+  --slate-800: 226 232 240;
+  --slate-900: 241 245 249;
+
+  --emerald-50: 6 46 36;   --emerald-300: 4 120 87;   --emerald-800: 110 231 183; --emerald-900: 167 243 208;
+  --amber-50: 66 44 8;     --amber-300: 146 64 14;    --amber-800: 252 211 77;    --amber-900: 253 230 138;
+  --red-50: 69 10 10;      --red-300: 153 27 27;      --red-800: 252 165 165;     --red-900: 254 202 202;
+  --violet-50: 46 16 101;  --violet-300: 109 40 217;  --violet-800: 196 181 253;  --violet-900: 221 214 254;
+  --sky-50: 8 47 73;       --sky-300: 3 105 161;      --sky-900: 186 230 253;
+}
+
+/* default border colour follows the theme (Tailwind's preflight default is a fixed light grey) */
+@layer base { *, ::before, ::after { border-color: rgb(var(--slate-200)); } }
+
+html, body { background: rgb(var(--slate-50)); color: rgb(var(--ink)); font-family: theme('fontFamily.sans'); }
+body { -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom); }
+
+/* brand blue is too dark for text on dark surfaces; a few single-shade text colours need a lift too */
+.dark .text-brand { color: #60a5fa; }
+.dark .text-brand-dark { color: #93c5fd; }
+.dark .bg-brand-light { background-color: rgb(59 130 246 / 0.18); }
+.dark .text-red-700 { color: #f87171; }
+.dark .text-violet-700 { color: #c4b5fd; }
+.dark input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+
+@layer components {
+  .card { @apply rounded-card border border-slate-200 bg-surface p-4 shadow-sm; }
+  .btn { @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-card px-5 text-base font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
+  .btn-secondary { @apply btn border border-slate-300 bg-surface text-ink hover:bg-slate-100; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .field { @apply min-h-touch w-full rounded-card border border-slate-300 bg-surface px-3 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30; }
+  .label { @apply mb-1 block text-sm font-medium text-slate-600; }
+  .chip { @apply inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium; }
+  .skeleton { @apply animate-pulse rounded-card bg-slate-200; }
+  .nav-item { @apply flex min-h-touch items-center gap-3 rounded-card px-3 font-medium text-slate-600 transition hover:bg-slate-100; }
+  .nav-item-active { @apply bg-brand-light text-brand-dark hover:bg-brand-light; }
+}

@@ -1,0 +1,1168 @@
+// Branch Pulse - schema implementing LLD sections 2-6.
+//
+// Conventions (LLD s1):
+//  - snake_case columns, plural snake_case tables (via @@map); UUID v7 primary keys.
+//  - Money NUMERIC(14,2), quantity NUMERIC(14,3), rate NUMERIC(14,4), percent NUMERIC(7,3).
+//  - Relations are declared only for parent -> child aggregates (nested writes / includes).
+//    All other foreign keys (location_id, user columns, item_id, supplier_id ...) are added as real
+//    FK constraints in migration 20260926000200_constraints_rls_triggers.
+//  - LLD "GENERATED ALWAYS" columns (mismatch_amount, variance, credit_amount, payable,
+//    remaining_amount, variance_qty) are ordinary columns here, computed by the domain services
+//    (the LLD requires all calculations to be server-side decimal arithmetic anyway).
+//  - Audit columns (created_at/by, updated_at/by, version) are repeated on every mutable table.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------- enums
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  REVERSED
+
+  @@map("record_status")
+}
+
+enum LocationType {
+  BRANCH
+  GODOWN
+  CENTRAL_OFFICE
+
+  @@map("location_type")
+}
+
+enum ApprovalStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@map("approval_status")
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  CHEQUE
+  CREDIT
+
+  @@map("payment_mode")
+}
+
+enum EntrySource {
+  WEB
+  PWA_OFFLINE
+  SYSTEM
+
+  @@map("entry_source")
+}
+
+enum ClosingStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+  REOPENED
+
+  @@map("closing_status")
+}
+
+enum CashTxnType {
+  OPENING
+  OTHER_RECEIPT
+  WITHDRAWAL
+  DEPOSIT_TO_BANK
+  EXPENSE
+  PURCHASE
+  SUPPLIER_PAYMENT
+  ADVANCE_PAYMENT
+  ADJUSTMENT
+
+  @@map("cash_txn_type")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+  HALF_DAY
+  WEEK_OFF
+  HOLIDAY
+
+  @@map("attendance_status")
+}
+
+enum StockTxnType {
+  OPENING
+  PURCHASE_IN
+  TRANSFER_OUT
+  TRANSFER_IN
+  CONSUMPTION
+  WASTAGE
+  COUNT_ADJUSTMENT
+  TRANSFER_VARIANCE
+  REVERSAL
+
+  @@map("stock_txn_type")
+}
+
+enum TransferStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  DISPATCHED
+  RECEIVED
+  PARTIALLY_RECEIVED
+  CANCELLED
+
+  @@map("transfer_status")
+}
+
+enum CountStatus {
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  REJECTED
+
+  @@map("count_status")
+}
+
+enum WastageReason {
+  SPOILED
+  EXPIRED
+  BURNT
+  DAMAGED
+  EXCESS_PREPARATION
+  STAFF_CONSUMPTION
+  COMPLIMENTARY
+  OTHER
+
+  @@map("wastage_reason")
+}
+
+enum AdvanceStatus {
+  REQUESTED
+  MANAGER_APPROVED
+  APPROVED
+  REJECTED
+  PAID
+  CLOSED
+  CANCELLED
+
+  @@map("advance_status")
+}
+
+enum AlertSeverity {
+  CRITICAL
+  WARNING
+  INFO
+
+  @@map("alert_severity")
+}
+
+// ---------------------------------------------------------------- access
+model Role {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  code       String       @unique @db.VarChar(30)
+  name       String       @db.VarChar(60)
+  is_system  Boolean      @default(false)
+  scope_mode String       @db.VarChar(10) // ALL | ASSIGNED (CHECK in migration)
+  status     RecordStatus @default(ACTIVE)
+  created_at DateTime     @default(now()) @db.Timestamptz
+  created_by String?      @db.Uuid
+  updated_at DateTime     @updatedAt @db.Timestamptz
+  updated_by String?      @db.Uuid
+  version    Int          @default(1)
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid(7)) @db.Uuid
+  code        String  @unique @db.VarChar(60) // e.g. expense:create
+  module      String  @db.VarChar(30)
+  description String?
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String @db.Uuid
+  permission_id String @db.Uuid
+
+  role       Role       @relation(fields: [role_id], references: [id])
+  permission Permission @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model User {
+  id                 String       @id @default(uuid(7)) @db.Uuid
+  username           String       @unique @db.VarChar(50)
+  mobile             String?      @unique @db.VarChar(15)
+  email              String?      @db.VarChar(120)
+  full_name          String       @db.VarChar(100)
+  password_hash      String
+  preferred_language String       @default("en") @db.Char(2)
+  employee_id        String?      @db.Uuid
+  mfa_enabled        Boolean      @default(false)
+  failed_logins      Int          @default(0) @db.SmallInt
+  locked_until       DateTime?    @db.Timestamptz
+  last_login_at      DateTime?    @db.Timestamptz
+  status             RecordStatus @default(ACTIVE)
+  created_at         DateTime     @default(now()) @db.Timestamptz
+  created_by         String?      @db.Uuid
+  updated_at         DateTime     @updatedAt @db.Timestamptz
+  updated_by         String?      @db.Uuid
+  version            Int          @default(1)
+
+  roles     UserRole[]
+  locations UserLocation[]
+  sessions  Session[]
+
+  @@map("users")
+}
+
+model UserRole {
+  user_id String @db.Uuid
+  role_id String @db.Uuid
+
+  user User @relation(fields: [user_id], references: [id])
+  role Role @relation(fields: [role_id], references: [id])
+
+  @@id([user_id, role_id])
+  @@map("user_roles")
+}
+
+model UserLocation {
+  user_id     String @db.Uuid
+  location_id String @db.Uuid
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, location_id])
+  @@map("user_locations")
+}
+
+model Session {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  user_id            String    @db.Uuid
+  refresh_token_hash String
+  device_label       String?   @db.VarChar(100)
+  user_agent         String?
+  ip                 String?   @db.Inet
+  created_at         DateTime  @default(now()) @db.Timestamptz
+  expires_at         DateTime  @db.Timestamptz
+  revoked_at         DateTime? @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("sessions")
+}
+
+model ApprovalLimit {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  role_id    String   @db.Uuid
+  entity_type String  @db.VarChar(30) // EXPENSE, PURCHASE, ADVANCE, WASTAGE, CASH_VARIANCE
+  max_amount Decimal  @db.Decimal(14, 2)
+  created_at DateTime @default(now()) @db.Timestamptz
+  created_by String?  @db.Uuid
+  updated_at DateTime @updatedAt @db.Timestamptz
+  updated_by String?  @db.Uuid
+  version    Int      @default(1)
+
+  @@unique([role_id, entity_type])
+  @@map("approval_limits")
+}
+
+// ---------------------------------------------------------------- master data
+model Location {
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  code                 String       @unique @db.VarChar(10)
+  name                 String       @db.VarChar(100)
+  name_ta              String?      @db.VarChar(100)
+  type                 LocationType
+  address              String?
+  phone                String?      @db.VarChar(15)
+  manager_user_id      String?      @db.Uuid
+  default_opening_cash Decimal      @default(0) @db.Decimal(14, 2)
+  card_enabled         Boolean      @default(true)
+  opened_on            DateTime?    @db.Date
+  monthly_rent         Decimal?     @db.Decimal(14, 2)
+  notes                String?
+  status               RecordStatus @default(ACTIVE)
+  created_at           DateTime     @default(now()) @db.Timestamptz
+  created_by           String?      @db.Uuid
+  updated_at           DateTime     @updatedAt @db.Timestamptz
+  updated_by           String?      @db.Uuid
+  version              Int          @default(1)
+
+  @@map("locations")
+}
+
+model ExpenseCategory {
+  id                     String       @id @default(uuid(7)) @db.Uuid
+  parent_id              String?      @db.Uuid
+  name_en                String       @db.VarChar(60)
+  name_ta                String?      @db.VarChar(60)
+  pl_bucket              String       @db.VarChar(20) // RAW_MATERIAL|SALARY|RENT|ELECTRICITY|TRANSPORT|MAINTENANCE|OTHER|NON_PL
+  requires_receipt_above Decimal?     @db.Decimal(14, 2)
+  unusual_threshold      Decimal?     @db.Decimal(14, 2)
+  sort_order             Int          @default(0) @db.SmallInt
+  status                 RecordStatus @default(ACTIVE)
+  created_at             DateTime     @default(now()) @db.Timestamptz
+  created_by             String?      @db.Uuid
+  updated_at             DateTime     @updatedAt @db.Timestamptz
+  updated_by             String?      @db.Uuid
+  version                Int          @default(1)
+
+  @@unique([parent_id, name_en])
+  @@map("expense_categories")
+}
+
+model Unit {
+  id             String  @id @default(uuid(7)) @db.Uuid
+  code           String  @unique @db.VarChar(10)
+  name           String  @db.VarChar(30)
+  base_unit_id   String? @db.Uuid
+  factor_to_base Decimal @default(1) @db.Decimal(14, 6)
+
+  @@map("units")
+}
+
+model InventoryItem {
+  id                     String       @id @default(uuid(7)) @db.Uuid
+  code                   String       @unique @db.VarChar(12)
+  name_en                String       @db.VarChar(80)
+  name_ta                String?      @db.VarChar(80)
+  category               String       @db.VarChar(30)
+  base_unit_id           String       @db.Uuid
+  purchase_unit_id       String?      @db.Uuid
+  is_perishable          Boolean      @default(false)
+  daily_count_required   Boolean      @default(false)
+  variance_threshold_pct Decimal?     @db.Decimal(7, 3)
+  variance_threshold_qty Decimal?     @db.Decimal(14, 3)
+  last_purchase_rate     Decimal?     @db.Decimal(14, 4)
+  avg_cost               Decimal      @default(0) @db.Decimal(14, 4)
+  status                 RecordStatus @default(ACTIVE)
+  created_at             DateTime     @default(now()) @db.Timestamptz
+  created_by             String?      @db.Uuid
+  updated_at             DateTime     @updatedAt @db.Timestamptz
+  updated_by             String?      @db.Uuid
+  version                Int          @default(1)
+
+  @@map("inventory_items")
+}
+
+model ItemLocationSetting {
+  item_id      String  @db.Uuid
+  location_id  String  @db.Uuid
+  min_stock    Decimal @default(0) @db.Decimal(14, 3)
+  reorder_qty  Decimal? @db.Decimal(14, 3)
+  is_stocked   Boolean @default(true)
+
+  @@id([item_id, location_id])
+  @@map("item_location_settings")
+}
+
+model Supplier {
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  code                 String       @unique @db.VarChar(10)
+  name                 String       @db.VarChar(100)
+  contact_person       String?      @db.VarChar(60)
+  phone                String?      @db.VarChar(15)
+  address              String?
+  gstin                String?      @db.VarChar(15)
+  payment_terms_days   Int          @default(0) @db.SmallInt
+  opening_balance      Decimal      @default(0) @db.Decimal(14, 2)
+  opening_balance_date DateTime?    @db.Date
+  status               RecordStatus @default(ACTIVE)
+  created_at           DateTime     @default(now()) @db.Timestamptz
+  created_by           String?      @db.Uuid
+  updated_at           DateTime     @updatedAt @db.Timestamptz
+  updated_by           String?      @db.Uuid
+  version              Int          @default(1)
+
+  @@map("suppliers")
+}
+
+model SupplierItem {
+  supplier_id String @db.Uuid
+  item_id     String @db.Uuid
+
+  @@id([supplier_id, item_id])
+  @@map("supplier_items")
+}
+
+model Setting {
+  key         String   @id @db.VarChar(60)
+  value       Json
+  description String?
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
+  updated_by  String?  @db.Uuid
+
+  @@map("settings")
+}
+
+// ---------------------------------------------------------------- daily operations
+model DailySales {
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  location_id          String       @db.Uuid
+  business_date        DateTime     @db.Date
+  total_sales          Decimal      @db.Decimal(14, 2)
+  cash_sales           Decimal      @default(0) @db.Decimal(14, 2)
+  upi_sales            Decimal      @default(0) @db.Decimal(14, 2)
+  card_sales           Decimal      @default(0) @db.Decimal(14, 2)
+  credit_sales         Decimal      @default(0) @db.Decimal(14, 2)
+  complimentary_amount Decimal      @default(0) @db.Decimal(14, 2)
+  other_adjustments    Decimal      @default(0) @db.Decimal(14, 2)
+  mismatch_amount      Decimal      @default(0) @db.Decimal(14, 2)
+  remarks              String?
+  submitted_by         String       @db.Uuid
+  submitted_at         DateTime     @db.Timestamptz
+  is_locked            Boolean      @default(false)
+  status               RecordStatus @default(ACTIVE)
+  client_uuid          String?      @unique @db.Uuid
+  client_created_at    DateTime?    @db.Timestamptz
+  source               EntrySource  @default(WEB)
+  created_at           DateTime     @default(now()) @db.Timestamptz
+  created_by           String?      @db.Uuid
+  updated_at           DateTime     @updatedAt @db.Timestamptz
+  updated_by           String?      @db.Uuid
+  version              Int          @default(1)
+
+  // partial unique index (location_id, business_date) WHERE status='ACTIVE' is created in SQL migration
+  @@index([location_id, business_date])
+  @@map("daily_sales")
+}
+
+model CashTransaction {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  location_id    String       @db.Uuid
+  business_date  DateTime     @db.Date
+  txn_type       CashTxnType
+  direction      Int          @db.SmallInt // +1 in, -1 out
+  amount         Decimal      @db.Decimal(14, 2)
+  source_type    String?      @db.VarChar(30)
+  source_id      String?      @db.Uuid
+  description    String?
+  status         RecordStatus @default(ACTIVE)
+  reversal_of_id String?      @db.Uuid
+  client_uuid    String?      @unique @db.Uuid
+  source         EntrySource  @default(WEB)
+  created_at     DateTime     @default(now()) @db.Timestamptz
+  created_by     String?      @db.Uuid
+  updated_at     DateTime     @updatedAt @db.Timestamptz
+  updated_by     String?      @db.Uuid
+  version        Int          @default(1)
+
+  @@index([location_id, business_date])
+  @@index([source_type, source_id])
+  @@map("cash_transactions")
+}
+
+model CashReconciliation {
+  id                  String          @id @default(uuid(7)) @db.Uuid
+  location_id         String          @db.Uuid
+  business_date       DateTime        @db.Date
+  opening_cash        Decimal         @db.Decimal(14, 2)
+  cash_sales          Decimal         @db.Decimal(14, 2)
+  other_receipts      Decimal         @db.Decimal(14, 2)
+  cash_expenses       Decimal         @db.Decimal(14, 2)
+  cash_purchases      Decimal         @db.Decimal(14, 2)
+  other_cash_out      Decimal         @db.Decimal(14, 2)
+  withdrawals         Decimal         @db.Decimal(14, 2)
+  expected_closing    Decimal         @db.Decimal(14, 2)
+  actual_closing      Decimal?        @db.Decimal(14, 2)
+  variance            Decimal?        @db.Decimal(14, 2)
+  denomination_json   Json?
+  variance_reason     String?         @db.VarChar(40)
+  manager_explanation String?
+  variance_approval   ApprovalStatus?
+  approved_by         String?         @db.Uuid
+  approved_at         DateTime?       @db.Timestamptz
+  is_locked           Boolean         @default(false)
+  created_at          DateTime        @default(now()) @db.Timestamptz
+  created_by          String?         @db.Uuid
+  updated_at          DateTime        @updatedAt @db.Timestamptz
+  updated_by          String?         @db.Uuid
+  version             Int             @default(1)
+
+  @@unique([location_id, business_date])
+  @@map("cash_reconciliation")
+}
+
+model DailyClosing {
+  id                     String        @id @default(uuid(7)) @db.Uuid
+  location_id            String        @db.Uuid
+  business_date          DateTime      @db.Date
+  status                 ClosingStatus @default(PENDING)
+  daily_sales_id         String?       @db.Uuid
+  cash_reconciliation_id String?       @db.Uuid
+  total_sales            Decimal?      @db.Decimal(14, 2)
+  cash_sales             Decimal?      @db.Decimal(14, 2)
+  upi_sales              Decimal?      @db.Decimal(14, 2)
+  card_sales             Decimal?      @db.Decimal(14, 2)
+  total_expenses         Decimal?      @db.Decimal(14, 2)
+  total_purchases        Decimal?      @db.Decimal(14, 2)
+  total_wastage_value    Decimal?      @db.Decimal(14, 2)
+  expected_cash          Decimal?      @db.Decimal(14, 2)
+  actual_cash            Decimal?      @db.Decimal(14, 2)
+  cash_variance          Decimal?      @db.Decimal(14, 2)
+  stock_notes            String?
+  remarks                String?
+  submitted_by           String?       @db.Uuid
+  submitted_at           DateTime?     @db.Timestamptz
+  reviewed_by            String?       @db.Uuid
+  reviewed_at            DateTime?     @db.Timestamptz
+  review_comment         String?
+  reopen_count           Int           @default(0) @db.SmallInt
+  created_at             DateTime      @default(now()) @db.Timestamptz
+  created_by             String?       @db.Uuid
+  updated_at             DateTime      @updatedAt @db.Timestamptz
+  updated_by             String?       @db.Uuid
+  version                Int           @default(1)
+
+  events DailyClosingEvent[]
+
+  @@unique([location_id, business_date])
+  @@index([status, business_date])
+  @@map("daily_closing")
+}
+
+model DailyClosingEvent {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  daily_closing_id String         @db.Uuid
+  from_status      ClosingStatus?
+  to_status        ClosingStatus
+  actor_id         String         @db.Uuid
+  comment          String?
+  snapshot         Json?
+  created_at       DateTime       @default(now()) @db.Timestamptz
+
+  closing DailyClosing @relation(fields: [daily_closing_id], references: [id])
+
+  @@map("daily_closing_events")
+}
+
+model Attendance {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  employee_id    String           @db.Uuid
+  location_id    String           @db.Uuid
+  business_date  DateTime         @db.Date
+  status         AttendanceStatus
+  overtime_hours Decimal          @default(0) @db.Decimal(5, 2)
+  check_in       DateTime?        @db.Time
+  check_out      DateTime?        @db.Time
+  remarks        String?
+  marked_by      String           @db.Uuid
+  client_uuid    String?          @unique @db.Uuid
+  source         EntrySource      @default(WEB)
+  created_at     DateTime         @default(now()) @db.Timestamptz
+  created_by     String?          @db.Uuid
+  updated_at     DateTime         @updatedAt @db.Timestamptz
+  updated_by     String?          @db.Uuid
+  version        Int              @default(1)
+
+  @@unique([employee_id, business_date])
+  @@index([location_id, business_date])
+  @@map("attendance")
+}
+
+// ---------------------------------------------------------------- expenses, purchases, suppliers
+model Expense {
+  id                String         @id @default(uuid(7)) @db.Uuid
+  code              String         @unique @db.VarChar(30)
+  location_id       String         @db.Uuid
+  business_date     DateTime       @db.Date
+  category_id       String         @db.Uuid
+  sub_category_id   String?        @db.Uuid
+  amount            Decimal        @db.Decimal(14, 2)
+  payment_mode      PaymentMode
+  supplier_id       String?        @db.Uuid
+  payee_name        String?        @db.VarChar(100)
+  description       String?
+  period_from       DateTime?      @db.Date
+  period_to         DateTime?      @db.Date
+  employee_id       String?        @db.Uuid
+  approval_status   ApprovalStatus @default(SUBMITTED)
+  approved_by       String?        @db.Uuid
+  approved_at       DateTime?      @db.Timestamptz
+  rejection_reason  String?
+  entered_by        String         @db.Uuid
+  status            RecordStatus   @default(ACTIVE)
+  reversal_of_id    String?        @db.Uuid
+  client_uuid       String?        @unique @db.Uuid
+  client_created_at DateTime?      @db.Timestamptz
+  source            EntrySource    @default(WEB)
+  created_at        DateTime       @default(now()) @db.Timestamptz
+  created_by        String?        @db.Uuid
+  updated_at        DateTime       @updatedAt @db.Timestamptz
+  updated_by        String?        @db.Uuid
+  version           Int            @default(1)
+
+  @@index([location_id, business_date])
+  @@index([category_id, business_date])
+  @@map("expenses")
+}
+
+model Purchase {
+  id                String         @id @default(uuid(7)) @db.Uuid
+  code              String         @unique @db.VarChar(30)
+  location_id       String         @db.Uuid
+  business_date     DateTime       @db.Date
+  supplier_id       String         @db.Uuid
+  supplier_ref_no   String?        @db.VarChar(40)
+  subtotal          Decimal        @db.Decimal(14, 2)
+  other_charges     Decimal        @default(0) @db.Decimal(14, 2)
+  discount          Decimal        @default(0) @db.Decimal(14, 2)
+  total_amount      Decimal        @db.Decimal(14, 2)
+  payment_mode      PaymentMode
+  paid_amount       Decimal        @default(0) @db.Decimal(14, 2)
+  credit_amount     Decimal        @default(0) @db.Decimal(14, 2)
+  due_date          DateTime?      @db.Date
+  remarks           String?
+  approval_status   ApprovalStatus @default(SUBMITTED)
+  approved_by       String?        @db.Uuid
+  approved_at       DateTime?      @db.Timestamptz
+  rejection_reason  String?
+  entered_by        String         @db.Uuid
+  status            RecordStatus   @default(ACTIVE)
+  reversal_of_id    String?        @db.Uuid
+  client_uuid       String?        @unique @db.Uuid
+  client_created_at DateTime?      @db.Timestamptz
+  source            EntrySource    @default(WEB)
+  created_at        DateTime       @default(now()) @db.Timestamptz
+  created_by        String?        @db.Uuid
+  updated_at        DateTime       @updatedAt @db.Timestamptz
+  updated_by        String?        @db.Uuid
+  version           Int            @default(1)
+
+  items PurchaseItem[]
+
+  @@index([location_id, business_date])
+  @@index([supplier_id, due_date])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id            String  @id @default(uuid(7)) @db.Uuid
+  purchase_id   String  @db.Uuid
+  item_id       String  @db.Uuid
+  line_no       Int     @db.SmallInt
+  quantity      Decimal @db.Decimal(14, 3)
+  unit_id       String  @db.Uuid
+  base_quantity Decimal @db.Decimal(14, 3)
+  rate          Decimal @db.Decimal(14, 4)
+  line_total    Decimal @db.Decimal(14, 2)
+
+  purchase Purchase @relation(fields: [purchase_id], references: [id])
+
+  @@unique([purchase_id, line_no])
+  @@map("purchase_items")
+}
+
+model SupplierPayment {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  code           String       @unique @db.VarChar(30)
+  supplier_id    String       @db.Uuid
+  location_id    String       @db.Uuid
+  business_date  DateTime     @db.Date
+  amount         Decimal      @db.Decimal(14, 2)
+  payment_mode   PaymentMode
+  reference_no   String?      @db.VarChar(40)
+  purchase_id    String?      @db.Uuid
+  remarks        String?
+  status         RecordStatus @default(ACTIVE)
+  reversal_of_id String?      @db.Uuid
+  created_at     DateTime     @default(now()) @db.Timestamptz
+  created_by     String?      @db.Uuid
+  updated_at     DateTime     @updatedAt @db.Timestamptz
+  updated_by     String?      @db.Uuid
+  version        Int          @default(1)
+
+  @@map("supplier_payments")
+}
+
+model SupplierLedger {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  supplier_id String    @db.Uuid
+  entry_date  DateTime  @db.Date
+  entry_type  String    @db.VarChar(20) // OPENING|PURCHASE|PAYMENT|REVERSAL|ADJUSTMENT
+  debit       Decimal   @default(0) @db.Decimal(14, 2)
+  credit      Decimal   @default(0) @db.Decimal(14, 2)
+  source_type String?   @db.VarChar(30)
+  source_id   String?   @db.Uuid
+  due_date    DateTime? @db.Date
+  location_id String?   @db.Uuid
+  narration   String?
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  created_by  String    @db.Uuid
+
+  @@index([supplier_id, entry_date])
+  @@map("supplier_ledger")
+}
+
+// ---------------------------------------------------------------- inventory
+model InventoryTransaction {
+  id                       String       @id @default(uuid(7)) @db.Uuid
+  location_id              String       @db.Uuid
+  item_id                  String       @db.Uuid
+  business_date            DateTime     @db.Date
+  txn_type                 StockTxnType
+  quantity                 Decimal      @db.Decimal(14, 3)
+  unit_cost                Decimal      @db.Decimal(14, 4)
+  value                    Decimal      @db.Decimal(14, 2)
+  balance_after            Decimal      @db.Decimal(14, 3)
+  source_type              String       @db.VarChar(30)
+  source_id                String       @db.Uuid
+  counterparty_location_id String?      @db.Uuid
+  reversal_of_id           String?      @db.Uuid
+  created_at               DateTime     @default(now()) @db.Timestamptz
+  created_by               String       @db.Uuid
+
+  @@index([location_id, item_id, business_date])
+  @@index([source_type, source_id])
+  @@map("inventory_transactions")
+}
+
+model StockBalance {
+  location_id      String    @db.Uuid
+  item_id          String    @db.Uuid
+  quantity         Decimal   @default(0) @db.Decimal(14, 3)
+  in_transit_in    Decimal   @default(0) @db.Decimal(14, 3)
+  avg_cost         Decimal   @default(0) @db.Decimal(14, 4)
+  value            Decimal   @default(0) @db.Decimal(14, 2)
+  last_txn_at      DateTime? @db.Timestamptz
+  last_counted_on  DateTime? @db.Date
+  version          Int       @default(1)
+
+  @@id([location_id, item_id])
+  @@map("stock_balances")
+}
+
+model StockTransfer {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  code             String         @unique @db.VarChar(30)
+  from_location_id String         @db.Uuid
+  to_location_id   String         @db.Uuid
+  business_date    DateTime       @db.Date
+  status           TransferStatus @default(DRAFT)
+  requested_by     String?        @db.Uuid
+  approved_by      String?        @db.Uuid
+  approved_at      DateTime?      @db.Timestamptz
+  dispatched_by    String?        @db.Uuid
+  dispatched_at    DateTime?      @db.Timestamptz
+  received_by      String?        @db.Uuid
+  received_at      DateTime?      @db.Timestamptz
+  vehicle_ref      String?        @db.VarChar(40)
+  remarks          String?
+  created_at       DateTime       @default(now()) @db.Timestamptz
+  created_by       String?        @db.Uuid
+  updated_at       DateTime       @updatedAt @db.Timestamptz
+  updated_by       String?        @db.Uuid
+  version          Int            @default(1)
+
+  items StockTransferItem[]
+
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  transfer_id     String   @db.Uuid
+  item_id         String   @db.Uuid
+  sent_qty        Decimal  @db.Decimal(14, 3)
+  received_qty    Decimal? @db.Decimal(14, 3)
+  unit_cost       Decimal? @db.Decimal(14, 4)
+  variance_reason String?  @db.VarChar(40)
+
+  transfer StockTransfer @relation(fields: [transfer_id], references: [id])
+
+  @@unique([transfer_id, item_id])
+  @@map("stock_transfer_items")
+}
+
+model StockCount {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  location_id   String      @db.Uuid
+  business_date DateTime    @db.Date
+  count_type    String      @db.VarChar(10) // OPENING | CLOSING | ADHOC
+  status        CountStatus @default(IN_PROGRESS)
+  counted_by    String?     @db.Uuid
+  approved_by   String?     @db.Uuid
+  approved_at   DateTime?   @db.Timestamptz
+  remarks       String?
+  client_uuid   String?     @unique @db.Uuid
+  created_at    DateTime    @default(now()) @db.Timestamptz
+  created_by    String?     @db.Uuid
+  updated_at    DateTime    @updatedAt @db.Timestamptz
+  updated_by    String?     @db.Uuid
+  version       Int         @default(1)
+
+  items StockCountItem[]
+
+  @@index([location_id, business_date])
+  @@map("stock_counts")
+}
+
+model StockCountItem {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  stock_count_id String   @db.Uuid
+  item_id        String   @db.Uuid
+  expected_qty   Decimal  @db.Decimal(14, 3)
+  physical_qty   Decimal  @db.Decimal(14, 3)
+  variance_qty   Decimal  @db.Decimal(14, 3)
+  variance_value Decimal? @db.Decimal(14, 2)
+  is_significant Boolean  @default(false)
+  reason         String?  @db.VarChar(40)
+  explanation    String?
+
+  count StockCount @relation(fields: [stock_count_id], references: [id])
+
+  @@unique([stock_count_id, item_id])
+  @@map("stock_count_items")
+}
+
+model Wastage {
+  id                String         @id @default(uuid(7)) @db.Uuid
+  code              String         @unique @db.VarChar(30)
+  location_id       String         @db.Uuid
+  business_date     DateTime       @db.Date
+  item_id           String         @db.Uuid
+  quantity          Decimal        @db.Decimal(14, 3)
+  unit_id           String         @db.Uuid
+  base_quantity     Decimal        @db.Decimal(14, 3)
+  estimated_value   Decimal        @db.Decimal(14, 2)
+  reason            WastageReason
+  reason_note       String?
+  entered_by        String         @db.Uuid
+  approval_status   ApprovalStatus @default(SUBMITTED)
+  approved_by       String?        @db.Uuid
+  approved_at       DateTime?      @db.Timestamptz
+  status            RecordStatus   @default(ACTIVE)
+  client_uuid       String?        @unique @db.Uuid
+  client_created_at DateTime?      @db.Timestamptz
+  source            EntrySource    @default(WEB)
+  created_at        DateTime       @default(now()) @db.Timestamptz
+  created_by        String?        @db.Uuid
+  updated_at        DateTime       @updatedAt @db.Timestamptz
+  updated_by        String?        @db.Uuid
+  version           Int            @default(1)
+
+  @@index([location_id, business_date])
+  @@map("wastage")
+}
+
+model Recipe {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  code           String       @unique @db.VarChar(12)
+  name_en        String       @db.VarChar(80)
+  name_ta        String?      @db.VarChar(80)
+  yield_qty      Decimal      @default(1) @db.Decimal(10, 3)
+  selling_price  Decimal?     @db.Decimal(14, 2)
+  effective_from DateTime     @db.Date
+  status         RecordStatus @default(ACTIVE)
+  created_at     DateTime     @default(now()) @db.Timestamptz
+  created_by     String?      @db.Uuid
+  updated_at     DateTime     @updatedAt @db.Timestamptz
+  updated_by     String?      @db.Uuid
+  version        Int          @default(1)
+
+  items RecipeItem[]
+
+  @@map("recipes")
+}
+
+model RecipeItem {
+  id            String  @id @default(uuid(7)) @db.Uuid
+  recipe_id     String  @db.Uuid
+  item_id       String  @db.Uuid
+  quantity      Decimal @db.Decimal(14, 3)
+  unit_id       String  @db.Uuid
+  base_quantity Decimal @db.Decimal(14, 3)
+
+  recipe Recipe @relation(fields: [recipe_id], references: [id])
+
+  @@unique([recipe_id, item_id])
+  @@map("recipe_items")
+}
+
+model RecipeCostSnapshot {
+  id               String   @id @default(uuid(7)) @db.Uuid
+  recipe_id        String   @db.Uuid
+  snapshot_date    DateTime @db.Date
+  cost_per_unit    Decimal  @db.Decimal(14, 4)
+  selling_price    Decimal? @db.Decimal(14, 2)
+  gross_margin_pct Decimal? @db.Decimal(7, 3)
+  breakdown        Json
+
+  @@unique([recipe_id, snapshot_date])
+  @@map("recipe_cost_snapshots")
+}
+
+// ---------------------------------------------------------------- people
+model Employee {
+  id                     String       @id @default(uuid(7)) @db.Uuid
+  code                   String       @unique @db.VarChar(10)
+  full_name              String       @db.VarChar(100)
+  location_id            String       @db.Uuid
+  job_role               String       @db.VarChar(40)
+  phone                  String?      @db.VarChar(15)
+  joining_date           DateTime     @db.Date
+  exit_date              DateTime?    @db.Date
+  salary_type            String       @db.VarChar(10) // MONTHLY | DAILY
+  base_salary            Decimal      @db.Decimal(14, 2)
+  overtime_rate_per_hour Decimal      @default(0) @db.Decimal(14, 2)
+  payment_method         String?      @db.VarChar(10)
+  bank_details_enc       Bytes?
+  status                 RecordStatus @default(ACTIVE)
+  created_at             DateTime     @default(now()) @db.Timestamptz
+  created_by             String?      @db.Uuid
+  updated_at             DateTime     @updatedAt @db.Timestamptz
+  updated_by             String?      @db.Uuid
+  version                Int          @default(1)
+
+  @@map("employees")
+}
+
+model Salary {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  employee_id      String         @db.Uuid
+  location_id      String         @db.Uuid
+  period_month     DateTime       @db.Date
+  working_days     Decimal        @db.Decimal(5, 2)
+  present_days     Decimal        @db.Decimal(5, 2)
+  leave_days       Decimal        @db.Decimal(5, 2)
+  overtime_hours   Decimal        @default(0) @db.Decimal(6, 2)
+  basic_earned     Decimal        @db.Decimal(14, 2)
+  overtime_amount  Decimal        @default(0) @db.Decimal(14, 2)
+  allowances       Decimal        @default(0) @db.Decimal(14, 2)
+  advance_recovery Decimal        @default(0) @db.Decimal(14, 2)
+  other_deductions Decimal        @default(0) @db.Decimal(14, 2)
+  payable          Decimal        @default(0) @db.Decimal(14, 2)
+  paid_amount      Decimal        @default(0) @db.Decimal(14, 2)
+  payment_status   String         @default("UNPAID") @db.VarChar(10)
+  approval_status  ApprovalStatus @default(DRAFT)
+  approved_by      String?        @db.Uuid
+  paid_on          DateTime?      @db.Date
+  payment_mode     PaymentMode?
+  created_at       DateTime       @default(now()) @db.Timestamptz
+  created_by       String?        @db.Uuid
+  updated_at       DateTime       @updatedAt @db.Timestamptz
+  updated_by       String?        @db.Uuid
+  version          Int            @default(1)
+
+  @@unique([employee_id, period_month])
+  @@map("salary")
+}
+
+model EmployeeAdvance {
+  id                  String        @id @default(uuid(7)) @db.Uuid
+  code                String        @unique @db.VarChar(30)
+  employee_id         String        @db.Uuid
+  location_id         String        @db.Uuid
+  request_date        DateTime      @db.Date
+  amount              Decimal       @db.Decimal(14, 2)
+  reason              String
+  monthly_recovery    Decimal?      @db.Decimal(14, 2)
+  status              AdvanceStatus @default(REQUESTED)
+  requested_by        String        @db.Uuid
+  manager_approved_by String?       @db.Uuid
+  manager_approved_at DateTime?     @db.Timestamptz
+  final_approved_by   String?       @db.Uuid
+  final_approved_at   DateTime?     @db.Timestamptz
+  rejection_reason    String?
+  paid_amount         Decimal       @default(0) @db.Decimal(14, 2)
+  paid_on             DateTime?     @db.Date
+  payment_mode        PaymentMode?
+  recovered_amount    Decimal       @default(0) @db.Decimal(14, 2)
+  remaining_amount    Decimal       @default(0) @db.Decimal(14, 2)
+  created_at          DateTime      @default(now()) @db.Timestamptz
+  created_by          String?       @db.Uuid
+  updated_at          DateTime      @updatedAt @db.Timestamptz
+  updated_by          String?       @db.Uuid
+  version             Int           @default(1)
+
+  repayments AdvanceRepayment[]
+
+  @@map("employee_advances")
+}
+
+model AdvanceRepayment {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  advance_id String       @db.Uuid
+  salary_id  String?      @db.Uuid
+  repaid_on  DateTime     @db.Date
+  amount     Decimal      @db.Decimal(14, 2)
+  mode       String       @db.VarChar(10) // SALARY | CASH
+  status     RecordStatus @default(ACTIVE)
+  created_at DateTime     @default(now()) @db.Timestamptz
+  created_by String?      @db.Uuid
+  updated_at DateTime     @updatedAt @db.Timestamptz
+  updated_by String?      @db.Uuid
+  version    Int          @default(1)
+
+  advance EmployeeAdvance @relation(fields: [advance_id], references: [id])
+
+  @@map("advance_repayments")
+}
+
+// ---------------------------------------------------------------- analytics
+model ProfitLoss {
+  location_id       String   @db.Uuid
+  business_date     DateTime @db.Date
+  total_sales       Decimal  @db.Decimal(14, 2)
+  raw_material_cost Decimal  @db.Decimal(14, 2)
+  salary            Decimal  @db.Decimal(14, 2)
+  rent              Decimal  @db.Decimal(14, 2)
+  electricity       Decimal  @db.Decimal(14, 2)
+  transport         Decimal  @db.Decimal(14, 2)
+  maintenance       Decimal  @db.Decimal(14, 2)
+  other_expenses    Decimal  @db.Decimal(14, 2)
+  wastage           Decimal  @db.Decimal(14, 2)
+  operating_profit  Decimal  @db.Decimal(14, 2)
+  is_final          Boolean  @default(false)
+  computed_at       DateTime @db.Timestamptz
+
+  @@id([location_id, business_date])
+  @@map("profit_loss")
+}
+
+// ---------------------------------------------------------------- platform
+model Attachment {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  entity_type String       @db.VarChar(30)
+  entity_id   String       @db.Uuid
+  location_id String       @db.Uuid
+  storage_key String
+  file_name   String?      @db.VarChar(200)
+  mime_type   String       @db.VarChar(60)
+  size_bytes  Int
+  sha256      String?      @db.Char(64)
+  status      RecordStatus @default(ACTIVE)
+  created_at  DateTime     @default(now()) @db.Timestamptz
+  created_by  String       @db.Uuid
+
+  @@index([entity_type, entity_id])
+  @@map("attachments")
+}
+
+model AlertRule {
+  code       String        @id @db.VarChar(40)
+  name       String        @db.VarChar(80)
+  severity   AlertSeverity
+  params     Json
+  is_enabled Boolean       @default(true)
+  channels   Json          @default("[\"IN_APP\"]")
+  updated_at DateTime?     @db.Timestamptz
+  updated_by String?       @db.Uuid
+
+  @@map("alert_rules")
+}
+
+model Notification {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  rule_code       String        @db.VarChar(40)
+  severity        AlertSeverity
+  location_id     String?       @db.Uuid
+  business_date   DateTime?     @db.Date
+  title           String        @db.VarChar(160)
+  message         String?
+  metric_value    Decimal?      @db.Decimal(14, 3)
+  entity_type     String?       @db.VarChar(30)
+  entity_id       String?       @db.Uuid
+  dedupe_key      String        @db.VarChar(160)
+  status          String        @default("OPEN") @db.VarChar(12)
+  acknowledged_by String?       @db.Uuid
+  acknowledged_at DateTime?     @db.Timestamptz
+  resolved_at     DateTime?     @db.Timestamptz
+  created_at      DateTime      @default(now()) @db.Timestamptz
+
+  @@index([status, severity, created_at(sort: Desc)])
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  notification_id String    @db.Uuid
+  user_id         String    @db.Uuid
+  channel         String    @db.VarChar(12)
+  status          String    @db.VarChar(10)
+  sent_at         DateTime? @db.Timestamptz
+  read_at         DateTime? @db.Timestamptz
+  error           String?
+
+  @@map("notification_deliveries")
+}
+
+model AuditLog {
+  id             BigInt       @id @default(autoincrement())
+  occurred_at    DateTime     @default(now()) @db.Timestamptz
+  actor_id       String?      @db.Uuid
+  actor_role     String?      @db.VarChar(30)
+  location_id    String?      @db.Uuid
+  action         String       @db.VarChar(20)
+  entity_type    String       @db.VarChar(30)
+  entity_id      String?      @db.Uuid
+  entity_code    String?      @db.VarChar(40)
+  old_values     Json?
+  new_values     Json?
+  changed_fields String[]
+  reason         String?
+  request_id     String?      @db.Uuid
+  ip             String?      @db.Inet
+  user_agent     String?
+  device_id      String?      @db.VarChar(64)
+  source         EntrySource?
+
+  @@index([entity_type, entity_id, occurred_at(sort: Desc)])
+  @@index([actor_id, occurred_at(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model SyncOperation {
+  client_uuid String   @id @db.Uuid
+  user_id     String   @db.Uuid
+  device_id   String   @db.VarChar(64)
+  entity_type String   @db.VarChar(30)
+  entity_id   String?  @db.Uuid
+  result      String   @db.VarChar(12)
+  response    Json
+  received_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("sync_operations")
+}
+
+model ReportExport {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  report_code  String    @db.VarChar(40)
+  format       String    @db.VarChar(5)
+  params       Json
+  status       String    @db.VarChar(10)
+  storage_key  String?
+  requested_by String    @db.Uuid
+  requested_at DateTime  @default(now()) @db.Timestamptz
+  completed_at DateTime? @db.Timestamptz
+  error        String?
+
+  @@map("report_exports")
+}
