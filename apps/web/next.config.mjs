@@ -6,6 +6,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Lets a second build (e.g. for browser verification) live beside a running dev server without clobbering it.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   // The Docker image builds a self-contained server (NEXT_STANDALONE=1). Plain `next build` is unchanged.
   ...(process.env.NEXT_STANDALONE === '1'
     ? { output: 'standalone', outputFileTracingRoot: path.join(here, '../../') }

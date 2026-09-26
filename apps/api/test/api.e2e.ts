@@ -591,4 +591,86 @@ describe('Branch Pulse API (e2e)', () => {
       expect(res.body.data.branches.map((b: { locationId: string }) => b.locationId)).toEqual([ownLoc]);
     });
   });
+
+  // ------------------------------------------------------------------ dashboard charts (LLD s17 band 4)
+  describe('dashboard charts', () => {
+    const chart = (code: string, token = owner, qs = `from=${yesterday}&to=${today}`) =>
+      http().get(`/api/v1/dashboard/charts/${code}?${qs}`).set(as(token));
+
+    it('daily sales trend: one point per day, per branch and total, null for days without data', async () => {
+      const res = await chart('daily-sales-trend');
+      expect(res.status).toBe(200);
+      expect(res.body.data.dates).toEqual([yesterday, today]);
+      expect(res.body.data.byBranch[ownLoc]).toEqual(['20000', '31000']);
+      expect(Number(res.body.data.total[1])).toBeGreaterThanOrEqual(31000);
+      // a branch with no sales in range is a run of nulls (a gap), never zeros
+      const other = res.body.data.byBranch[otherLoc];
+      expect(other.every((v: unknown) => v === null || typeof v === 'string')).toBe(true);
+    });
+
+    it('branch-wise sales adds the range and ranks branches', async () => {
+      const res = await chart('branch-sales');
+      const row = res.body.data.rows.find((r: { locationId: string }) => r.locationId === ownLoc);
+      expect(row.sales).toBe('51000');
+      expect(row.days).toBe(2);
+      const sales = res.body.data.rows.map((r: { sales: string }) => Number(r.sales));
+      expect(sales).toEqual([...sales].sort((a, b) => b - a));
+    });
+
+    it('expense category breakdown totals the approved and pending expenses of the range', async () => {
+      const res = await chart('expense-categories');
+      expect(Number(res.body.data.total)).toBeGreaterThan(0);
+      const sum = res.body.data.rows.reduce((a: number, r: { amount: string }) => a + Number(r.amount), 0);
+      expect(sum).toBeCloseTo(Number(res.body.data.total), 2);
+    });
+
+    it('monthly sales and expenses always return 12 calendar months ending this month', async () => {
+      for (const code of ['monthly-sales', 'monthly-expenses']) {
+        const res = await chart(code, owner, 'from=2020-01-01&to=2020-01-02'); // range is ignored for monthly charts
+        expect(res.body.data.months).toHaveLength(12);
+        expect(res.body.data.months[11].month).toBe(today.slice(0, 7));
+      }
+      const sales = await chart('monthly-sales');
+      expect(Number(sales.body.data.months[11].amount)).toBeGreaterThanOrEqual(51000);
+    });
+
+    it('branch profitability = (sales - operating expenses - wastage) / sales', async () => {
+      const res = await chart('branch-profitability');
+      const row = res.body.data.rows.find((r: { locationId: string }) => r.locationId === ownLoc);
+      const profit = Number(row.sales) - Number(row.expenses) - Number(row.wastage);
+      expect(Number(row.profit)).toBeCloseTo(profit, 2);
+      expect(Number(row.marginPct)).toBeCloseTo((profit / Number(row.sales)) * 100, 1);
+      // a branch with no sales has no margin (null), not 0% or a divide-by-zero
+      const idle = res.body.data.rows.find((r: { sales: string }) => Number(r.sales) === 0);
+      if (idle) expect(idle.marginPct).toBeNull();
+    });
+
+    it('stock consumption and wastage trend return their series shape', async () => {
+      const stock = await chart('stock-consumption');
+      expect(stock.status).toBe(200);
+      expect(Array.isArray(stock.body.data.items)).toBe(true);
+      const wastage = await chart('wastage-trend');
+      expect(wastage.body.data.dates).toEqual([yesterday, today]);
+      expect(wastage.body.data.value).toHaveLength(2);
+      expect(wastage.body.data.pctOfSales).toHaveLength(2);
+    });
+
+    it('a manager only ever sees their own branch in every chart', async () => {
+      const bs = await chart('branch-sales', manager);
+      expect(bs.body.data.rows.map((r: { locationId: string }) => r.locationId)).toEqual([ownLoc]);
+      const trend = await chart('daily-sales-trend', manager);
+      expect(Object.keys(trend.body.data.byBranch)).toEqual([ownLoc]);
+      const prof = await chart('branch-profitability', manager);
+      expect(prof.body.data.rows.map((r: { locationId: string }) => r.locationId)).toEqual([ownLoc]);
+    });
+
+    it('rejects unknown charts, backwards ranges and ranges over 400 days', async () => {
+      expect((await chart('nope')).status).toBe(404);
+      const back = await chart('branch-sales', owner, `from=${today}&to=${yesterday}`);
+      expect(back.status).toBe(422);
+      expect(back.body.error.code).toBe('INVALID_RANGE');
+      const long = await chart('branch-sales', owner, `from=2024-01-01&to=${today}`);
+      expect(long.status).toBe(422);
+    });
+  });
 });

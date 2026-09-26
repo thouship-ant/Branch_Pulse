@@ -24,6 +24,11 @@
   --red-50: 254 242 242;     --red-300: 252 165 165;    --red-800: 153 27 27;     --red-900: 127 29 29;
   --violet-50: 245 243 255;  --violet-300: 196 181 253; --violet-800: 91 33 182;  --violet-900: 76 29 149;
   --sky-50: 240 249 255;     --sky-300: 125 211 252;    --sky-900: 12 74 110;
+
+  /* chart categorical slots, fixed order (validated: scripts/validate_palette.js, light on #ffffff) */
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+  --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
+  --diverge-neg: #e34948; /* diverging pair: series-1 blue above zero, red below */
 }
 
 .dark {
@@ -48,6 +53,11 @@
   --red-50: 69 10 10;      --red-300: 153 27 27;      --red-800: 252 165 165;     --red-900: 254 202 202;
   --violet-50: 46 16 101;  --violet-300: 109 40 217;  --violet-800: 196 181 253;  --violet-900: 221 214 254;
   --sky-50: 8 47 73;       --sky-300: 3 105 161;      --sky-900: 186 230 253;
+
+  /* dark steps of the same hues (validated on #172033) */
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+  --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+  --diverge-neg: #e66767;
 }
 
 /* default border colour follows the theme (Tailwind's preflight default is a fixed light grey) */

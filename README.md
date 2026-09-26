@@ -47,6 +47,7 @@ npm -w apps/api run test:e2e                    # 34 end-to-end tests
 | Expenses: receipts (presigned, magic-byte checked), auto-approval by limit, approve/reject/cancel/reverse | done |
 | Daily closing: state machine, pre-checks, locking (app + DB trigger), reopen, event log | done |
 | Owner dashboard, live exception feed, closing board/detail, approvals inbox | done |
+| Dashboard charts (8): daily sales trend, branch sales, expense categories, monthly sales/expenses, branch profitability, stock consumption, wastage trend; period filter, table view, light/dark | done (`GET /dashboard/charts/:code`); stock consumption and wastage fill in once those modules exist (demo data via `db:seed -- --demo`) |
 | Offline: outbox, exactly-once `/sync/batch`, conflicts, master bootstrap, service worker | done |
 | Full LLD schema (all ~60 tables, FKs, checks, RLS, triggers) | done |
 

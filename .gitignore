@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .next/
+.next-verify/
+dist-verify/
 .env
 .env.local
 .env.prod

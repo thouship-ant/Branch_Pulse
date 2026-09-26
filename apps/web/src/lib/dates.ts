@@ -55,6 +55,21 @@ function locale(): string {
   try { return localStorage.getItem('bp_lang') === 'ta' ? 'ta-IN' : 'en-IN'; } catch { return 'en-IN'; }
 }
 
+/** 26 Sep - short label for chart axes */
+export function shortDate(date: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(locale(), { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+/** Oct - month name for a YYYY-MM key */
+export function monthShort(ym: string): string {
+  return new Date(`${ym}-01T00:00:00Z`).toLocaleDateString(locale(), { month: 'short', timeZone: 'UTC' });
+}
+
+/** October 2026 */
+export function monthLong(ym: string): string {
+  return new Date(`${ym}-01T00:00:00Z`).toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
 /** 26 Sept 2026 (Tamil month names when the UI is Tamil) */
 export function prettyDate(date: string): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString(locale(), { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });

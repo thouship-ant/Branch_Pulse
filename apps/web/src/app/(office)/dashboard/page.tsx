@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DashboardCharts } from '@/components/DashboardCharts';
 import { DateNav } from '@/components/DateNav';
 import { Icon, type IconName } from '@/components/Icon';
 import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
@@ -162,6 +163,9 @@ export default function Dashboard() {
           </tbody>
         </table>
       </section>
+
+      {/* Band 4: charts (own period filter; fetched lazily when scrolled near) */}
+      <DashboardCharts />
     </div>
   );
 }

@@ -286,7 +286,10 @@ async function main() {
   console.log(`Seeded masters, ${ALL_PERMS.length} permissions, ${ROLES.length} roles, ${users.length} users.`);
   if (!process.env.SEED_PASSWORD) console.log('Seed password for every user (dev only): ChangeMe@123');
 
-  if (DEMO) await seedDemoHistory(branches, locId.get('HO01')!);
+  if (DEMO) {
+    await seedDemoHistory(branches, locId.get('HO01')!);
+    await seedDemoStockExtras(branches);
+  }
 }
 
 // ---------------------------------------------------------------- demo history generator
@@ -404,6 +407,69 @@ async function seedDemoHistory(branches: Array<{ id: string; code: string; card_
     }
   }
   console.log(`Demo history: ${created} branch-days generated over ${days} days.`);
+}
+
+/**
+ * Demo-only wastage and stock consumption so the dashboard's wastage and consumption charts have data
+ * before the stock module exists. Consumption is derived from each day's sales (tea recipe: 90 ml milk,
+ * 4 g tea powder, 8 g sugar, 1 cup per ~15 rupees). Ledger rows are written without stock_balances, so
+ * never seed this into a database you plan to run the real stock module on.
+ */
+async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>) {
+  if (await prisma.wastage.count()) return; // idempotent
+  const owner = await prisma.user.findUniqueOrThrow({ where: { username: 'owner' } });
+  const items = await prisma.inventoryItem.findMany();
+  const item = (code: string) => items.find((i) => i.code === code)!;
+  const today = toDate(todayIST());
+  const perCup: Array<[string, number]> = [['ITM001', 90], ['ITM002', 4], ['ITM004', 8], ['ITM008', 1]];
+  const reasons = ['SPOILED', 'EXCESS_PREPARATION', 'BURNT', 'DAMAGED'] as const;
+  let w = 0, c = 0;
+
+  // approved days are locked by trigger; the seed runs as the owner, so lift the lock only for this insert
+  await prisma.$executeRawUnsafe('ALTER TABLE wastage DISABLE TRIGGER t_lock_wastage');
+  try {
+    for (const [bi, b] of branches.entries()) {
+      const manager = await prisma.user.findUniqueOrThrow({ where: { username: `manager${bi + 1}` } });
+      const rand = rng(5000 + bi);
+      for (let back = 30; back >= 1; back--) {
+        const date = addDays(today, -back);
+        const sales = await prisma.dailySales.findFirst({ where: { location_id: b.id, business_date: date } });
+        const closing = await prisma.dailyClosing.findFirst({ where: { location_id: b.id, business_date: date } });
+        if (!sales || !closing) continue;
+
+        const cups = sales.total_sales.div(15);
+        for (const [code, per] of perCup) {
+          const it = item(code);
+          const qty = cups.mul(per).mul(0.9 + rand() * 0.2).toDecimalPlaces(3);
+          await prisma.inventoryTransaction.create({
+            data: {
+              location_id: b.id, item_id: it.id, business_date: date, txn_type: 'CONSUMPTION', quantity: qty.neg(),
+              unit_cost: it.avg_cost, value: qty.mul(it.avg_cost).neg().toDecimalPlaces(2), balance_after: D(0),
+              source_type: 'CLOSING', source_id: closing.id, created_by: manager.id,
+            },
+          });
+          c++;
+        }
+
+        if (rand() < 0.45) {
+          const it = item(['ITM001', 'ITM002', 'ITM004'][Math.floor(rand() * 3)]);
+          const qty = D(Math.round(300 + rand() * 1700)).div(it.code === 'ITM001' ? 1 : 10);
+          await prisma.wastage.create({
+            data: {
+              code: await nextCode('WST', 'seq_code_wastage', b.code), location_id: b.id, business_date: date, item_id: it.id,
+              quantity: qty, unit_id: it.base_unit_id, base_quantity: qty, estimated_value: qty.mul(it.avg_cost).toDecimalPlaces(2),
+              reason: reasons[Math.floor(rand() * reasons.length)], entered_by: manager.id, approval_status: 'APPROVED',
+              approved_by: owner.id, approved_at: date, source: 'SYSTEM',
+            },
+          });
+          w++;
+        }
+      }
+    }
+  } finally {
+    await prisma.$executeRawUnsafe('ALTER TABLE wastage ENABLE TRIGGER t_lock_wastage');
+  }
+  console.log(`Demo stock extras: ${w} wastage entries, ${c} consumption ledger rows.`);
 }
 
 main()
