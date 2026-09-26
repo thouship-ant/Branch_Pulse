@@ -3,6 +3,7 @@ import { Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
 import { CashService, CashTxnDto, ReconciliationDto } from './cash.service';
 import { ClosingsService, ReviewDto, SubmitClosingDto } from './closings.service';
 import { SalesDto, SalesService } from './sales.service';
+import { VarianceReportQuery, VarianceReportService } from './variance-report.service';
 
 @Controller('daily-sales')
 export class SalesController {
@@ -29,7 +30,30 @@ export class CashController {
   constructor(
     private readonly cash: CashService,
     private readonly closings: ClosingsService,
+    private readonly varianceReport: VarianceReportService,
   ) {}
+
+  /** All branches for one day, with expected vs actual cash and approval status (owner / accountant view). */
+  @Get('overview') @RequirePermissions('cash:view')
+  overview(@Ctx() ctx: ReqCtx, @Query('date') date: string) {
+    return this.cash.overview(ctx, date);
+  }
+
+  /** Cash Variance Report: days that did not tally, with reasons and approvals, plus a per-branch summary. */
+  @Get('variance-report') @RequirePermissions('cash:view')
+  report(@Ctx() ctx: ReqCtx, @Query() q: VarianceReportQuery) {
+    return this.varianceReport.report(ctx, q);
+  }
+
+  @Post('transactions/:id/cancel') @HttpCode(200) @RequirePermissions('cash:enter')
+  cancelTxn(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: ReviewDto) {
+    return this.cash.cancelTxn(ctx, id, dto.comment);
+  }
+
+  @Post('reconciliation/:locationId/:date/submit') @HttpCode(200) @RequirePermissions('cash:enter')
+  submitVariance(@Ctx() ctx: ReqCtx, @Param('locationId', ParseUUIDPipe) locationId: string, @Param('date') date: string) {
+    return this.cash.submitVariance(ctx, locationId, date);
+  }
 
   @Get('transactions') @RequirePermissions('cash:view')
   listTxns(@Ctx() ctx: ReqCtx, @Query('locationId', ParseUUIDPipe) locationId: string, @Query('date') date: string) {

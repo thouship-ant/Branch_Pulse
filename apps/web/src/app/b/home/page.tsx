@@ -51,7 +51,7 @@ export default function BranchHome() {
       href: '/b/expense', title: t('expenses'),
       detail: `${formatINR(String(total), { decimals: false })} (${live.length + queuedExpenses})`, done: live.length + queuedExpenses > 0,
     },
-    { href: '/b/closing', title: `${t('cash')} · ${t('closing')}`, detail: counted ? formatINR(cash.actualClosing) : '—', done: counted },
+    { href: '/b/cash', title: t('cashRecon'), detail: counted ? formatINR(cash.actualClosing) : '—', done: counted },
   ];
 
   return (

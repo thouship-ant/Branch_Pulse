@@ -113,7 +113,8 @@ export function BranchShell({ children }: { children: ReactNode }) {
       <main className="flex-1 space-y-4 p-4 pb-24">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-lg border-t border-slate-200 bg-surface pb-[env(safe-area-inset-bottom)]" aria-label="Main">
         {BRANCH_TABS.map((tab) => {
-          const active = path.startsWith(tab.href);
+          // the cash reconciliation is part of the closing flow, so it keeps the Closing tab lit
+          const active = path.startsWith(tab.href) || (tab.href === '/b/closing' && path.startsWith('/b/cash'));
           return (
             <Link
               key={tab.href} href={tab.href} aria-current={active ? 'page' : undefined}
@@ -133,6 +134,7 @@ export function BranchShell({ children }: { children: ReactNode }) {
 const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; perm?: string }> = [
   { href: '/dashboard', key: 'dashboard', icon: 'grid', perm: 'dashboard:view' },
   { href: '/closings', key: 'closings', icon: 'check', perm: 'closing:view' },
+  { href: '/cash', key: 'cash', icon: 'wallet', perm: 'cash:view' },
   { href: '/approvals', key: 'approvals', icon: 'shield', perm: 'expense:approve' },
   { href: '/branches', key: 'branches', icon: 'store', perm: 'location:manage' },
 ];

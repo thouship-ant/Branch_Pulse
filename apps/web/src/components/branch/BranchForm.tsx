@@ -38,6 +38,7 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
   const [tamilBusy, setTamilBusy] = useState(false);
   const [tamilFor, setTamilFor] = useState(''); // the name the current Tamil value was made from
   const [tamilApprox, setTamilApprox] = useState(false);
+  const [tamilEdited, setTamilEdited] = useState(false); // typed by hand: automatic filling no longer overwrites it
   const set = <K extends keyof Values>(k: K, val: Values[K]) => setV((x) => ({ ...x, [k]: val }));
 
   // suggest the next free ID whenever the type changes (add mode only)
@@ -51,7 +52,7 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
   async function fillTamil() {
     if (mode !== 'add') return;
     const name = v.name.trim();
-    if (name === tamilFor) return;
+    if (name === tamilFor || (tamilEdited && v.nameTa.trim())) return;
     if (!name) { set('nameTa', ''); setTamilFor(''); setTamilApprox(false); return; }
     setTamilBusy(true);
     try {
@@ -69,7 +70,7 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
     setBusy(true); setError(null); setSaved(false);
     try {
       // in add mode a Tamil value made for an older spelling of the name is dropped; the server then makes a fresh one
-      const staleTamil = mode === 'add' && v.name.trim() !== tamilFor;
+      const staleTamil = mode === 'add' && !tamilEdited && v.name.trim() !== tamilFor;
       const body = {
         name: v.name.trim(), nameTa: staleTamil ? undefined : v.nameTa.trim(), address: v.address, phone: v.phone, notes: v.notes,
         defaultOpeningCash: amt(v.openingCash), monthlyRent: amt(v.monthlyRent), cardEnabled: v.cardEnabled,
@@ -119,8 +120,8 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
         <TextField id="bn" label={t('branchNameEn')} value={v.name} onChange={(e) => set('name', e.target.value)} onBlur={fillTamil} required />
         <div>
           <TextField
-            id="bnt" label={t('branchNameTa')} value={tamilBusy ? '' : v.nameTa} readOnly={mode === 'add'} placeholder={tamilBusy ? '…' : undefined}
-            onChange={(e) => set('nameTa', e.target.value)} aria-busy={tamilBusy}
+            id="bnt" label={t('branchNameTa')} value={tamilBusy ? '' : v.nameTa} placeholder={tamilBusy ? '…' : undefined}
+            onChange={(e) => { set('nameTa', e.target.value); setTamilEdited(e.target.value.trim() !== ''); setTamilApprox(false); }} aria-busy={tamilBusy}
           />
           {mode === 'add' && <p className="mt-1 text-xs text-slate-500">{tamilApprox ? t('tamilApprox') : t('tamilAuto')}</p>}
         </div>

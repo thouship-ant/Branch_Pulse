@@ -251,6 +251,14 @@ export class ClosingsService {
         throw new AppException(422, 'CLOSING_PRECHECK_FAILED', 'Fix the items below before submitting', failed);
       }
 
+      // submitting the closing also sends an unexplained-then-explained variance for approval
+      if (g.recon!.variance && !g.recon!.variance.isZero() && !['SUBMITTED', 'APPROVED'].includes(g.recon!.variance_approval ?? '')) {
+        g.recon = await tx.cashReconciliation.update({
+          where: { id: g.recon!.id },
+          data: { variance_approval: 'SUBMITTED', approved_by: null, approved_at: null, updated_by: ctx.user.id, version: { increment: 1 } },
+        });
+      }
+
       const snapshot = {
         total_sales: g.sales!.total_sales,
         cash_sales: g.sales!.cash_sales,

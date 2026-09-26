@@ -78,7 +78,8 @@ export default function Dashboard() {
   }
 
   const linkFor = (e: Exc) =>
-    e.link.type === 'EXPENSE_QUEUE' ? '/approvals' : e.link.locationId && e.link.date ? `/closings/${e.link.locationId}/${e.link.date}` : '/closings';
+    e.link.type === 'EXPENSE_QUEUE' ? '/approvals' :
+    e.link.type === 'CASH_RECONCILIATION' && e.link.locationId && e.link.date ? `/cash/${e.link.locationId}/${e.link.date}` : e.link.locationId && e.link.date ? `/closings/${e.link.locationId}/${e.link.date}` : '/closings';
 
   return (
     <div className="space-y-5">

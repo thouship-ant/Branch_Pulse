@@ -204,7 +204,9 @@ export function useOutbox(locationId?: string, businessDate?: string) {
 /** Ask the browser to wake us for a background sync when connectivity returns (where supported). */
 export async function registerBackgroundSync() {
   try {
-    const reg: any = await navigator.serviceWorker?.ready;
+    if (!navigator.serviceWorker) return;
+    // `ready` never settles when no service worker is registered (dev builds, first visit): don't let it block a save
+    const reg: any = await Promise.race([navigator.serviceWorker.ready, new Promise((resolve) => setTimeout(resolve, 800))]);
     await reg?.sync?.register('sync-outbox');
   } catch { /* unsupported: the online event and 60 s timer still cover it */ }
 }

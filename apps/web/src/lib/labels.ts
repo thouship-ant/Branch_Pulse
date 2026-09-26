@@ -27,6 +27,19 @@ export const STATUS_KEY: Record<string, MessageKey> = {
   REVERSED: 'reversed',
 };
 
+/** Cash movement types as the manager sees them. */
+export const MOVEMENT_KEY: Record<string, MessageKey> = {
+  OTHER_RECEIPT: 'mvOtherReceipt',
+  WITHDRAWAL: 'mvWithdrawal',
+  DEPOSIT_TO_BANK: 'mvDeposit',
+  ADJUSTMENT: 'mvAdjustment',
+  EXPENSE: 'mvExpense',
+  PURCHASE: 'mvPurchase',
+  SUPPLIER_PAYMENT: 'mvSupplier',
+  ADVANCE_PAYMENT: 'mvAdvance',
+  OPENING: 'openingCash',
+};
+
 export const EXCEPTION_KEY: Record<string, MessageKey> = {
   CLOSING_PENDING: 'exClosingPending',
   CLOSING_REJECTED: 'exClosingRejected',

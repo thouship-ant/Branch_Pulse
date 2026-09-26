@@ -674,6 +674,228 @@ describe('Branch Pulse API (e2e)', () => {
     });
   });
 
+  // ------------------------------------------------------------------ daily cash reconciliation (critical module)
+  describe('cash reconciliation', () => {
+    let br: string; // a fresh branch + its manager, so the numbers below are exact
+    let mgr: string;
+    let otherMgr: string;
+    let reconId: string;
+    let withdrawalId: string;
+    let receiptId: string;
+    const put = (body: object, token = mgr) =>
+      http().put(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(token)).send(body);
+    const get = async (token = mgr) => (await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(token))).body.data;
+    const photo = async (token: string, locationId: string) => {
+      const p = await http().post('/api/v1/attachments/presign').set(as(token)).send({ fileName: 'note.png', mimeType: 'image/png', sizeBytes: PNG.length, locationId });
+      await http().put(p.body.data.uploadUrl).set('Content-Type', 'image/png').send(PNG).expect(200);
+      return p.body.data.key as string;
+    };
+
+    beforeAll(async () => {
+      const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `CR${rnd}`, name: `Cash Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '2000.00' });
+      br = loc.body.data.id;
+      const u = await http().post('/api/v1/users').set(as(owner)).send({ username: `crm${rnd}`, password: 'Test@12345', fullName: 'Cash Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] });
+      expect(u.status).toBe(201);
+      mgr = (await login(`crm${rnd}`, 'Test@12345')).body.data.accessToken;
+      // a second branch's manager, to prove branches cannot touch each other's cash
+      otherMgr = manager;
+    });
+
+    it('SRS example: opening 2,000 + cash sales 10,000 - cash expenses 1,500 = expected 10,500; counted 10,200 = shortage 300', async () => {
+      await http().put(`/api/v1/daily-sales?locationId=${br}&date=${today}`).set(as(mgr)).send({ totalSales: '10000.00', cashSales: '10000.00' }).expect(200);
+      const cat = (await http().get('/api/v1/expense-categories').set(as(mgr))).body.data[0].id;
+      const key = await photo(mgr, br);
+      const exp = await http().post('/api/v1/expenses').set(as(mgr)).send({ locationId: br, businessDate: today, categoryId: cat, amount: '1500.00', paymentMode: 'CASH', attachmentKeys: [key] });
+      expect(exp.status).toBe(201);
+
+      const before = await get();
+      expect(before.openingCash).toBe('2000');
+      expect(before.cashSales).toBe('10000');
+      expect(before.cashExpenses).toBe('1500');
+      expect(before.expectedClosing).toBe('10500');
+
+      const saved = await put({ actualClosing: '10200.00' });
+      expect(saved.status).toBe(200);
+      expect(saved.body.data.variance).toBe('-300');
+      expect(saved.body.data.varianceLabel).toBe('SHORTAGE');
+      reconId = saved.body.data.id;
+
+      // a surplus reads as a surplus
+      const surplus = await put({ actualClosing: '10650.00' });
+      expect(surplus.body.data.variance).toBe('150');
+      expect(surplus.body.data.varianceLabel).toBe('SURPLUS');
+      await put({ actualClosing: '10500.00' }).then((r) => expect(r.body.data.varianceLabel).toBe('TALLIED'));
+      await put({ actualClosing: '10200.00' });
+    });
+
+    it('other cash receipts and withdrawals move expected cash, and a saved count follows them', async () => {
+      const post = (type: string, amount: string) =>
+        http().post('/api/v1/cash/transactions').set(as(mgr)).send({ locationId: br, businessDate: today, type, amount, description: 'test' });
+      const r = await post('OTHER_RECEIPT', '500.00');
+      expect(r.status).toBe(201);
+      receiptId = r.body.data.id;
+      const w = await post('WITHDRAWAL', '200.00');
+      withdrawalId = w.body.data.id;
+
+      // 10,500 + 500 receipt - 200 withdrawal = 10,800 expected; the saved count of 10,200 is now 600 short
+      const view = await get();
+      expect(view.otherReceipts).toBe('500');
+      expect(view.withdrawals).toBe('200');
+      expect(view.expectedClosing).toBe('10800');
+      expect(view.variance).toBe('-600');
+
+      // cancelling a hand-entered movement is allowed (never a delete); an expense's cash line is not cancellable here
+      const cancel = await http().post(`/api/v1/cash/transactions/${withdrawalId}/cancel`).set(as(mgr)).send({});
+      expect(cancel.status).toBe(200);
+      expect(cancel.body.data.status).toBe('CANCELLED');
+      expect((await get()).expectedClosing).toBe('11000');
+      const list = (await http().get(`/api/v1/cash/transactions?locationId=${br}&date=${today}`).set(as(mgr))).body.data;
+      const expenseLine = list.find((t: { txnType: string }) => t.txnType === 'EXPENSE');
+      const refuse = await http().post(`/api/v1/cash/transactions/${expenseLine.id}/cancel`).set(as(mgr)).send({});
+      expect(refuse.status).toBe(409);
+
+      await http().post(`/api/v1/cash/transactions/${receiptId}/cancel`).set(as(mgr)).send({}).expect(200);
+      const back = await get();
+      expect(back.expectedClosing).toBe('10500');
+      expect(back.variance).toBe('-300');
+    });
+
+    it('a variance is a DRAFT until sent; sending needs a reason and an explanation; a photo is optional', async () => {
+      expect((await get()).varianceApproval).toBe('DRAFT');
+
+      const noReason = await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({});
+      expect(noReason.status).toBe(422);
+      expect(noReason.body.error.code).toBe('VARIANCE_REASON_REQUIRED');
+
+      // too-short explanation is still refused
+      await put({ varianceReason: 'SHORT_CHANGE', managerExplanation: 'too short' });
+      expect((await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({})).status).toBe(422);
+
+      const key = await photo(mgr, br);
+      const withPhoto = await put({ varianceReason: 'SHORT_CHANGE', managerExplanation: 'Gave wrong change during the evening rush', attachmentKeys: [key] });
+      expect(withPhoto.body.data.photos).toHaveLength(1);
+
+      const sent = await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({});
+      expect(sent.status).toBe(200);
+      expect(sent.body.data.varianceApproval).toBe('SUBMITTED');
+      expect((await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({})).status).toBe(409);
+
+      // more than three photos is refused
+      const extra = [await photo(mgr, br), await photo(mgr, br), await photo(mgr, br)];
+      expect((await put({ attachmentKeys: extra })).status).toBe(422);
+    });
+
+    it('a tallied day needs no approval', async () => {
+      await put({ actualClosing: '10500.00' });
+      const v = await get();
+      expect(v.varianceApproval).toBeNull();
+      const res = await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({});
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('NO_VARIANCE');
+      await put({ actualClosing: '10200.00' }); // back to the 300 shortage
+      expect((await get()).varianceApproval).toBe('DRAFT'); // a re-opened variance starts again as a draft
+      await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({}).expect(200);
+    });
+
+    it('managers cannot approve or touch another branch; the owner sees every branch', async () => {
+      expect((await http().post(`/api/v1/cash/reconciliation/${reconId}/approve`).set(as(mgr)).send({})).status).toBe(403);
+      // another branch's manager gets a scope error on this branch
+      const other = await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(otherMgr));
+      expect(other.status).toBe(403);
+      expect((await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(otherMgr)).send({})).status).toBe(403);
+
+      const ov = await http().get(`/api/v1/cash/overview?date=${today}`).set(as(owner));
+      expect(ov.status).toBe(200);
+      const row = ov.body.data.rows.find((r: { locationId: string }) => r.locationId === br);
+      expect(row.expectedClosing).toBe('10500');
+      expect(row.actualClosing).toBe('10200');
+      expect(row.variance).toBe('-300');
+      expect(row.varianceLabel).toBe('SHORTAGE');
+      expect(row.varianceApproval).toBe('SUBMITTED');
+      expect(row.photoCount).toBe(1);
+      expect(ov.body.data.rows.length).toBeGreaterThan(1); // all branches
+      expect(ov.body.data.totals.awaitingApproval).toBeGreaterThanOrEqual(1);
+
+      const mine = await http().get(`/api/v1/cash/overview?date=${today}`).set(as(mgr));
+      expect(mine.body.data.rows.map((r: { locationId: string }) => r.locationId)).toEqual([br]);
+    });
+
+    it('owner approval records who approved and when; changing the count later withdraws the approval', async () => {
+      const ok = await http().post(`/api/v1/cash/reconciliation/${reconId}/approve`).set(as(owner)).send({});
+      expect(ok.status).toBe(200);
+      expect(ok.body.data.varianceApproval).toBe('APPROVED');
+      const v = await get(owner);
+      expect(v.varianceApproval).toBe('APPROVED');
+      expect(v.approvedBy).toBe('Owner');
+      expect(v.approvedAt).toBeTruthy();
+
+      // an approval only covers the figures it approved
+      await put({ actualClosing: '10300.00' });
+      const changed = await get();
+      expect(changed.varianceApproval).toBe('DRAFT');
+      expect(changed.approvedBy).toBeNull();
+
+      // rejection: send again, the owner rejects with a comment, the manager corrects and it is a draft again
+      await put({ managerExplanation: 'Recounted the tin twice; short by 200 after the correction' });
+      await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({}).expect(200);
+      const noComment = await http().post(`/api/v1/cash/reconciliation/${reconId}/reject`).set(as(owner)).send({});
+      expect(noComment.status).toBe(422);
+      await http().post(`/api/v1/cash/reconciliation/${reconId}/reject`).set(as(owner)).send({ comment: 'Please recount' }).expect(200);
+      expect((await get()).varianceApproval).toBe('REJECTED');
+      await put({ actualClosing: '10200.00' });
+      expect((await get()).varianceApproval).toBe('DRAFT');
+    });
+
+    it('Cash Variance Report: reasons, explanations, approval and a per-branch summary; scoped for managers', async () => {
+      await http().post(`/api/v1/cash/reconciliation/${br}/${today}/submit`).set(as(mgr)).send({}).expect(200);
+      await http().post(`/api/v1/cash/reconciliation/${reconId}/approve`).set(as(owner)).send({}).expect(200);
+
+      const rep = await http().get(`/api/v1/cash/variance-report?from=${today}&to=${today}`).set(as(owner));
+      expect(rep.status).toBe(200);
+      const row = rep.body.data.rows.find((r: { locationId: string }) => r.locationId === br);
+      expect(row.variance).toBe('-300');
+      expect(row.varianceLabel).toBe('SHORTAGE');
+      expect(row.reason).toBe('SHORT_CHANGE');
+      expect(row.managerExplanation).toContain('Recounted');
+      expect(row.approvalStatus).toBe('APPROVED');
+      expect(row.approvedBy).toBe('Owner');
+      expect(row.photoCount).toBe(1);
+      expect(rep.body.data.summary.shortageCount).toBeGreaterThanOrEqual(1);
+      expect(Number(rep.body.data.summary.net)).toBeLessThanOrEqual(-300);
+
+      const branchRow = rep.body.data.byBranch.find((b: { locationId: string }) => b.locationId === br);
+      expect(branchRow.daysReconciled).toBe(1);
+      expect(branchRow.cashSales).toBe('10000');
+      expect(branchRow.netVariance).toBe('-300');
+      expect(branchRow.shortageDays).toBe(1);
+      expect(branchRow.largestShortage).toBe('-300');
+
+      // filters
+      const surplus = await http().get(`/api/v1/cash/variance-report?from=${today}&to=${today}&type=surplus&locationId=${br}`).set(as(owner));
+      expect(surplus.body.data.rows).toEqual([]);
+      const submitted = await http().get(`/api/v1/cash/variance-report?from=${today}&to=${today}&status=SUBMITTED&locationId=${br}`).set(as(owner));
+      expect(submitted.body.data.rows).toEqual([]);
+      const approved = await http().get(`/api/v1/cash/variance-report?from=${today}&to=${today}&status=APPROVED&locationId=${br}`).set(as(owner));
+      expect(approved.body.data.rows).toHaveLength(1);
+
+      // a manager reads only their own branch
+      const own = await http().get(`/api/v1/cash/variance-report?from=${today}&to=${today}`).set(as(mgr));
+      expect(own.body.data.rows.every((r: { locationId: string }) => r.locationId === br)).toBe(true);
+      expect((await http().get(`/api/v1/cash/variance-report?locationId=${otherLoc}`).set(as(mgr))).status).toBe(403);
+      expect((await http().get(`/api/v1/cash/variance-report?from=${today}&to=2020-01-01`).set(as(owner))).status).toBe(422);
+    });
+
+    it('submitting the daily closing sends an unsent variance for approval', async () => {
+      // move the count so the variance is a fresh draft, then submit the closing
+      await put({ actualClosing: '10250.00', varianceReason: 'COUNTING_ERROR', managerExplanation: 'Miscounted the coins at close' });
+      expect((await get()).varianceApproval).toBe('DRAFT');
+      const closing = (await http().get(`/api/v1/closings/${br}/${today}`).set(as(mgr))).body.data.closing.id;
+      const res = await http().post(`/api/v1/closings/${closing}/submit`).set(as(mgr)).send({});
+      expect(res.status).toBe(200);
+      expect((await get()).varianceApproval).toBe('SUBMITTED');
+    });
+  });
+
   // ------------------------------------------------------------------ branch management (owner menu)
   describe('branch management', () => {
     let branchA: string;
