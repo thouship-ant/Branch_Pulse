@@ -20,6 +20,8 @@ const PATHS: Record<string, string[]> = {
   wallet: ['M20 12V8H6a2 2 0 0 1 0-4h12v4', 'M4 6v12a2 2 0 0 0 2 2h14v-4', 'M18 12a2 2 0 0 0 0 4h4v-4z'],
   bag: ['M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
   bars: ['M12 20V10', 'M18 20V4', 'M6 20v-4'],
+  store: ['M4 7l2-4h12l2 4v1a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V7z', 'M5 12v8h14v-8', 'M10 20v-5h4v5'],
+  plus: ['M12 5v14', 'M5 12h14'],
 };
 
 export type IconName = keyof typeof PATHS;

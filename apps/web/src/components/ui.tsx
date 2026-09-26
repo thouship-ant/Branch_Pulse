@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { cleanAmount } from '@/lib/money';
 import { useT, type MessageKey } from '@/lib/i18n';
 import { useOutbox } from '@/lib/outbox';
@@ -22,6 +22,16 @@ export function StatusPill({ status }: { status: string }) {
     <span className={`chip ${s.cls}`}>
       <span aria-hidden>{s.icon}</span>
       {t(s.key)}
+    </span>
+  );
+}
+
+/** Active / inactive: icon + word, never colour alone. */
+export function ActiveChip({ active }: { active: boolean }) {
+  const { t } = useT();
+  return (
+    <span className={`chip ${active ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-slate-100 text-slate-600'}`}>
+      <span aria-hidden>{active ? '●' : '○'}</span>{active ? t('active') : t('inactive')}
     </span>
   );
 }
@@ -55,11 +65,38 @@ export function MoneyInput({
   );
 }
 
-export function TextField({ label, id, ...rest }: { label: string; id: string } & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({ label, id, className = '', ...rest }: { label: string; id: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
       <label htmlFor={id} className="label">{label}</label>
-      <input id={id} className="field" {...rest} />
+      {/* read-only values look different from editable ones (and are announced as read-only) */}
+      <input
+        id={id} aria-readonly={rest.readOnly || undefined}
+        className={`field ${rest.readOnly ? 'cursor-default bg-slate-100 text-slate-600 focus:border-slate-300 focus:ring-0' : ''} ${className}`}
+        {...rest}
+      />
+    </div>
+  );
+}
+
+/** Multi-line text that grows with its content (so every line is visible) and can still be resized by hand. */
+export function AutoTextarea({
+  label, id, value, onChange, minRows = 2, ...rest
+}: { label: string; id: string; value: string; onChange: (v: string) => void; minRows?: number } & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'value'>) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + 2}px`; // +2: the border
+  }, [value]);
+  return (
+    <div>
+      <label htmlFor={id} className="label">{label}</label>
+      <textarea
+        ref={ref} id={id} rows={minRows} value={value} onChange={(e) => onChange(e.target.value)}
+        className="field resize-y overflow-hidden py-2 leading-6" {...rest}
+      />
     </div>
   );
 }

@@ -87,7 +87,9 @@ Open `https://YOUR_DOMAIN`, sign in as **owner** with `SEED_PASSWORD`. Caddy fet
 
 ## 5. Create your branches and staff
 
-The seed creates no demo data. The Settings screens (branches, users) are not built yet, so create them through the API once. Replace the domain and IDs:
+The seed creates no demo data. Sign in as **owner** and use the **Branches** menu: **Add branch** suggests the next free branch ID (prefix configurable via the `branch.code_prefix` setting, default `BR`), and you can create the branch manager's login in the same form. Each branch page has Settings (opening cash, rent, manager, activate/deactivate), Expenses, History and Reports tabs.
+
+There is no screen for other staff logins (accountant, stock manager) yet; create those through the API once. Replace the domain and IDs (the same calls can also create branches and managers if you prefer scripting):
 
 ```bash
 D=https://YOUR_DOMAIN

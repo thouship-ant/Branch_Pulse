@@ -673,4 +673,183 @@ describe('Branch Pulse API (e2e)', () => {
       expect(long.status).toBe(422);
     });
   });
+
+  // ------------------------------------------------------------------ branch management (owner menu)
+  describe('branch management', () => {
+    let branchA: string;
+    let branchB: string;
+    let m1: string; // manager user ids
+    let m2: string;
+    const codeA = `XA${rnd}`;
+    const codeB = `XB${rnd}`;
+    const post = (path: string, body: object, token = owner) => http().post(`/api/v1${path}`).set(as(token)).send(body);
+    const users = async () => (await http().get('/api/v1/users').set(as(owner))).body.data as Array<{ id: string; locationIds: string[] }>;
+    const branch = async (id: string) => (await http().get(`/api/v1/locations/${id}`).set(as(owner))).body.data;
+
+    it('branch IDs are unique, upper-case and configurable: the next code follows the prefix setting', async () => {
+      const next = await http().get('/api/v1/locations/next-code?type=BRANCH').set(as(owner));
+      expect(next.status).toBe(200);
+      expect(next.body.data.code).toBe('BR007'); // BR001-BR006 exist in the seed; the number is derived from data
+
+      // the prefix is a setting, not a constant
+      await http().put('/api/v1/settings/branch.code_prefix').set(as(owner)).send({ value: 'ZZ' }).expect(200);
+      try {
+        const changed = await http().get('/api/v1/locations/next-code?type=BRANCH').set(as(owner));
+        expect(changed.body.data.code).toBe('ZZ001');
+      } finally {
+        await http().put('/api/v1/settings/branch.code_prefix').set(as(owner)).send({ value: 'BR' }).expect(200);
+      }
+      expect((await http().put('/api/v1/settings/branch.code_prefix').set(as(owner)).send({ value: 'bad prefix!' })).status).toBe(422);
+    });
+
+    it('suggests the Tamil form of a name; falls back offline; never needs the internet to save a branch', async () => {
+      const tamil = /[஀-௿]/;
+      const ext = await http().get('/api/v1/locations/transliterate?text=Guindy').set(as(owner));
+      expect(ext.status).toBe(200);
+      expect(ext.body.data.tamil).toMatch(tamil);
+      expect(['google', 'local']).toContain(ext.body.data.source); // depends on whether this machine is online
+
+      // switch the external service off: the built-in fallback answers, deterministically
+      await http().put('/api/v1/settings/transliteration.external').set(as(owner)).send({ value: false }).expect(200);
+      try {
+        const local = await http().get('/api/v1/locations/transliterate?text=Anna%20Nagar').set(as(owner));
+        expect(local.body.data).toEqual({ tamil: 'அன்ன நகர்', source: 'local' });
+
+        // a branch created without a Tamil name gets one automatically
+        const auto = await post('/locations', { code: `XT${rnd}`, name: 'Guindy', type: 'BRANCH' });
+        expect(auto.status).toBe(201);
+        expect(auto.body.data.nameTa).toBe('கின்டி');
+        // an explicit Tamil name is never overwritten
+        const own = await post('/locations', { code: `XU${rnd}`, name: 'Guindy', nameTa: 'கிண்டி', type: 'BRANCH' });
+        expect(own.body.data.nameTa).toBe('கிண்டி');
+      } finally {
+        await http().put('/api/v1/settings/transliteration.external').set(as(owner)).send({ value: true }).expect(200);
+      }
+
+      expect((await http().get('/api/v1/locations/transliterate?text=').set(as(owner))).body.data.tamil).toBe('');
+      expect((await http().get('/api/v1/locations/transliterate?text=Guindy').set(as(manager))).status).toBe(403);
+    });
+
+    it('rejects lower-case codes and duplicates; managers cannot add branches', async () => {
+      const lower = await post('/locations', { code: 'br900', name: 'Nope', type: 'BRANCH' });
+      expect(lower.status).toBe(422);
+      expect(lower.body.error.code).toBe('VALIDATION_ERROR');
+
+      const a = await post('/locations', { code: codeA, name: `Branch A ${rnd}`, nameTa: 'கிளை அ', type: 'BRANCH', defaultOpeningCash: '1500.00', monthlyRent: '25000.00' });
+      expect(a.status).toBe(201);
+      branchA = a.body.data.id;
+      const b = await post('/locations', { code: codeB, name: `Branch B ${rnd}`, type: 'BRANCH' });
+      branchB = b.body.data.id;
+
+      const dup = await post('/locations', { code: codeA, name: 'Same code', type: 'BRANCH' });
+      expect(dup.status).toBe(409);
+      expect(dup.body.error.code).toBe('DUPLICATE');
+
+      expect((await post('/locations', { code: 'ZZ999', name: 'x', type: 'BRANCH' }, manager)).status).toBe(403);
+      expect((await http().get('/api/v1/locations/next-code').set(as(manager))).status).toBe(403);
+    });
+
+    it('the code is fixed once created; name, opening cash, rent and card setting can be edited', async () => {
+      const res = await http().patch(`/api/v1/locations/${branchA}`).set(as(owner)).send({
+        code: 'HACK1', name: `Branch A renamed ${rnd}`, defaultOpeningCash: '3000.00', cardEnabled: false, monthlyRent: '27000.00',
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.data.code).toBe(codeA); // the code field is ignored
+      expect(res.body.data.name).toContain('renamed');
+      expect(res.body.data.defaultOpeningCash).toBe('3000');
+      expect(res.body.data.cardEnabled).toBe(false);
+      expect(res.body.data.monthlyRent).toBe('27000');
+    });
+
+    it('assigns a manager, moves them between branches, and takes access away from the previous manager', async () => {
+      for (const [name, loc] of [['m1', branchA], ['m2', branchB]] as const) {
+        const u = await post('/users', { username: `${name}${rnd}`, password: 'Test@12345', fullName: `Manager ${name}`, roleCodes: ['BRANCH_MANAGER'], locationIds: [loc] });
+        expect(u.status).toBe(201);
+        if (name === 'm1') m1 = u.body.data.id; else m2 = u.body.data.id;
+      }
+
+      const first = await post(`/locations/${branchA}/manager`, { userId: m1 });
+      expect(first.status).toBe(200);
+      expect(first.body.data.manager.id).toBe(m1);
+      expect(first.body.data.manager.fullName).toBe('Manager m1');
+
+      // moving m1 to branch B: B gets them, A loses its manager, m1 works at exactly one branch
+      const moved = await post(`/locations/${branchB}/manager`, { userId: m1 });
+      expect(moved.body.data.manager.id).toBe(m1);
+      expect((await branch(branchA)).manager).toBeNull();
+      expect((await users()).find((u) => u.id === m1)!.locationIds).toEqual([branchB]);
+
+      // replacing B's manager with m2: m1 is left with no branch, m2 has B only
+      await post(`/locations/${branchB}/manager`, { userId: m2 }).then((r) => expect(r.status).toBe(200));
+      const all = await users();
+      expect(all.find((u) => u.id === m1)!.locationIds).toEqual([]);
+      expect(all.find((u) => u.id === m2)!.locationIds).toEqual([branchB]);
+
+      // clearing
+      const cleared = await post(`/locations/${branchB}/manager`, { userId: null });
+      expect(cleared.body.data.manager).toBeNull();
+    });
+
+    it('only an active Branch Manager can be assigned', async () => {
+      const list = (await http().get('/api/v1/users').set(as(owner))).body.data as Array<{ id: string; username: string }>;
+      const accountant = list.find((u) => u.username === 'accountant')!;
+      const res = await post(`/locations/${branchA}/manager`, { userId: accountant.id });
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('INVALID_MANAGER');
+      expect((await post(`/locations/${branchA}/manager`, { userId: m1 }, manager)).status).toBe(403);
+    });
+
+    it('a deactivated branch drops out of the dashboard and can be reactivated', async () => {
+      const off = await post(`/locations/${branchA}/deactivate`, {});
+      expect(off.body.data.status).toBe('INACTIVE');
+      const summary = await http().get(`/api/v1/dashboard/summary?date=${today}`).set(as(owner));
+      expect(summary.body.data.branches.some((b: { locationId: string }) => b.locationId === branchA)).toBe(false);
+      const on = await post(`/locations/${branchA}/activate`, {});
+      expect(on.body.data.status).toBe('ACTIVE');
+    });
+
+    it('history lists every change to the branch, newest first, with who did it and pages with a cursor', async () => {
+      const res = await http().get(`/api/v1/locations/${branchA}/history?limit=3`).set(as(owner));
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(3);
+      expect(res.body.meta.hasMore).toBe(true);
+      const ids = res.body.data.map((r: { id: string }) => BigInt(r.id));
+      expect(ids).toEqual([...ids].sort((a, b) => (a < b ? 1 : -1))); // newest first
+      expect(res.body.data[0].actorName).toBe('Owner');
+
+      const older = await http().get(`/api/v1/locations/${branchA}/history?limit=50&before=${res.body.meta.next}`).set(as(owner));
+      expect(older.body.data.every((r: { id: string }) => BigInt(r.id) < BigInt(res.body.meta.next))).toBe(true);
+
+      const all = await http().get(`/api/v1/locations/${branchA}/history?limit=100&entityType=LOCATION`).set(as(owner));
+      const updates = all.body.data.filter((r: { action: string }) => r.action === 'UPDATE');
+      const edit = updates.find((r: { changedFields: string[] }) => r.changedFields.includes('default_opening_cash'));
+      expect(edit.oldValues.default_opening_cash).toBe('1500');
+      expect(edit.newValues.default_opening_cash).toBe('3000');
+      expect(all.body.data.some((r: { action: string; reason: string }) => r.action === 'PERMISSION_CHANGE' && r.reason === 'manager assigned')).toBe(true);
+    });
+
+    it('branch report: totals reconcile with the day rows, and managers only read their own branch', async () => {
+      const res = await http().get(`/api/v1/locations/${ownLoc}/report?from=${yesterday}&to=${today}`).set(as(owner));
+      expect(res.status).toBe(200);
+      const r = res.body.data;
+      expect(r.days.map((d: { date: string }) => d.date)).toEqual([yesterday, today]);
+      expect(r.summary.totalSales).toBe('51000');
+      expect(r.summary.salesDays).toBe(2);
+      expect(r.summary.avgDailySales).toBe('25500');
+
+      const dayExpenses = r.days.reduce((a: number, d: { expenses: string }) => a + Number(d.expenses), 0);
+      expect(dayExpenses).toBeCloseTo(Number(r.summary.totalExpenses), 2);
+      const byCat = r.expenseByCategory.reduce((a: number, c: { amount: string }) => a + Number(c.amount), 0);
+      expect(byCat).toBeCloseTo(Number(r.summary.totalExpenses), 2);
+      expect(Number(r.summary.operatingProfit)).toBeCloseTo(
+        Number(r.summary.totalSales) - Number(r.summary.operatingExpenses) - Number(r.summary.totalWastage), 2);
+      expect(r.summary.closings.approved).toBeGreaterThanOrEqual(1); // today was approved earlier in this run
+
+      const own = await http().get(`/api/v1/locations/${ownLoc}/report?from=${yesterday}&to=${today}`).set(as(manager));
+      expect(own.status).toBe(200);
+      const other = await http().get(`/api/v1/locations/${otherLoc}/report`).set(as(manager));
+      expect(other.status).toBe(404); // not visible to them at all (row-level security)
+      expect((await http().get(`/api/v1/locations/${ownLoc}/report?from=${today}&to=${yesterday}`).set(as(owner))).status).toBe(422);
+    });
+  });
 });

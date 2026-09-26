@@ -1,17 +1,32 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
-import { CreateLocationDto, LocationsService, UpdateLocationDto } from './locations.service';
+import { BranchReportService } from './branch-report.service';
+import { AssignManagerDto, CreateLocationDto, LocationsService, UpdateLocationDto } from './locations.service';
 import { ApprovalLimitDto, CategoryDto, MasterService, SettingValueDto, UpdateCategoryDto } from './master.service';
 import { CreateUserDto, UpdateUserDto, UsersService } from './users.service';
 
 @Controller('locations')
 export class LocationsController {
-  constructor(private readonly svc: LocationsService) {}
+  constructor(
+    private readonly svc: LocationsService,
+    private readonly reports: BranchReportService,
+  ) {}
 
   @Get() @RequirePermissions('location:view')
   list(@Ctx() ctx: ReqCtx, @Query('type') type?: string) {
     return this.svc.list(ctx, type);
+  }
+
+  // literal route must precede ":id"
+  @Get('next-code') @RequirePermissions('location:manage')
+  nextCode(@Ctx() ctx: ReqCtx, @Query('type') type = 'BRANCH') {
+    return this.svc.nextCode(ctx, type);
+  }
+
+  @Get('transliterate') @RequirePermissions('location:manage')
+  transliterate(@Query('text') text = '') {
+    return this.svc.transliterate(text);
   }
 
   @Get(':id') @RequirePermissions('location:view')
@@ -20,8 +35,24 @@ export class LocationsController {
   }
 
   @Get(':id/history') @RequirePermissions('location:view')
-  history(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string) {
-    return this.svc.history(ctx, id);
+  history(
+    @Ctx() ctx: ReqCtx,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit?: string,
+    @Query('before') before?: string,
+    @Query('entityType') entityType?: string,
+  ) {
+    return this.svc.history(ctx, id, { limit: limit ? Number(limit) : undefined, before, entityType });
+  }
+
+  @Get(':id/report') @RequirePermissions('report:view')
+  report(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.reports.report(ctx, id, from, to);
+  }
+
+  @Post(':id/manager') @HttpCode(200) @RequirePermissions('location:manage')
+  assignManager(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignManagerDto) {
+    return this.svc.assignManager(ctx, id, dto.userId);
   }
 
   @Post() @RequirePermissions('location:manage')

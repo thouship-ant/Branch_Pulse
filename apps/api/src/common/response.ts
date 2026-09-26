@@ -40,6 +40,8 @@ export function serialise(value: unknown): unknown {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (k === 'password_hash' || k === 'refresh_token_hash' || k === 'bank_details_enc') continue;
+      // audit snapshots are records of raw column names (they line up with changed_fields), so their inner keys stay as-is
+      if (k === 'old_values' || k === 'new_values') { out[camel(k)] = v; continue; }
       const s = serialise(v);
       if (s !== undefined) out[camel(k)] = s;
     }

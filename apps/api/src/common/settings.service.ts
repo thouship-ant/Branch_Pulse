@@ -6,6 +6,8 @@ export const SETTING_DEFAULTS: Record<string, unknown> = {
   'business.name': 'Branch Pulse',
   'business.type': 'TEA_SHOP', // TEA_SHOP | HOTEL | BAKERY | OTHER
   'fy.start_month': 4,
+  'branch.code_prefix': 'BR', // prefix suggested for new branch codes (BR001, BR002 ...)
+  'transliteration.external': true, // false = never send names to an external service; use the built-in fallback
   'entry.backdate_days': 3,
   'cash.variance_threshold': 500,
   'stock.variance_pct_default': 5,

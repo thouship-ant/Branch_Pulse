@@ -109,6 +109,9 @@ export class MasterService {
     if (!(key in SETTING_DEFAULTS)) throw validation('UNKNOWN_SETTING', `Unknown setting ${key}`, 'key');
     const expected = typeof SETTING_DEFAULTS[key];
     if (typeof value !== expected) throw validation('INVALID_SETTING', `${key} must be a ${expected}`, 'value');
+    if (key === 'branch.code_prefix' && !/^[A-Z]{1,4}$/.test(String(value))) {
+      throw validation('INVALID_SETTING', 'branch.code_prefix must be 1-4 upper-case letters', 'value');
+    }
     if (key === 'business.type' && !['TEA_SHOP', 'HOTEL', 'BAKERY', 'OTHER'].includes(String(value))) {
       throw validation('INVALID_SETTING', 'business.type must be TEA_SHOP, HOTEL, BAKERY or OTHER', 'value');
     }

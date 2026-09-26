@@ -134,6 +134,7 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; perm?
   { href: '/dashboard', key: 'dashboard', icon: 'grid', perm: 'dashboard:view' },
   { href: '/closings', key: 'closings', icon: 'check', perm: 'closing:view' },
   { href: '/approvals', key: 'approvals', icon: 'shield', perm: 'expense:approve' },
+  { href: '/branches', key: 'branches', icon: 'store', perm: 'location:manage' },
 ];
 
 export function OfficeShell({ children }: { children: ReactNode }) {
