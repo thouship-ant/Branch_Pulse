@@ -119,6 +119,19 @@ const CATEGORIES: Array<[string, string]> = [
   ['Cooking oil', 'RAW_MATERIAL'], ['Packaging', 'RAW_MATERIAL'], ['Miscellaneous', 'OTHER'],
 ];
 
+// category -> [sub-category, Tamil name]
+const SUB_CATEGORIES: Record<string, Array<[string, string]>> = {
+  Milk: [['Cow milk', 'பசும்பால்'], ['Buffalo milk', 'எருமைப்பால்']],
+  Salary: [['Monthly salary', 'மாதச் சம்பளம்'], ['Daily wages', 'தினக்கூலி'], ['Overtime', 'கூடுதல் நேரம்']],
+  Gas: [['Commercial cylinder', 'வணிக சிலிண்டர்'], ['Cylinder delivery', 'சிலிண்டர் விநியோகம்']],
+  Electricity: [['Shop meter bill', 'கடை மின் கட்டணம்'], ['Generator fuel', 'ஜெனரேட்டர் எரிபொருள்']],
+  Transport: [['Fuel', 'எரிபொருள்'], ['Delivery charges', 'விநியோகக் கட்டணம்'], ['Vehicle hire', 'வாகன வாடகை']],
+  Maintenance: [['Electrical work', 'மின் பணி'], ['Plumbing', 'குழாய் பணி'], ['Equipment service', 'கருவி சேவை']],
+  Cleaning: [['Housekeeping supplies', 'சுத்தம் செய்யும் பொருட்கள்'], ['Pest control', 'பூச்சிக் கட்டுப்பாடு']],
+  Packaging: [['Paper cups', 'காகிதக் குவளைகள்'], ['Carry bags', 'கைப்பைகள்'], ['Parcel boxes', 'பார்சல் பெட்டிகள்']],
+  Repairs: [['Furniture', 'மரச்சாமான்'], ['Appliances', 'மின்சாதனங்கள்']],
+};
+
 // code, name, base unit, purchase unit, last rate per base unit, daily count, min stock per branch
 const ITEMS: Array<[string, string, string, string, string, string, boolean, string]> = [
   ['ITM001', 'Milk', 'DAIRY', 'ML', '0.056', 'L', true, '20000'],
@@ -149,6 +162,15 @@ async function seedUnitsAndCategories() {
   for (const [i, [name, bucket]] of CATEGORIES.entries()) {
     const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: null } });
     if (!exists) await prisma.expenseCategory.create({ data: { name_en: name, name_ta: TA[name], pl_bucket: bucket, sort_order: i } });
+  }
+  // starter sub-categories: the owner can add, rename or switch these off under Expenses > Categories
+  for (const [parentName, subs] of Object.entries(SUB_CATEGORIES)) {
+    const parent = await prisma.expenseCategory.findFirst({ where: { name_en: parentName, parent_id: null } });
+    if (!parent) continue;
+    for (const [i, [name, nameTa]] of subs.entries()) {
+      const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: parent.id } });
+      if (!exists) await prisma.expenseCategory.create({ data: { parent_id: parent.id, name_en: name, name_ta: nameTa, pl_bucket: parent.pl_bucket, sort_order: i } });
+    }
   }
   return new Map((await prisma.unit.findMany()).map((u) => [u.code, u.id]));
 }

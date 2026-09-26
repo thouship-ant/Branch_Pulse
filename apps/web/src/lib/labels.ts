@@ -14,6 +14,7 @@ export const MODE_KEY: Record<string, MessageKey> = {
   UPI: 'upi',
   CARD: 'card',
   BANK_TRANSFER: 'modeBank',
+  CHEQUE: 'modeCheque',
   CREDIT: 'credit',
 };
 

@@ -54,6 +54,9 @@ export class ListExpensesQuery {
   @IsOptional() @IsString() to?: string;
   @IsOptional() @IsString() status?: string; // approval status
   @IsOptional() @IsUUID() categoryId?: string;
+  @IsOptional() @IsUUID() subCategoryId?: string;
+  @IsOptional() @IsEnum(PAYMENT_MODES) paymentMode?: string;
+  @IsOptional() @IsString() @MaxLength(100) q?: string; // matches payee, description or code
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number;
 }
@@ -207,28 +210,59 @@ export class ExpensesService {
   }
 
   // ------------------------------------------------------------ read
+  /** Ledger rows carry everything the owner screens show: names for category / sub-category / supplier / branch / people. */
   async list(ctx: ReqCtx, q: ListExpensesQuery) {
     const page = Math.max(1, Number(q.page ?? 1));
     const pageSize = Math.min(100, Math.max(1, Number(q.pageSize ?? 25)));
+    const search = q.q?.trim();
     const where: Prisma.ExpenseWhereInput = {
       ...(q.locationId ? { location_id: q.locationId } : {}),
       ...(q.categoryId ? { category_id: q.categoryId } : {}),
+      ...(q.subCategoryId ? { sub_category_id: q.subCategoryId } : {}),
+      ...(q.paymentMode ? { payment_mode: q.paymentMode as any } : {}),
       ...(q.status ? { approval_status: q.status as any } : {}),
+      ...(search
+        ? { OR: [{ payee_name: { contains: search, mode: 'insensitive' } }, { description: { contains: search, mode: 'insensitive' } }, { code: { contains: search, mode: 'insensitive' } }] }
+        : {}),
       ...(q.from || q.to
         ? { business_date: { ...(q.from ? { gte: toDate(q.from, 'from') } : {}), ...(q.to ? { lte: toDate(q.to, 'to') } : {}) } }
         : {}),
     };
-    const [rows, total, cats, totalAmount] = await this.prisma.runScoped(ctx.user, (tx) =>
-      Promise.all([
+    return this.prisma.runScoped(ctx.user, async (tx) => {
+      const [rows, total, totalAmount] = await Promise.all([
         tx.expense.findMany({ where, orderBy: [{ business_date: 'desc' }, { created_at: 'desc' }], skip: (page - 1) * pageSize, take: pageSize }),
         tx.expense.count({ where }),
-        tx.expenseCategory.findMany({ select: { id: true, name_en: true, name_ta: true } }),
-        tx.expense.aggregate({ where: { ...where, status: 'ACTIVE' }, _sum: { amount: true } }),
-      ]),
-    );
-    const names = new Map(cats.map((c) => [c.id, c]));
-    const data = rows.map((r) => ({ ...r, category_name: names.get(r.category_id)?.name_en, category_name_ta: names.get(r.category_id)?.name_ta }));
-    return new Envelope(data, [], { page, pageSize, total, totalAmount: totalAmount._sum.amount ?? D(0) });
+        tx.expense.aggregate({ where: { ...where, status: 'ACTIVE', approval_status: { in: ['SUBMITTED', 'APPROVED'] } }, _sum: { amount: true } }),
+      ]);
+      const catIds = [...new Set(rows.flatMap((r) => [r.category_id, r.sub_category_id].filter((x): x is string => !!x)))];
+      const userIds = [...new Set(rows.flatMap((r) => [r.entered_by, r.approved_by].filter((x): x is string => !!x)))];
+      const supplierIds = [...new Set(rows.map((r) => r.supplier_id).filter((x): x is string => !!x))];
+      const locIds = [...new Set(rows.map((r) => r.location_id))];
+      const [cats, users, suppliers, locs, atts] = await Promise.all([
+        tx.expenseCategory.findMany({ where: { id: { in: catIds } }, select: { id: true, name_en: true, name_ta: true } }),
+        tx.user.findMany({ where: { id: { in: userIds } }, select: { id: true, full_name: true } }),
+        tx.supplier.findMany({ where: { id: { in: supplierIds } }, select: { id: true, name: true } }),
+        tx.location.findMany({ where: { id: { in: locIds } }, select: { id: true, code: true, name: true, name_ta: true } }),
+        tx.attachment.groupBy({ by: ['entity_id'], where: { entity_type: 'EXPENSE', entity_id: { in: rows.map((r) => r.id) }, status: 'ACTIVE' }, _count: { _all: true } }),
+      ]);
+      const c = new Map(cats.map((x) => [x.id, x]));
+      const u = new Map(users.map((x) => [x.id, x.full_name]));
+      const sp = new Map(suppliers.map((x) => [x.id, x.name]));
+      const l = new Map(locs.map((x) => [x.id, x]));
+      const a = new Map(atts.map((x) => [x.entity_id, x._count._all]));
+      const data = rows.map((r) => ({
+        ...r,
+        category_name: c.get(r.category_id)?.name_en, category_name_ta: c.get(r.category_id)?.name_ta,
+        sub_category_name: r.sub_category_id ? c.get(r.sub_category_id)?.name_en : null,
+        sub_category_name_ta: r.sub_category_id ? c.get(r.sub_category_id)?.name_ta : null,
+        supplier_name: r.supplier_id ? sp.get(r.supplier_id) : null,
+        location_code: l.get(r.location_id)?.code, location_name: l.get(r.location_id)?.name, location_name_ta: l.get(r.location_id)?.name_ta,
+        entered_by_name: u.get(r.entered_by) ?? null,
+        approved_by_name: r.approved_by ? u.get(r.approved_by) ?? null : null,
+        receipt_count: a.get(r.id) ?? 0,
+      }));
+      return new Envelope(data, [], { page, pageSize, total, totalAmount: totalAmount._sum.amount ?? D(0) });
+    });
   }
 
   async get(ctx: ReqCtx, id: string) {

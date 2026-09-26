@@ -19,6 +19,7 @@ export const SETTING_DEFAULTS: Record<string, unknown> = {
   'sales.unusual_pct': 40,
   'expense.receipt_above': 500,
   'expense.unusual_multiple': 3,
+  'purchase.rate_deviation_pct': 25, // warn when a purchase rate differs from the last one by more than this
   'advance.max_multiple': 1,
   'alerts.supplier_due_days_before': 3,
   'alerts.approval_pending_hours': 12,

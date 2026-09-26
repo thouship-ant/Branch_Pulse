@@ -1,10 +1,16 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
+import { ExpenseReportService, ExpenseSummaryQuery } from './expense-report.service';
 import { CreateExpenseDto, ExpenseActionDto, ExpensesService, ListExpensesQuery, UpdateExpenseDto } from './expenses.service';
 
 @Controller('expenses')
 export class ExpensesController {
-  constructor(private readonly svc: ExpensesService) {}
+  constructor(private readonly svc: ExpensesService, private readonly report: ExpenseReportService) {}
+
+  @Get('summary') @RequirePermissions('expense:view')
+  summary(@Ctx() ctx: ReqCtx, @Query() q: ExpenseSummaryQuery) {
+    return this.report.summary(ctx, q);
+  }
 
   @Get() @RequirePermissions('expense:view')
   list(@Ctx() ctx: ReqCtx, @Query() q: ListExpensesQuery) {

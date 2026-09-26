@@ -1074,4 +1074,567 @@ describe('Branch Pulse API (e2e)', () => {
       expect((await http().get(`/api/v1/locations/${ownLoc}/report?from=${today}&to=${yesterday}`).set(as(owner))).status).toBe(422);
     });
   });
+
+  // ------------------------------------------------------------------ expense management: categories, ledger fields, owner analytics
+  describe('expense management', () => {
+    let br: string;
+    let mgr: string;
+    let cat: string;
+    let sub: string;
+    let sub2: string;
+    let supplier: string;
+    let bigId: string;
+    let rejectedId: string;
+    const cats = async (token: string, qs = '') => (await http().get(`/api/v1/expense-categories${qs}`).set(as(token))).body.data as any[];
+    const spend = (body: object) => http().post('/api/v1/expenses').set(as(mgr)).send({ locationId: br, paymentMode: 'CASH', ...body });
+
+    beforeAll(async () => {
+      const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `EX${rnd}`, name: `Expense Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '1000.00' });
+      br = loc.body.data.id;
+      await http().post('/api/v1/users').set(as(owner)).send({ username: `exm${rnd}`, password: 'Test@12345', fullName: 'Expense Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
+      mgr = (await login(`exm${rnd}`, 'Test@12345')).body.data.accessToken;
+    });
+
+    it('categories and sub-categories are configurable by the owner, not by a manager', async () => {
+      const denied = await http().post('/api/v1/expense-categories').set(as(mgr)).send({ nameEn: `X${rnd}`, plBucket: 'OTHER' });
+      expect(denied.status).toBe(403);
+
+      const c = await http().post('/api/v1/expense-categories').set(as(owner)).send({ nameEn: `Test cat ${rnd}`, nameTa: 'சோதனை', plBucket: 'OTHER', sortOrder: 500 });
+      expect(c.status).toBe(201);
+      cat = c.body.data.id;
+      expect(c.body.data.sortOrder).toBe(500);
+      const s1 = await http().post('/api/v1/expense-categories').set(as(owner)).send({ nameEn: `Sub A ${rnd}`, plBucket: 'OTHER', parentId: cat });
+      const s2 = await http().post('/api/v1/expense-categories').set(as(owner)).send({ nameEn: `Sub B ${rnd}`, plBucket: 'OTHER', parentId: cat });
+      expect(s1.status).toBe(201);
+      sub = s1.body.data.id;
+      sub2 = s2.body.data.id;
+      // a sub-category cannot have children
+      expect((await http().post('/api/v1/expense-categories').set(as(owner)).send({ nameEn: `Deep ${rnd}`, plBucket: 'OTHER', parentId: sub })).status).toBe(422);
+
+      // every default category from the brief exists
+      const names = (await cats(manager)).filter((x) => !x.parentId).map((x) => x.nameEn);
+      for (const n of ['Milk', 'Tea powder', 'Coffee', 'Sugar', 'Snacks / raw materials', 'Cooking oil', 'Gas', 'Electricity', 'Rent', 'Salary', 'Transport', 'Maintenance', 'Cleaning', 'Packaging', 'Repairs', 'Staff advance', 'Miscellaneous']) {
+        expect(names).toContain(n);
+      }
+    });
+
+    it('a per-category receipt limit can be set and cleared again; switching a category off hides it from entry but not from the owner', async () => {
+      const set = await http().patch(`/api/v1/expense-categories/${cat}`).set(as(owner)).send({ requiresReceiptAbove: '100.00' });
+      expect(set.body.data.requiresReceiptAbove).toBe('100');
+      const cleared = await http().patch(`/api/v1/expense-categories/${cat}`).set(as(owner)).send({ requiresReceiptAbove: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.data.requiresReceiptAbove).toBeNull();
+
+      await http().patch(`/api/v1/expense-categories/${sub2}`).set(as(owner)).send({ active: false }).expect(200);
+      expect((await cats(mgr)).some((x) => x.id === sub2)).toBe(false);
+      expect((await cats(mgr, '?includeInactive=true')).some((x) => x.id === sub2)).toBe(false); // managers never see inactive ones
+      expect((await cats(owner, '?includeInactive=true')).some((x) => x.id === sub2)).toBe(true);
+      const refused = await spend({ businessDate: today, categoryId: cat, subCategoryId: sub2, amount: '10.00' });
+      expect(refused.status).toBe(422);
+      await http().patch(`/api/v1/expense-categories/${sub2}`).set(as(owner)).send({ active: true }).expect(200);
+    });
+
+    it('stores every field of an expense: date, branch, category, sub-category, amount, mode, supplier/payee, description, receipt, entered/approved by', async () => {
+      const boot = await http().get(`/api/v1/sync/bootstrap?locationId=${br}`).set(as(mgr));
+      supplier = boot.body.data.suppliers[0].id;
+      const a = await spend({ businessDate: yesterday, categoryId: cat, subCategoryId: sub, amount: '300.00', supplierId: supplier, payeeName: 'Ravi', description: 'Morning supply' });
+      expect(a.status).toBe(201);
+      await spend({ businessDate: today, categoryId: cat, subCategoryId: sub, amount: '200.00', paymentMode: 'UPI' }).expect(201);
+
+      const key = (await http().post('/api/v1/attachments/presign').set(as(mgr)).send({ fileName: 'b.png', mimeType: 'image/png', sizeBytes: PNG.length, locationId: br })).body.data;
+      await http().put(key.uploadUrl).set('Content-Type', 'image/png').send(PNG).expect(200);
+      const big = await spend({ businessDate: today, categoryId: cat, amount: '800.00', paymentMode: 'BANK_TRANSFER', attachmentKeys: [key.key], description: 'Repair advance' });
+      expect(big.status).toBe(201);
+      expect(big.body.data.approvalStatus).toBe('SUBMITTED'); // above the manager's limit
+      bigId = big.body.data.id;
+
+      const list = await http().get(`/api/v1/expenses?locationId=${br}&from=${yesterday}&to=${today}`).set(as(owner));
+      expect(list.status).toBe(200);
+      const rows = list.body.data as any[];
+      expect(rows).toHaveLength(3);
+      const first = rows.find((r) => r.amount === '300')!;
+      expect(first).toMatchObject({
+        categoryName: `Test cat ${rnd}`, subCategoryName: `Sub A ${rnd}`, payeeName: 'Ravi', description: 'Morning supply', paymentMode: 'CASH',
+        locationCode: `EX${rnd}`, enteredByName: 'Expense Manager', approvedByName: 'Expense Manager', approvalStatus: 'APPROVED', receiptCount: 0,
+      });
+      expect(first.supplierName).toBeTruthy();
+      expect(String(first.businessDate)).toBe(yesterday);
+      const bigRow = rows.find((r) => r.id === bigId)!;
+      expect(bigRow).toMatchObject({ receiptCount: 1, approvedByName: null, approvalStatus: 'SUBMITTED', paymentMode: 'BANK_TRANSFER' });
+      // nothing is excluded yet: all three are approved or waiting
+      expect(list.body.meta.totalAmount).toBe('1300');
+    });
+
+    it('filters the ledger by sub-category, payment mode and a search text', async () => {
+      const get = async (qs: string) => (await http().get(`/api/v1/expenses?locationId=${br}&from=${yesterday}&to=${today}&${qs}`).set(as(owner))).body;
+      expect((await get(`subCategoryId=${sub}`)).data).toHaveLength(2);
+      expect((await get('paymentMode=UPI')).data).toHaveLength(1);
+      expect((await get('q=repair')).data).toHaveLength(1);
+      expect((await get('q=ravi')).data).toHaveLength(1);
+      expect((await get('status=SUBMITTED')).data).toHaveLength(1);
+      expect((await get('q=nothing-like-this')).data).toHaveLength(0);
+    });
+
+    it('summary: daily, weekly and monthly buckets, branch-wise, category-wise (with sub-categories), payment modes and trend', async () => {
+      const day = await http().get(`/api/v1/expenses/summary?locationId=${br}&from=${yesterday}&to=${today}&groupBy=day`).set(as(owner));
+      expect(day.status).toBe(200);
+      const d = day.body.data;
+      expect(d.days).toBe(2);
+      expect(d.totals.total).toBe('1300');
+      expect(d.totals.count).toBe(3);
+      expect(d.totals.averagePerDay).toBe('650');
+      expect(d.totals.pendingApproval).toMatchObject({ amount: '800', count: 1 });
+      expect(d.totals.changePct).toBeNull(); // nothing in the previous period
+      expect(d.buckets.map((b: any) => [b.start, b.amount])).toEqual([[yesterday, '300'], [today, '1000']]);
+      expect(d.branches).toHaveLength(1);
+      expect(d.branches[0]).toMatchObject({ code: `EX${rnd}`, amount: '1300', count: 3, sharePct: 100 });
+      expect(d.categories[0]).toMatchObject({ name: `Test cat ${rnd}`, amount: '1300' });
+      const subs = d.categories[0].subs;
+      expect(subs.find((x: any) => x.name === `Sub A ${rnd}`)).toMatchObject({ amount: '500', count: 2 });
+      expect(subs.find((x: any) => x.name === null)).toMatchObject({ amount: '800' }); // no sub-category chosen
+      expect(d.paymentModes.map((m: any) => m.mode).sort()).toEqual(['BANK_TRANSFER', 'CASH', 'UPI']);
+      expect(d.categoryTrend.series[0].values.map(String)).toEqual(['300', '1000']);
+
+      for (const groupBy of ['week', 'month']) {
+        const r = (await http().get(`/api/v1/expenses/summary?locationId=${br}&from=${yesterday}&to=${today}&groupBy=${groupBy}`).set(as(owner))).body.data;
+        const total = r.buckets.reduce((s: number, b: any) => s + Number(b.amount), 0);
+        expect(total).toBe(1300);
+        if (groupBy === 'week') r.buckets.forEach((b: any) => expect(new Date(`${b.start}T00:00:00Z`).getUTCDay()).toBe(1)); // weeks start on Monday
+        if (groupBy === 'month') r.buckets.forEach((b: any) => expect(b.start).toMatch(/-01$/));
+      }
+      // a longer range with no groupBy picks a sensible one and fills quiet days with zero
+      const auto = (await http().get(`/api/v1/expenses/summary?locationId=${br}&from=${addDaysStr(today, -9)}&to=${today}`).set(as(owner))).body.data;
+      expect(auto.groupBy).toBe('day');
+      expect(auto.buckets).toHaveLength(10);
+    });
+
+    it('summary compares with the previous period and filters by category', async () => {
+      const cmp = (await http().get(`/api/v1/expenses/summary?locationId=${br}&from=${today}&to=${today}`).set(as(owner))).body.data;
+      // today 1000 vs yesterday 300 -> +233.3%
+      expect(cmp.totals.previousTotal).toBe('300');
+      expect(cmp.totals.changePct).toBeCloseTo(233.3, 1);
+      const none = (await http().get(`/api/v1/expenses/summary?locationId=${br}&from=${yesterday}&to=${today}&categoryId=${randomUUID()}`).set(as(owner))).body.data;
+      expect(none.totals.total).toBe('0');
+      expect(none.categories).toHaveLength(0);
+    });
+
+    it('approving records who approved; rejected expenses drop out of the totals', async () => {
+      const ok = await http().post(`/api/v1/expenses/${bigId}/approve`).set(as(owner));
+      expect(ok.status).toBe(200);
+      const row = (await http().get(`/api/v1/expenses?locationId=${br}&q=Repair`).set(as(owner))).body.data[0];
+      expect(row).toMatchObject({ approvalStatus: 'APPROVED', approvedByName: 'Owner' });
+
+      const k2 = (await http().post('/api/v1/attachments/presign').set(as(mgr)).send({ fileName: 'c.png', mimeType: 'image/png', sizeBytes: PNG.length, locationId: br })).body.data;
+      await http().put(k2.uploadUrl).set('Content-Type', 'image/png').send(PNG).expect(200);
+      const extra = await spend({ businessDate: today, categoryId: cat, amount: '900.00', attachmentKeys: [k2.key], description: 'Wrong entry' }); // over the limit: waits for approval
+      expect(extra.body.data.approvalStatus).toBe('SUBMITTED');
+      rejectedId = extra.body.data.id;
+      await http().post(`/api/v1/expenses/${rejectedId}/reject`).set(as(owner)).send({ reason: 'Duplicate' }).expect(200);
+      const r = (await http().get(`/api/v1/expenses/summary?locationId=${br}&from=${yesterday}&to=${today}`).set(as(owner))).body.data;
+      expect(r.totals.total).toBe('1300'); // unchanged
+      expect(r.totals.pendingApproval.count).toBe(0);
+      const rej = (await http().get(`/api/v1/expenses?locationId=${br}&status=REJECTED`).set(as(owner))).body.data[0];
+      expect(rej).toMatchObject({ rejectionReason: 'Duplicate', approvalStatus: 'REJECTED' });
+    });
+
+    it('a manager sees only their own branch in the summary; a bad range is refused', async () => {
+      const own = (await http().get(`/api/v1/expenses/summary?from=${yesterday}&to=${today}`).set(as(mgr))).body.data;
+      expect(own.branches).toHaveLength(1);
+      expect(own.branches[0].code).toBe(`EX${rnd}`);
+      const other = await http().get(`/api/v1/expenses/summary?locationId=${otherLoc}&from=${yesterday}&to=${today}`).set(as(mgr));
+      expect(other.status).toBe(403);
+      expect((await http().get(`/api/v1/expenses/summary?from=${today}&to=${yesterday}`).set(as(owner))).status).toBe(422);
+      expect((await http().get(`/api/v1/expenses/summary?from=2020-01-01&to=${today}`).set(as(owner))).status).toBe(422);
+    });
+  });
+
+  // ------------------------------------------------------------------ purchase management: suppliers, cash / credit / part payment, approval -> inventory
+  describe('purchase management', () => {
+    let br: string;
+    let mgr: string;
+    let stockMgr: string;
+    let godown: string;
+    let supplier: string;
+    let noTermsSupplier: string;
+    let milk: string; // item ids and unit ids
+    let sugar: string;
+    let unitL: string;
+    let unitKg: string;
+    let cashPurchase: string;
+    let creditPurchase: string;
+    let partPurchase: string;
+    const line = (itemId: string, unitId: string, quantity: string, rate: string) => ({ itemId, unitId, quantity, rate });
+    const buy = (token: string, body: object) => http().post('/api/v1/purchases').set(as(token)).send({ businessDate: today, ...body });
+    const stockOf = async (loc: string, item: string, token = owner) => {
+      const rows = (await http().get(`/api/v1/stock?locationId=${loc}`).set(as(token))).body.data as any[];
+      return rows.find((r) => r.itemId === item);
+    };
+    const outstanding = async (id = supplier) => {
+      const rows = (await http().get('/api/v1/suppliers').set(as(owner))).body.data as any[];
+      return rows.find((s) => s.id === id).outstanding as string;
+    };
+
+    beforeAll(async () => {
+      const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `PU${rnd}`, name: `Purchase Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '5000.00' });
+      br = loc.body.data.id;
+      await http().post('/api/v1/users').set(as(owner)).send({ username: `pum${rnd}`, password: 'Test@12345', fullName: 'Purchase Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
+      mgr = (await login(`pum${rnd}`, 'Test@12345')).body.data.accessToken;
+      stockMgr = (await login('stockmgr')).body.data.accessToken;
+      const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
+      milk = boot.items.find((i: any) => i.code === 'ITM001').id;
+      sugar = boot.items.find((i: any) => i.code === 'ITM004').id;
+      unitL = boot.units.find((u: any) => u.code === 'L').id;
+      unitKg = boot.units.find((u: any) => u.code === 'KG').id;
+      godown = (await http().get('/api/v1/locations').set(as(owner))).body.data.find((l: any) => l.code === 'GDN01').id;
+    });
+
+    it('suppliers: the owner manages them, an opening balance is owed from day one, managers cannot see balances', async () => {
+      expect((await http().post('/api/v1/suppliers').set(as(mgr)).send({ name: `S${rnd}` })).status).toBe(403);
+      const s = await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `Dairy Farm ${rnd}`, phone: '9876543210', paymentTermsDays: 7, openingBalance: '500.00' });
+      expect(s.status).toBe(201);
+      expect(s.body.data.code).toMatch(/^SUP\d{4}$/);
+      supplier = s.body.data.id;
+      const n = await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `Spot Vendor ${rnd}` }); // no credit terms
+      noTermsSupplier = n.body.data.id;
+      expect((await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `dairy farm ${rnd}` })).status).toBe(409); // same name
+
+      expect(await outstanding()).toBe('500');
+      const seenByManager = (await http().get('/api/v1/suppliers').set(as(mgr))).body.data.find((x: any) => x.id === supplier);
+      expect(seenByManager.name).toContain('Dairy Farm');
+      expect(seenByManager.outstanding).toBeNull();
+    });
+
+    it('cash purchase: the till pays at once, stock and the supplier ledger move only when it is approved', async () => {
+      const res = await buy(mgr, { locationId: br, supplierId: supplier, paymentMode: 'CASH', supplierRefNo: `INV-${rnd}`, items: [line(milk, unitL, '10', '60')], remarks: 'Morning delivery' });
+      expect(res.status).toBe(201);
+      const p = res.body.data;
+      cashPurchase = p.id;
+      expect(p).toMatchObject({ approvalStatus: 'SUBMITTED', totalAmount: '600', paidAmount: '600', creditAmount: '0', paymentMode: 'CASH' });
+      expect(p.code).toMatch(/^PUR-PU\d+-\d\d-\d{6}$/);
+      expect(res.body.warnings.map((w: any) => w.code)).toContain('NO_INVOICE');
+
+      // cash left the till already; nothing reached stock or the supplier
+      const cash = (await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(mgr))).body.data;
+      expect(cash.cashPurchases).toBe('600');
+      expect(cash.expectedClosing).toBe('4400'); // 5,000 opening - 600
+      expect((await stockOf(br, milk)).quantity).toBe('0');
+      expect(await outstanding()).toBe('500');
+
+      // a manager cannot approve their own purchase; the owner approves and stock follows
+      expect((await http().post(`/api/v1/purchases/${cashPurchase}/approve`).set(as(mgr))).status).toBe(403);
+      const ok = await http().post(`/api/v1/purchases/${cashPurchase}/approve`).set(as(owner));
+      expect(ok.status).toBe(200);
+      expect(ok.body.data.approvalStatus).toBe('APPROVED');
+      const m = await stockOf(br, milk);
+      expect(m.quantity).toBe('10000'); // 10 L in the item's own unit (ml)
+      expect(m.avgCost).toBe('0.06');
+      expect(m.value).toBe('600');
+      expect(await outstanding()).toBe('500'); // bought and paid in cash: nothing new owed
+    });
+
+    it('credit purchase: goes on the supplier account, due date from the supplier terms; stock is costed by weighted average', async () => {
+      const res = await buy(owner, { locationId: br, supplierId: supplier, paymentMode: 'CREDIT', items: [line(milk, unitL, '20', '62')] });
+      expect(res.status).toBe(201);
+      creditPurchase = res.body.data.id;
+      expect(res.body.data).toMatchObject({ approvalStatus: 'APPROVED', totalAmount: '1240', paidAmount: '0', creditAmount: '1240' }); // owner: no limit
+      expect(String(res.body.data.dueDate)).toBe(addDaysStr(today, 7)); // terms of 7 days
+      const m = await stockOf(br, milk);
+      expect(m.quantity).toBe('30000');
+      expect(m.value).toBe('1840');
+      expect(m.avgCost).toBe('0.0613');
+      expect(await outstanding()).toBe('1740'); // 500 opening + 1,240
+      // an explicit due date wins
+      const later = await buy(owner, { locationId: br, supplierId: supplier, paymentMode: 'CREDIT', dueDate: addDaysStr(today, 30), items: [line(sugar, unitKg, '2', '45')] });
+      expect(String(later.body.data.dueDate)).toBe(addDaysStr(today, 30));
+      expect((await stockOf(br, sugar)).quantity).toBe('2000');
+    });
+
+    it('part payment: paid now + credit = total; other charges and discount are spread into the stock cost', async () => {
+      const res = await buy(owner, {
+        locationId: br, supplierId: supplier, paymentMode: 'UPI', paidAmount: '400.00', dueDate: addDaysStr(today, 10),
+        otherCharges: '50.00', discount: '20.00', items: [line(milk, unitL, '10', '60')],
+      });
+      expect(res.status).toBe(201);
+      partPurchase = res.body.data.id;
+      expect(res.body.data).toMatchObject({ subtotal: '600', otherCharges: '50', discount: '20', totalAmount: '630', paidAmount: '400', creditAmount: '230' });
+      const inv = (await http().get(`/api/v1/stock/movements?locationId=${br}&itemId=${milk}`).set(as(owner))).body.data as any[];
+      const last = inv.find((r) => r.sourceCode === res.body.data.code);
+      expect(last).toMatchObject({ txnType: 'PURCHASE_IN', quantity: '10000', value: '630', unitCost: '0.063' }); // landed cost
+      expect(await outstanding()).toBe('2060'); // 1,830 + only the 230 left on credit
+    });
+
+    it('rejects impossible payments and bad lines', async () => {
+      const base = { locationId: br, supplierId: supplier, items: [line(milk, unitL, '1', '60')] };
+      expect((await buy(owner, { ...base, paymentMode: 'CASH', paidAmount: '61.00' })).body.error.code).toBe('OVERPAID');
+      expect((await buy(owner, { ...base, paymentMode: 'CREDIT', paidAmount: '10.00' })).body.error.code).toBe('PAID_WITH_CREDIT');
+      expect((await buy(owner, { ...base, supplierId: noTermsSupplier, paymentMode: 'CREDIT' })).body.error.code).toBe('DUE_DATE_REQUIRED');
+      expect((await buy(owner, { ...base, paymentMode: 'CASH', items: [line(milk, unitKg, '1', '60')] })).body.error.code).toBe('INVALID_UNIT'); // kg is not a unit of milk
+      expect((await buy(owner, { ...base, paymentMode: 'CASH', items: [] })).status).toBe(422);
+      expect((await buy(owner, { ...base, paymentMode: 'CASH', discount: '999.00' })).body.error.code).toBe('INVALID_AMOUNT');
+      const office = (await http().get('/api/v1/locations').set(as(owner))).body.data.find((l: any) => l.code === 'HO01').id;
+      expect((await buy(owner, { ...base, locationId: office, paymentMode: 'CASH' })).body.error.code).toBe('INVALID_LOCATION');
+      expect((await buy(mgr, { ...base, locationId: otherLoc, paymentMode: 'CASH' })).status).toBe(403); // another branch
+    });
+
+    it('paying a supplier: oldest dues first, part payments, cash leaves the till, never more than is owed', async () => {
+      expect((await http().post(`/api/v1/suppliers/${supplier}/payments`).set(as(mgr)).send({ locationId: br, amount: '10.00', paymentMode: 'CASH' })).status).toBe(403);
+      expect((await http().post(`/api/v1/suppliers/${supplier}/payments`).set(as(owner)).send({ locationId: br, amount: '99999.00', paymentMode: 'CASH' })).body.error.code).toBe('OVERPAYMENT');
+      expect((await http().post(`/api/v1/suppliers/${supplier}/payments`).set(as(owner)).send({ locationId: br, amount: '10.00', paymentMode: 'CREDIT' })).status).toBe(422);
+
+      // 300 in cash, no purchase named: the oldest due date is settled first (the 7-day credit; the 10-day and 30-day ones wait)
+      const pay = await http().post(`/api/v1/suppliers/${supplier}/payments`).set(as(owner)).send({ locationId: br, amount: '300.00', paymentMode: 'CASH', referenceNo: 'CASH-1' });
+      expect(pay.status).toBe(201);
+      expect(pay.body.data.outstandingAfter).toBe('1760');
+      const parts = pay.body.data.payments as any[];
+      expect(parts.map((p) => [p.purchaseId, p.amount])).toEqual([[creditPurchase, '300']]);
+      const c = (await http().get(`/api/v1/purchases/${creditPurchase}`).set(as(owner))).body.data;
+      expect(c).toMatchObject({ paidAmount: '300', creditAmount: '940' });
+      expect(c.payments).toHaveLength(1);
+      expect((await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(owner))).body.data.otherCashOut).toBe('300');
+
+      // paying one purchase by name: part, then no more than is left
+      expect((await http().post(`/api/v1/suppliers/${supplier}/payments`).set(as(owner)).send({ locationId: br, amount: '231.00', paymentMode: 'BANK_TRANSFER', purchaseId: partPurchase })).body.error.code).toBe('OVERPAYMENT');
+      const part = await http().post(`/api/v1/suppliers/${supplier}/payments`).set(as(owner)).send({ locationId: br, amount: '100.00', paymentMode: 'BANK_TRANSFER', purchaseId: partPurchase, referenceNo: 'NEFT-9' });
+      expect(part.status).toBe(201);
+      expect((await http().get(`/api/v1/purchases/${partPurchase}`).set(as(owner))).body.data).toMatchObject({ paidAmount: '500', creditAmount: '130' });
+      expect(await outstanding()).toBe('1660');
+    });
+
+    it('supplier statement: running balance, and the credit purchases still open with overdue flags', async () => {
+      const st = (await http().get(`/api/v1/suppliers/${supplier}/ledger?from=${addDaysStr(today, -30)}&to=${today}`).set(as(owner))).body.data;
+      expect(st.closingBalance).toBe('1660');
+      expect(st.outstanding).toBe('1660');
+      expect(st.entries[0]).toMatchObject({ entryType: 'OPENING', debit: '500', balance: '500' });
+      expect(st.entries.at(-1).balance).toBe('1660');
+      expect(st.openPurchases.map((o: any) => o.creditAmount).sort()).toEqual(['130', '90', '940']); // 7-day, 10-day and 30-day credits
+      expect(st.openPurchases.every((o: any) => o.overdue === false)).toBe(true);
+      expect((await http().get(`/api/v1/suppliers/${supplier}/ledger`).set(as(mgr))).status).toBe(403);
+    });
+
+    it('rejecting a purchase gives the cash back and never touches stock or the supplier', async () => {
+      const before = await stockOf(br, milk);
+      const res = await buy(mgr, { locationId: br, supplierId: supplier, paymentMode: 'CASH', items: [line(milk, unitL, '5', '60')] });
+      const id = res.body.data.id;
+      expect((await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(mgr))).body.data.cashPurchases).toBe('900'); // 600 + this 300
+      expect((await http().post(`/api/v1/purchases/${id}/reject`).set(as(owner)).send({})).body.error.code).toBe('REASON_REQUIRED');
+      await http().post(`/api/v1/purchases/${id}/reject`).set(as(owner)).send({ reason: 'Wrong rate' }).expect(200);
+      expect((await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(mgr))).body.data.cashPurchases).toBe('600');
+      expect((await stockOf(br, milk)).quantity).toBe(before.quantity);
+      expect(await outstanding()).toBe('1660');
+      expect((await http().post(`/api/v1/purchases/${id}/approve`).set(as(owner))).status).toBe(409); // already decided
+      // the manager can withdraw one that is still waiting
+      const again = await buy(mgr, { locationId: br, supplierId: supplier, paymentMode: 'CASH', items: [line(milk, unitL, '1', '60')] });
+      await http().post(`/api/v1/purchases/${again.body.data.id}/cancel`).set(as(mgr)).send({}).expect(200);
+    });
+
+    it('central warehouse: the stock manager buys within their limit; above it the owner must approve', async () => {
+      const g0 = Number((await stockOf(godown, sugar))?.quantity ?? 0);
+      const small = await buy(stockMgr, { locationId: godown, supplierId: supplier, paymentMode: 'CASH', items: [line(sugar, unitKg, '10', '45')] });
+      expect(small.status).toBe(201);
+      expect(small.body.data.approvalStatus).toBe('APPROVED'); // 450 <= their limit of 25,000
+      expect(Number((await stockOf(godown, sugar)).quantity)).toBe(g0 + 10000);
+
+      const big = await buy(stockMgr, { locationId: godown, supplierId: supplier, paymentMode: 'CREDIT', dueDate: addDaysStr(today, 15), items: [line(sugar, unitKg, '1000', '45')] });
+      expect(big.body.data.approvalStatus).toBe('SUBMITTED'); // 45,000 is above it
+      expect((await http().post(`/api/v1/purchases/${big.body.data.id}/approve`).set(as(stockMgr))).body.error.code).toBe('APPROVAL_LIMIT_EXCEEDED');
+      expect(Number((await stockOf(godown, sugar)).quantity)).toBe(g0 + 10000); // still waiting: no stock yet
+      await http().post(`/api/v1/purchases/${big.body.data.id}/approve`).set(as(owner)).expect(200);
+      expect(Number((await stockOf(godown, sugar)).quantity)).toBe(g0 + 1010000);
+    });
+
+    it('reversal: refused while payments exist or stock is used; otherwise stock, ledger and cash are mirrored', async () => {
+      // the part-paid purchase has a payment against it
+      expect((await http().post(`/api/v1/purchases/${partPurchase}/reverse`).set(as(owner)).send({ reason: 'Wrong supplier' })).body.error.code).toBe('HAS_PAYMENTS');
+      const payments = (await http().get(`/api/v1/purchases/${partPurchase}`).set(as(owner))).body.data.payments as any[];
+      expect((await http().post(`/api/v1/suppliers/payments/${payments[0].id}/reverse`).set(as(owner)).send({})).body.error.code).toBe('REASON_REQUIRED');
+      const oBefore = Number(await outstanding());
+      await http().post(`/api/v1/suppliers/payments/${payments[0].id}/reverse`).set(as(owner)).send({ reason: 'Bounced' }).expect(200);
+      expect((await http().get(`/api/v1/purchases/${partPurchase}`).set(as(owner))).body.data).toMatchObject({ paidAmount: '400', creditAmount: '230' });
+      expect(Number(await outstanding())).toBe(oBefore + 100); // the 100 is owed again
+      const o0 = Number(await outstanding());
+
+      // now it can be reversed: 10 L of milk leave stock again and the 230 owed and 400 paid are undone
+      const stockBefore = (await stockOf(br, milk)).quantity;
+      await http().post(`/api/v1/purchases/${partPurchase}/reverse`).set(as(owner)).send({ reason: 'Wrong supplier' }).expect(200);
+      expect(Number((await stockOf(br, milk)).quantity)).toBe(Number(stockBefore) - 10000);
+      expect(Number(await outstanding())).toBe(o0 - 230); // the 630 purchase and the 400 paid with it are undone
+      expect((await http().get(`/api/v1/purchases/${partPurchase}`).set(as(owner))).body.data.status).toBe('REVERSED');
+      expect((await http().post(`/api/v1/purchases/${partPurchase}/reverse`).set(as(owner)).send({ reason: 'again' })).status).toBe(409);
+
+      // the cash purchase: 10 L bought, and stock is still there, so its reversal returns 600 to the till
+      const cashBefore = (await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(owner))).body.data.expectedClosing;
+      await http().post(`/api/v1/purchases/${cashPurchase}/reverse`).set(as(owner)).send({ reason: 'Returned to dairy' }).expect(200);
+      const cashAfter = (await http().get(`/api/v1/cash/reconciliation/${br}/${today}`).set(as(owner))).body.data.expectedClosing;
+      expect(Number(cashAfter) - Number(cashBefore)).toBe(600);
+    });
+
+    it('summary: totals, cash vs credit, by branch / supplier / item, and what is still owed', async () => {
+      const r = (await http().get(`/api/v1/purchases/summary?locationId=${br}&from=${today}&to=${today}`).set(as(owner))).body.data;
+      expect(r.groupBy).toBe('day');
+      // live purchases at this branch today: credit 1,240 + sugar 90 (the cash and part purchases were reversed, the rejected one is out)
+      expect(r.totals.total).toBe('1330');
+      expect(r.totals.count).toBe(2);
+      expect(r.locations).toHaveLength(1);
+      expect(r.suppliers[0]).toMatchObject({ amount: '1330' });
+      expect(r.items.map((i: any) => i.code)).toEqual(expect.arrayContaining(['ITM001', 'ITM004']));
+      expect(Number(r.outstanding.total)).toBeGreaterThanOrEqual(Number(await outstanding()));
+      expect(r.outstanding.suppliers).toBeGreaterThanOrEqual(1);
+      expect(r.outstanding.overdue).toBeDefined();
+      const mgrView = (await http().get('/api/v1/purchases/summary').set(as(mgr))).body.data;
+      expect(mgrView.locations.every((l: any) => l.code === `PU${rnd}`)).toBe(true);
+    });
+
+    it('a repeated offline submission is applied once; offline purchases sync through the outbox', async () => {
+      const clientUuid = randomUUID();
+      const body = { locationId: br, supplierId: supplier, paymentMode: 'CASH', items: [line(milk, unitL, '2', '60')], clientUuid };
+      const a = await buy(owner, body);
+      const b = await buy(owner, body);
+      expect(b.body.data.id).toBe(a.body.data.id);
+
+      const uuid2 = randomUUID();
+      const batch = await http().post('/api/v1/sync/batch').set(as(mgr)).send({
+        deviceId: 'test-device',
+        operations: [{ clientUuid: uuid2, entityType: 'PURCHASE', op: 'CREATE', payload: { locationId: br, businessDate: today, supplierId: supplier, paymentMode: 'CASH', items: [line(milk, unitL, '1', '60')] } }],
+      });
+      expect(batch.status).toBe(200);
+      expect(batch.body.data.results[0].result).toBe('APPLIED');
+      const dup = await http().post('/api/v1/sync/batch').set(as(mgr)).send({
+        deviceId: 'test-device',
+        operations: [{ clientUuid: uuid2, entityType: 'PURCHASE', op: 'CREATE', payload: { locationId: br, businessDate: today, supplierId: supplier, paymentMode: 'CASH', items: [line(milk, unitL, '1', '60')] } }],
+      });
+      expect(dup.body.data.results[0].result).toBe('DUPLICATE');
+    });
+
+    it('the supplier ledger is append-only: the application role cannot rewrite it', async () => {
+      await expect(prisma.$executeRaw`UPDATE supplier_ledger SET debit = debit + 1 WHERE supplier_id = ${supplier}::uuid`).rejects.toBeTruthy();
+    });
+  });
+
+  // ------------------------------------------------------------------ supplier management: profile, totals, items supplied, payment history, dues
+  describe('supplier management', () => {
+    let br: string;
+    let mgr: string;
+    let sup: string;
+    let milk: string;
+    let sugar: string;
+    let tea: string;
+    let unitL: string;
+    let unitKg: string;
+    const line = (itemId: string, unitId: string, quantity: string, rate: string) => ({ itemId, unitId, quantity, rate });
+    const buy = (body: object) => http().post('/api/v1/purchases').set(as(owner)).send({ businessDate: today, paymentMode: 'CREDIT', ...body });
+    const profile = async (token = owner) => (await http().get(`/api/v1/suppliers/${sup}`).set(as(token))).body.data;
+    const pay = (amount: string, extra: object = {}) => http().post(`/api/v1/suppliers/${sup}/payments`).set(as(owner)).send({ locationId: br, amount, paymentMode: 'UPI', ...extra });
+
+    beforeAll(async () => {
+      const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `SM${rnd}`, name: `Supplier Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '1000.00' });
+      br = loc.body.data.id;
+      await http().post('/api/v1/users').set(as(owner)).send({ username: `smm${rnd}`, password: 'Test@12345', fullName: 'Supplier Mgr', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
+      mgr = (await login(`smm${rnd}`, 'Test@12345')).body.data.accessToken;
+      const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
+      const item = (code: string) => boot.items.find((i: any) => i.code === code).id;
+      milk = item('ITM001'); sugar = item('ITM004'); tea = item('ITM002');
+      unitL = boot.units.find((u: any) => u.code === 'L').id;
+      unitKg = boot.units.find((u: any) => u.code === 'KG').id;
+    });
+
+    it('a profile holds name, contact number, address, items supplied, payment terms and the opening balance', async () => {
+      const c = await http().post('/api/v1/suppliers').set(as(owner)).send({
+        name: `Profile Co ${rnd}`, contactPerson: 'Meena', phone: '9876500011', address: '12 Market Road\nChennai 600001', gstin: '33abcde1234f1z5',
+        paymentTermsDays: 15, openingBalance: '800.00', openingBalanceDate: addDaysStr(today, -30), itemIds: [milk, sugar],
+      });
+      expect(c.status).toBe(201);
+      sup = c.body.data.id;
+      const p = await profile();
+      expect(p).toMatchObject({ name: `Profile Co ${rnd}`, contactPerson: 'Meena', phone: '9876500011', paymentTermsDays: 15, openingBalance: '800', gstin: '33ABCDE1234F1Z5' });
+      expect(p.address).toContain('Chennai');
+      expect(p.items.map((i: any) => i.code).sort()).toEqual(['ITM001', 'ITM004']);
+      expect(p.totals).toMatchObject({ openingBalance: '800', totalPurchases: '0', totalPaid: '0', outstanding: '800', purchaseCount: 0 });
+
+      // items supplied can be replaced, and must be real active items
+      await http().patch(`/api/v1/suppliers/${sup}`).set(as(owner)).send({ itemIds: [milk] }).expect(200);
+      expect((await profile()).itemIds).toEqual([milk]);
+      expect((await http().patch(`/api/v1/suppliers/${sup}`).set(as(owner)).send({ itemIds: [randomUUID()] })).body.error.code).toBe('INVALID_ITEM');
+      expect((await profile()).itemIds).toEqual([milk]); // unchanged after the refusal
+      await http().patch(`/api/v1/suppliers/${sup}`).set(as(owner)).send({ itemIds: [milk, sugar] }).expect(200);
+
+      // a manager sees the profile but never the money
+      const m = await profile(mgr);
+      expect(m.name).toContain('Profile Co');
+      expect(m.totals).toBeNull();
+    });
+
+    it('total purchases, total paid and outstanding always agree: opening + purchases - paid = outstanding', async () => {
+      const b = await buy({ locationId: br, supplierId: sup, items: [line(milk, unitL, '10', '100')], dueDate: addDaysStr(today, 5) });
+      expect(b.status).toBe(201);
+      let t = (await profile()).totals;
+      expect(t).toMatchObject({ totalPurchases: '1000', totalPaid: '0', outstanding: '1800', purchaseCount: 1 });
+
+      await pay('300.00').then((r) => expect(r.status).toBe(201));
+      t = (await profile()).totals;
+      expect(t).toMatchObject({ totalPurchases: '1000', totalPaid: '300', outstanding: '1500', paymentCount: 1 });
+
+      // 900 more: 700 settles the purchase, the last 200 is on account against the opening balance
+      const r = await pay('900.00');
+      expect(r.body.data.payments.map((p: any) => [p.purchaseId === null ? 'account' : 'purchase', p.amount])).toEqual([['purchase', '700'], ['account', '200']]);
+      t = (await profile()).totals;
+      expect(t).toMatchObject({ totalPurchases: '1000', totalPaid: '1200', outstanding: '600' });
+      expect(Number(t.openingBalance) + Number(t.totalPurchases) - Number(t.totalPaid)).toBe(Number(t.outstanding));
+
+      const row = ((await http().get('/api/v1/suppliers').set(as(owner))).body.data as any[]).find((s) => s.id === sup);
+      expect(row).toMatchObject({ outstanding: '600', totalPurchases: '1000', totalPaid: '1200', itemCount: 2 });
+      const seen = ((await http().get('/api/v1/suppliers').set(as(mgr))).body.data as any[]).find((s) => s.id === sup);
+      expect(seen).toMatchObject({ outstanding: null, totalPurchases: null, totalPaid: null });
+    });
+
+    it('buying an item from a supplier adds it to the items they supply', async () => {
+      expect((await profile()).itemIds).not.toContain(tea);
+      await buy({ locationId: br, supplierId: sup, paymentMode: 'CASH', items: [line(tea, unitKg, '1', '480')] }).then((r) => expect(r.status).toBe(201));
+      expect((await profile()).itemIds).toContain(tea);
+    });
+
+    it('payment history: every payment with supplier, paying location, purchase, mode, reference, and who paid; reversals are kept', async () => {
+      const all = await http().get(`/api/v1/suppliers/payments?supplierId=${sup}`).set(as(owner));
+      expect(all.status).toBe(200);
+      const rows = all.body.data as any[];
+      expect(rows).toHaveLength(3); // 300, 700 to the purchase, 200 on account
+      expect(rows[0]).toMatchObject({ supplierName: `Profile Co ${rnd}`, locationCode: `SM${rnd}`, paymentMode: 'UPI', paidByName: 'Owner', status: 'ACTIVE' });
+      expect(rows.filter((r) => r.purchaseCode)).toHaveLength(2);
+      expect(all.body.meta.totalAmount).toBe('1200');
+
+      const onAccount = rows.find((r) => !r.purchaseId);
+      await http().post(`/api/v1/suppliers/payments/${onAccount.id}/reverse`).set(as(owner)).send({ reason: 'Wrong supplier' }).expect(200);
+      const after = await http().get(`/api/v1/suppliers/payments?supplierId=${sup}`).set(as(owner));
+      expect(after.body.data).toHaveLength(3); // kept, marked reversed
+      expect(after.body.meta.totalAmount).toBe('1000'); // and no longer counted
+      expect((await http().get(`/api/v1/suppliers/payments?supplierId=${sup}&status=REVERSED`).set(as(owner))).body.data).toHaveLength(1);
+      expect((await http().get(`/api/v1/suppliers/payments?supplierId=${sup}&from=${addDaysStr(today, 1)}`).set(as(owner))).body.data).toHaveLength(0);
+      expect((await http().get('/api/v1/suppliers/payments').set(as(mgr))).status).toBe(403);
+    });
+
+    it('due payments: overdue, due this week, later and no date, per supplier and per purchase', async () => {
+      // three credit purchases: one already late, one due in 3 days, one due in 40 days
+      const late = await buy({ locationId: br, supplierId: sup, businessDate: addDaysStr(today, -20), items: [line(sugar, unitKg, '10', '40')], dueDate: addDaysStr(today, -5) });
+      expect(late.status).toBe(201);
+      await buy({ locationId: br, supplierId: sup, items: [line(sugar, unitKg, '5', '40')], dueDate: addDaysStr(today, 3) }).then((r) => expect(r.status).toBe(201));
+      await buy({ locationId: br, supplierId: sup, items: [line(sugar, unitKg, '1', '90')], dueDate: addDaysStr(today, 40) }).then((r) => expect(r.status).toBe(201));
+
+      const d = (await http().get(`/api/v1/suppliers/dues?supplierId=${sup}`).set(as(owner))).body.data;
+      expect(d.summary).toMatchObject({ overdue: '400', due7: '200', later: '90', suppliers: 1 });
+      // the 200 paid on account was reversed in the previous step, so the whole 800 opening balance is owed with no purchase behind it
+      expect(d.summary.onAccount).toBe('800');
+      expect(d.summary.total).toBe(String(400 + 200 + 90 + 800));
+      expect(d.suppliers[0]).toMatchObject({ code: expect.any(String), overdue: '400', due7: '200', later: '90', onAccount: '800' });
+      expect(d.rows.map((r: any) => r.bucket)).toEqual(['overdue', 'due7', 'later']); // oldest due first
+      expect(d.rows[0]).toMatchObject({ creditAmount: '400', daysOverdue: 5, locationCode: `SM${rnd}` });
+      expect(d.rows[1].daysOverdue).toBe(-3);
+
+      const only = (await http().get(`/api/v1/suppliers/dues?supplierId=${sup}&bucket=overdue`).set(as(owner))).body.data;
+      expect(only.rows).toHaveLength(1);
+      expect((await http().get('/api/v1/suppliers/dues').set(as(mgr))).status).toBe(403);
+      // the same supplier's total in the list agrees with the report
+      const row = ((await http().get('/api/v1/suppliers').set(as(owner))).body.data as any[]).find((s) => s.id === sup);
+      expect(row.overdue).toBe('400');
+      expect(row.outstanding).toBe(d.summary.total);
+    });
+  });
 });

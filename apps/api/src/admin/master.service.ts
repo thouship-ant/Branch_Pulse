@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { IsBoolean, IsDefined, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsDefined, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { ReqCtx } from '../common/auth-user';
@@ -17,14 +17,17 @@ export class CategoryDto {
   @IsIn(BUCKETS) plBucket: string;
   @IsOptional() @Matches(MONEY_PATTERN) requiresReceiptAbove?: string;
   @IsOptional() @Matches(MONEY_PATTERN) unusualThreshold?: string;
+  @IsOptional() @IsInt() @Min(0) @Max(9999) sortOrder?: number;
 }
 
 export class UpdateCategoryDto {
   @IsOptional() @IsString() @MaxLength(60) nameEn?: string;
   @IsOptional() @IsString() @MaxLength(60) nameTa?: string;
   @IsOptional() @IsIn(BUCKETS) plBucket?: string;
-  @IsOptional() @Matches(MONEY_PATTERN) requiresReceiptAbove?: string;
-  @IsOptional() @Matches(MONEY_PATTERN) unusualThreshold?: string;
+  // null clears the override, so the shop-wide default applies again
+  @IsOptional() @ValidateIf((_, v) => v !== null) @Matches(MONEY_PATTERN) requiresReceiptAbove?: string | null;
+  @IsOptional() @ValidateIf((_, v) => v !== null) @Matches(MONEY_PATTERN) unusualThreshold?: string | null;
+  @IsOptional() @IsInt() @Min(0) @Max(9999) sortOrder?: number;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
@@ -69,6 +72,7 @@ export class MasterService {
           pl_bucket: dto.plBucket,
           requires_receipt_above: dto.requiresReceiptAbove ? parseMoney(dto.requiresReceiptAbove, 'requiresReceiptAbove') : null,
           unusual_threshold: dto.unusualThreshold ? parseMoney(dto.unusualThreshold, 'unusualThreshold') : null,
+          sort_order: dto.sortOrder ?? 100,
           created_by: ctx.user.id,
           updated_by: ctx.user.id,
         },
@@ -88,8 +92,9 @@ export class MasterService {
           name_en: dto.nameEn,
           name_ta: dto.nameTa,
           pl_bucket: dto.plBucket,
-          requires_receipt_above: dto.requiresReceiptAbove ? parseMoney(dto.requiresReceiptAbove, 'requiresReceiptAbove') : undefined,
-          unusual_threshold: dto.unusualThreshold ? parseMoney(dto.unusualThreshold, 'unusualThreshold') : undefined,
+          requires_receipt_above: dto.requiresReceiptAbove === null ? null : dto.requiresReceiptAbove ? parseMoney(dto.requiresReceiptAbove, 'requiresReceiptAbove') : undefined,
+          unusual_threshold: dto.unusualThreshold === null ? null : dto.unusualThreshold ? parseMoney(dto.unusualThreshold, 'unusualThreshold') : undefined,
+          sort_order: dto.sortOrder,
           status: dto.active === undefined ? undefined : dto.active ? 'ACTIVE' : 'INACTIVE',
           updated_by: ctx.user.id,
           version: { increment: 1 },

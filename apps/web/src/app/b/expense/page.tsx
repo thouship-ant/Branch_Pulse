@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Chips, ErrorBox, MoneyInput, Skeleton, TextField, Warnings } from '@/components/ui';
 import { api, type Warning } from '@/lib/api';
-import { prettyDate } from '@/lib/dates';
+import { addDays, prettyDate } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { compressImage } from '@/lib/image';
 import { MODE_KEY, STATUS_KEY } from '@/lib/labels';
@@ -12,17 +12,21 @@ import { cacheMaster, readMaster, submitOffline, useOutbox } from '@/lib/outbox'
 import { useBranch } from '@/lib/useBranch';
 
 interface Category { id: string; nameEn: string; nameTa?: string; requiresReceiptAbove?: string | null; parentId?: string | null }
-interface Bootstrap { categories: Category[]; rules: { receiptAbove: number } }
+interface Supplier { id: string; code: string; name: string }
+interface Bootstrap { categories: Category[]; suppliers?: Supplier[]; rules: { receiptAbove: number; backdateDays?: number } }
 
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'] as const;
 
 export default function ExpensePage() {
   const { t, pick } = useT();
-  const { locationId, date } = useBranch();
+  const { locationId, date: today } = useBranch();
+  const [date, setDate] = useState(today); // the day the expense belongs to (today, or back-dated within the allowed window)
   const { ops, waiting } = useOutbox(locationId, date);
   const [boot, setBoot] = useState<Bootstrap | null>(null);
   const [list, setList] = useState<any[]>([]);
   const [categoryId, setCategoryId] = useState('');
+  const [subId, setSubId] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState<(typeof MODES)[number]>('CASH');
   const [payee, setPayee] = useState('');
@@ -75,8 +79,8 @@ export default function ExpensePage() {
       const row = await submitOffline({
         entityType: 'EXPENSE', op: 'CREATE', locationId, businessDate: date,
         payload: {
-          locationId, businessDate: date, categoryId, amount: dec(amount).toFixed(2), paymentMode: mode,
-          payeeName: payee || undefined, description: note || undefined,
+          locationId, businessDate: date, categoryId, subCategoryId: subId || undefined, amount: dec(amount).toFixed(2), paymentMode: mode,
+          supplierId: supplierId || undefined, payeeName: payee || undefined, description: note || undefined,
         },
         blobs: photo ? [{ blob: photo.blob, name: photo.name }] : undefined,
       });
@@ -86,8 +90,8 @@ export default function ExpensePage() {
       }
       setInfo(row.state === 'DONE' ? t('synced') : t('offline'));
       setWarnings((row.warnings as Warning[]) ?? []);
-      setAmount(''); setPayee(''); setNote(''); setPhoto(null);
-      if (!another) setCategoryId('');
+      setAmount(''); setPayee(''); setNote(''); setPhoto(null); setSupplierId('');
+      if (!another) { setCategoryId(''); setSubId(''); }
       void loadList();
     } finally {
       setBusy(false);
@@ -97,7 +101,9 @@ export default function ExpensePage() {
   if (!boot) return <Skeleton className="h-96" />;
   const name = (c: Category) => pick(c.nameEn, c.nameTa);
   const top = boot.categories.filter((c) => !c.parentId);
-  const queued = ops.filter((o) => o.entityType === 'EXPENSE' && o.state !== 'DONE');
+  const subs = boot.categories.filter((c) => c.parentId === categoryId);
+  const backdate = boot.rules.backdateDays ?? 0;
+  const queued = ops.filter((o) => o.entityType === 'EXPENSE' && o.state !== 'DONE' && o.businessDate === date);
 
   return (
     <div className="space-y-4">
@@ -107,11 +113,17 @@ export default function ExpensePage() {
       </div>
 
       <section className="card space-y-4" aria-label={t('category')}>
+        {backdate > 0 && (
+          <div>
+            <label htmlFor="edate" className="label">{t('dateLabel')}</label>
+            <input id="edate" type="date" className="field" value={date} min={addDays(today, -backdate)} max={today} onChange={(e) => setDate(e.target.value || today)} />
+          </div>
+        )}
         <span className="label">{t('category')}</span>
         <div className="grid grid-cols-3 gap-2">
           {top.map((c) => (
             <button
-              key={c.id} type="button" onClick={() => setCategoryId(c.id)} aria-pressed={categoryId === c.id}
+              key={c.id} type="button" onClick={() => { setCategoryId(c.id); setSubId(''); }} aria-pressed={categoryId === c.id}
               className={`min-h-[56px] rounded-card border p-2 text-sm font-medium leading-tight ${categoryId === c.id ? 'border-brand bg-brand text-white' : 'border-slate-300 bg-surface'}`}
             >
               {categoryId === c.id && <span aria-hidden>✓ </span>}{name(c)}
@@ -119,10 +131,23 @@ export default function ExpensePage() {
           ))}
         </div>
 
+        {subs.length > 0 && (
+          <Chips label={t('subCategory')} value={subId} onChange={setSubId} options={subs.map((c) => ({ value: c.id, label: name(c) }))} />
+        )}
+
         <MoneyInput id="amount" label={t('amount')} value={amount} onChange={setAmount} required />
         <Chips label={t('paymentMode')} value={mode} onChange={setMode} options={MODES.map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
+        {(boot.suppliers?.length ?? 0) > 0 && (
+          <div>
+            <label htmlFor="supplier" className="label">{t('supplier')}</label>
+            <select id="supplier" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+              <option value="">{t('supplierNone')}</option>
+              {boot.suppliers!.map((sp) => <option key={sp.id} value={sp.id}>{sp.name}</option>)}
+            </select>
+          </div>
+        )}
         <TextField id="payee" label={t('payee')} value={payee} onChange={(e) => setPayee(e.target.value)} />
-        <TextField id="note" label={t('note')} value={note} onChange={(e) => setNote(e.target.value)} />
+        <TextField id="note" label={t('description')} value={note} onChange={(e) => setNote(e.target.value)} />
 
         <div>
           <span className="label">{t('photo')}{needsReceipt && <span className="text-red-600"> * {t('needReceipt')}</span>}</span>
@@ -153,15 +178,25 @@ export default function ExpensePage() {
             </li>
           ))}
           {list.map((e) => (
-            <li key={e.id} className="card flex items-center justify-between">
-              <div>
-                <p className="font-medium">{pick(e.categoryName, e.categoryNameTa)}</p>
-                <p className="text-xs text-slate-500">{e.code}</p>
+            <li key={e.id} className="card space-y-1">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium">{pick(e.categoryName, e.categoryNameTa)}{e.subCategoryName && <span className="text-slate-500"> › {pick(e.subCategoryName, e.subCategoryNameTa)}</span>}</p>
+                  <p className="text-xs text-slate-500">{e.code}{e.receiptCount > 0 && ' · 🧾'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="tabular-nums">{formatINR(e.amount)}</p>
+                  <p className="text-xs text-slate-500">{(() => { const st = e.status !== 'ACTIVE' ? e.status : e.approvalStatus; return STATUS_KEY[st] ? t(STATUS_KEY[st]) : st; })()}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="tabular-nums">{formatINR(e.amount)}</p>
-                <p className="text-xs text-slate-500">{(() => { const s = e.status !== 'ACTIVE' ? e.status : e.approvalStatus; return STATUS_KEY[s] ? t(STATUS_KEY[s]) : s; })()}</p>
-              </div>
+              {(e.supplierName || e.payeeName || e.description) && (
+                <p className="truncate text-xs text-slate-600">{[e.supplierName, e.payeeName, e.description].filter(Boolean).join(' · ')}</p>
+              )}
+              <p className="text-xs text-slate-500">
+                {t('enteredBy')}: {e.enteredByName ?? '—'}
+                {e.approvedByName && <> · {t('approvedBy')}: {e.approvedByName}</>}
+                {e.approvalStatus === 'REJECTED' && e.rejectionReason && <span className="text-red-700"> · {e.rejectionReason}</span>}
+              </p>
             </li>
           ))}
         </ul>

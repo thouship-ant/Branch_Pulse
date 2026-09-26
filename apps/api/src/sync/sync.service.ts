@@ -13,6 +13,7 @@ import { SettingsService } from '../common/settings.service';
 import { CashService } from '../daily/cash.service';
 import { SalesService } from '../daily/sales.service';
 import { ExpensesService } from '../expenses/expenses.service';
+import { PurchasesService } from '../purchases/purchases.service';
 
 export class SyncOperationDto {
   @IsUUID() clientUuid: string;
@@ -54,6 +55,7 @@ export class SyncService {
     private readonly expenses: ExpensesService,
     private readonly sales: SalesService,
     private readonly cash: CashService,
+    private readonly purchases: PurchasesService,
   ) {}
 
   async batch(ctx: ReqCtx, dto: SyncBatchDto) {
@@ -110,6 +112,12 @@ export class SyncService {
         if (op.op !== 'CREATE') throw new AppException(422, 'UNSUPPORTED_OPERATION', 'Expenses sync as CREATE only');
         this.need(ctx, 'expense:create');
         const env = await this.expenses.create(ctx, { ...p, clientUuid: op.clientUuid, clientCreatedAt: op.clientCreatedAt } as any);
+        return this.applied(op, env);
+      }
+      case 'PURCHASE': {
+        if (op.op !== 'CREATE') throw new AppException(422, 'UNSUPPORTED_OPERATION', 'Purchases sync as CREATE only');
+        this.need(ctx, 'purchase:create');
+        const env = await this.purchases.create(ctx, { ...p, clientUuid: op.clientUuid, clientCreatedAt: op.clientCreatedAt } as any);
         return this.applied(op, env);
       }
       case 'DAILY_SALES': {

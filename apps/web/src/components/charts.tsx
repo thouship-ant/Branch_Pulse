@@ -393,7 +393,7 @@ export function Columns({ cols, fmt, axisFmt, color = 'var(--series-1)', height 
   const band = iw / cols.length;
   const bw = Math.min(24, band * 0.6);
   // the axis label is a month name; the year is added on the first column and on every January
-  const every = band < 34 ? 2 : 1;
+  const every = Math.max(1, Math.ceil(44 / band)); // keep >= 44px between axis labels (daily columns are narrow)
   const { top, ticks } = niceScale(Math.max(0, ...cols.map((c) => c.value)));
   const y = (v: number) => m.t + ih - (v / top) * ih;
   const peak = cols.reduce((p, c, i) => (c.value > cols[p].value ? i : p), 0);

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
-import { Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
+import { can, Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
 import { BranchReportService } from './branch-report.service';
 import { AssignManagerDto, CreateLocationDto, LocationsService, UpdateLocationDto } from './locations.service';
 import { ApprovalLimitDto, CategoryDto, MasterService, SettingValueDto, UpdateCategoryDto } from './master.service';
@@ -109,9 +109,10 @@ export class MasterController {
   constructor(private readonly master: MasterService) {}
 
   // any authenticated user may read categories (entry screens need them)
+  // inactive ones are listed only for people who manage the configuration
   @Get('expense-categories')
-  categories() {
-    return this.master.listCategories();
+  categories(@Ctx() ctx: ReqCtx, @Query('includeInactive') includeInactive?: string) {
+    return this.master.listCategories(includeInactive === 'true' && can(ctx.user, 'settings:manage'));
   }
 
   @Post('expense-categories') @RequirePermissions('settings:manage')
