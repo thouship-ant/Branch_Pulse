@@ -1,0 +1,19 @@
+# Automatic HTTPS (Let's Encrypt) for $DOMAIN. One origin: /api -> API, everything else -> web app.
+# Same origin means the SameSite=Strict refresh cookie works and no CORS is involved.
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

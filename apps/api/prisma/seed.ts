@@ -3,6 +3,7 @@
  *
  *   npm run db:seed                 masters, roles, permissions, users
  *   npm run db:seed -- --demo       + 30 days of consistent branch history for dashboards/tests
+ *   SEED_MINIMAL=1 (or --minimal)   production bootstrap: roles, permissions, limits, units, categories, one owner
  *   SEED_PASSWORD=...               password for every seeded user (required in production)
  */
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -18,6 +19,7 @@ try {
 const prisma = new PrismaClient({ datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL });
 const D = (v: Prisma.Decimal.Value) => new Prisma.Decimal(v);
 const DEMO = process.argv.includes('--demo');
+const MINIMAL = process.env.SEED_MINIMAL === '1' || process.argv.includes('--minimal');
 
 // ---------------------------------------------------------------- permissions & roles (LLD s12)
 const PERMISSIONS: Record<string, string[]> = {
@@ -136,9 +138,25 @@ const SUPPLIERS: Array<[string, string, number]> = [
   ['SUP0003', 'Packaging supplier', 30], ['SUP0004', 'Snacks vendor', 7],
 ];
 
+async function seedUnitsAndCategories() {
+  for (const [code, name, base, factor] of UNITS) {
+    const baseUnit = base ? await prisma.unit.findUnique({ where: { code: base } }) : null;
+    await prisma.unit.upsert({
+      where: { code }, update: {},
+      create: { code, name, base_unit_id: baseUnit?.id ?? null, factor_to_base: D(factor) },
+    });
+  }
+  for (const [i, [name, bucket]] of CATEGORIES.entries()) {
+    const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: null } });
+    if (!exists) await prisma.expenseCategory.create({ data: { name_en: name, name_ta: TA[name], pl_bucket: bucket, sort_order: i } });
+  }
+  return new Map((await prisma.unit.findMany()).map((u) => [u.code, u.id]));
+}
+
 async function main() {
   const password = process.env.SEED_PASSWORD ?? (process.env.NODE_ENV === 'production' ? undefined : 'ChangeMe@123');
   if (!password) throw new Error('SEED_PASSWORD is required in production');
+  if (MINIMAL && password === 'ChangeMe@123') throw new Error('Set a real SEED_PASSWORD for a production seed');
   const passwordHash = await argon2.hash(password);
 
   // ---- permissions, roles
@@ -168,6 +186,23 @@ async function main() {
     });
   }
 
+  // Production bootstrap: roles, permissions, limits, units, categories and ONE owner. No demo branches,
+  // items or users - the owner creates their own locations and staff in the app.
+  if (MINIMAL) {
+    await seedUnitsAndCategories();
+    if (!(await prisma.user.findUnique({ where: { username: 'owner' } }))) {
+      await prisma.user.create({
+        data: {
+          username: 'owner', full_name: 'Owner', password_hash: passwordHash,
+          roles: { create: [{ role_id: roleId.get('OWNER')! }] },
+        },
+      });
+    }
+    console.log(`Minimal seed done: ${ALL_PERMS.length} permissions, ${ROLES.length} roles, owner user 'owner'.`);
+    console.log('Sign in as owner with SEED_PASSWORD and change it straight away (Settings -> Users).');
+    return;
+  }
+
   // ---- locations
   const openedOn = DEMO ? toDate(fmtDate(addDays(toDate(todayIST()), -45))) : null;
   for (const [code, name, type] of LOCATIONS) {
@@ -181,19 +216,7 @@ async function main() {
   const branches = locs.filter((l) => l.type === 'BRANCH').sort((a, b) => a.code.localeCompare(b.code));
 
   // ---- units, categories, items, suppliers
-  for (const [code, name, base, factor] of UNITS) {
-    const baseUnit = base ? await prisma.unit.findUnique({ where: { code: base } }) : null;
-    await prisma.unit.upsert({
-      where: { code }, update: {},
-      create: { code, name, base_unit_id: baseUnit?.id ?? null, factor_to_base: D(factor) },
-    });
-  }
-  const unitId = new Map((await prisma.unit.findMany()).map((u) => [u.code, u.id]));
-
-  for (const [i, [name, bucket]] of CATEGORIES.entries()) {
-    const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: null } });
-    if (!exists) await prisma.expenseCategory.create({ data: { name_en: name, name_ta: TA[name], pl_bucket: bucket, sort_order: i } });
-  }
+  const unitId = await seedUnitsAndCategories();
 
   for (const [code, name, category, base, rate, purchaseUnit, daily, min] of ITEMS) {
     const item = await prisma.inventoryItem.upsert({

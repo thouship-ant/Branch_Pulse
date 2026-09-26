@@ -20,6 +20,10 @@ npm run dev:web                                 # http://localhost:3000
 
 Seed users (password `ChangeMe@123`, dev only): `owner`, `accountant`, `stockmgr`, `manager1`..`manager6` (one per branch).
 
+## Deploy
+
+Production runs in Docker behind Caddy (automatic HTTPS). Step-by-step Ubuntu VPS guide: [DEPLOY.md](DEPLOY.md). Files: `docker-compose.prod.yml`, `apps/*/Dockerfile`, `infra/{Caddyfile,deploy.sh,backup.sh,postgres-init-prod.sh}`, `.env.prod.example`.
+
 ## Tests
 
 ```bash

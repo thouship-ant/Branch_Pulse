@@ -1,0 +1,93 @@
+# Production stack for a single Ubuntu VPS.
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# Only Caddy publishes ports (80/443). Postgres, the API and the web app are reachable only on the internal network.
+name: branch-pulse
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+      POSTGRES_DB: branch_pulse
+      APP_RW_PASSWORD: ${APP_RW_PASSWORD:?set APP_RW_PASSWORD in .env.prod}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres-init-prod.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d branch_pulse"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-off tools (not started by `up`): migrations and seeding.
+  #   docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm migrate
+  #   docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm seed
+  migrate:
+    profiles: ["tools"]
+    build: { context: ., dockerfile: apps/api/Dockerfile, target: build }
+    working_dir: /app/apps/api
+    command: npx prisma migrate deploy
+    environment: &dburls
+      DATABASE_URL: postgresql://app_rw:${APP_RW_PASSWORD}@db:5432/branch_pulse?schema=public
+      DIRECT_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/branch_pulse?schema=public
+    depends_on:
+      db: { condition: service_healthy }
+
+  seed:
+    profiles: ["tools"]
+    build: { context: ., dockerfile: apps/api/Dockerfile, target: build }
+    working_dir: /app/apps/api
+    command: npx tsx prisma/seed.ts
+    environment:
+      <<: *dburls
+      NODE_ENV: production
+      SEED_MINIMAL: "1"
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile, target: runtime }
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      <<: *dburls
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env.prod}
+      CORS_ORIGINS: https://${DOMAIN:?set DOMAIN in .env.prod}
+      COOKIE_SECURE: "true"
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile, target: runtime }
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

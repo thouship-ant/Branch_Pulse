@@ -1,0 +1,5 @@
+# Shell scripts and container configs must keep LF line endings (a CRLF breaks them inside Linux containers).
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+*.yml text eol=lf

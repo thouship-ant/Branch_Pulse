@@ -1,7 +1,15 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 const API = process.env.API_URL || 'http://localhost:4000';
+const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The Docker image builds a self-contained server (NEXT_STANDALONE=1). Plain `next build` is unchanged.
+  ...(process.env.NEXT_STANDALONE === '1'
+    ? { output: 'standalone', outputFileTracingRoot: path.join(here, '../../') }
+    : {}),
   reactStrictMode: true,
   poweredByHeader: false,
   // Same-origin API: the browser only ever talks to the web origin, so the SameSite=Strict
