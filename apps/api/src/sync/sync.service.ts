@@ -13,6 +13,7 @@ import { SettingsService } from '../common/settings.service';
 import { CashService } from '../daily/cash.service';
 import { SalesService } from '../daily/sales.service';
 import { ExpensesService } from '../expenses/expenses.service';
+import { WastageService } from '../inventory/wastage.service';
 import { PurchasesService } from '../purchases/purchases.service';
 
 export class SyncOperationDto {
@@ -56,6 +57,7 @@ export class SyncService {
     private readonly sales: SalesService,
     private readonly cash: CashService,
     private readonly purchases: PurchasesService,
+    private readonly wastage: WastageService,
   ) {}
 
   async batch(ctx: ReqCtx, dto: SyncBatchDto) {
@@ -112,6 +114,12 @@ export class SyncService {
         if (op.op !== 'CREATE') throw new AppException(422, 'UNSUPPORTED_OPERATION', 'Expenses sync as CREATE only');
         this.need(ctx, 'expense:create');
         const env = await this.expenses.create(ctx, { ...p, clientUuid: op.clientUuid, clientCreatedAt: op.clientCreatedAt } as any);
+        return this.applied(op, env);
+      }
+      case 'WASTAGE': {
+        if (op.op !== 'CREATE') throw new AppException(422, 'UNSUPPORTED_OPERATION', 'Wastage syncs as CREATE only');
+        this.need(ctx, 'wastage:create');
+        const env = await this.wastage.create(ctx, { ...p, clientUuid: op.clientUuid, clientCreatedAt: op.clientCreatedAt } as any);
         return this.applied(op, env);
       }
       case 'PURCHASE': {

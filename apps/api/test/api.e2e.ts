@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+﻿import 'reflect-metadata';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
@@ -1635,6 +1635,297 @@ describe('Branch Pulse API (e2e)', () => {
       const row = ((await http().get('/api/v1/suppliers').set(as(owner))).body.data as any[]).find((s) => s.id === sup);
       expect(row.overdue).toBe('400');
       expect(row.outstanding).toBe(d.summary.total);
+    });
+  });
+
+  // ------------------------------------------------------------------ inventory: opening + purchases + transfers - consumption - wastage = expected; physical count -> shortage / excess
+  describe('inventory management', () => {
+    let a: string; // branch A (has the stock we reconcile)
+    let b: string; // branch B (receives a transfer)
+    let gw: string; // a fresh central warehouse
+    let mgrA: string;
+    let mgrB: string;
+    let supplier: string;
+    let itemM: string; // milk-like, stock unit ml, bought in litres
+    let itemS: string; // sugar-like, stock unit g, bought in kg
+    let uL: string;
+    let uKg: string;
+    let uMl: string;
+    let uG: string;
+    let wasteBig: string;
+    let countB: string;
+    const date = today;
+    const buy = (token: string, body: object) => http().post('/api/v1/purchases').set(as(token)).send({ businessDate: today, paymentMode: 'CASH', supplierId: supplier, ...body });
+    const line = (itemId: string, unitId: string, quantity: string, rate: string) => ({ itemId, unitId, quantity, rate });
+    const rec = async (loc: string, token = owner, d = date) => (await http().get(`/api/v1/stock/reconciliation?locationId=${loc}&date=${d}`).set(as(token)));
+    const row = async (loc: string, item: string, token = owner, d = date) => ((await rec(loc, token, d)).body.data.rows as any[]).find((r) => r.itemId === item);
+    /** The lines given, plus every item that must be counted daily (counted as the books expect), like a manager doing the full count. */
+    const full = async (loc: string, token: string, lines: any[]) => {
+      const rows = (await rec(loc, token)).body.data.rows as any[];
+      const given = new Set(lines.map((l) => l.itemId));
+      return [...lines, ...rows.filter((r) => r.dailyCountRequired && !given.has(r.itemId)).map((r) => ({ itemId: r.itemId, physicalQty: r.expected }))];
+    };
+    const photo = async (token: string, loc: string) => {
+      const p = await http().post('/api/v1/attachments/presign').set(as(token)).send({ fileName: 'w.png', mimeType: 'image/png', sizeBytes: PNG.length, locationId: loc });
+      await http().put(p.body.data.uploadUrl).set('Content-Type', 'image/png').send(PNG).expect(200);
+      return p.body.data.key as string;
+    };
+
+    beforeAll(async () => {
+      const mk = async (code: string, type: string) => (await http().post('/api/v1/locations').set(as(owner)).send({ code, name: `Inv ${code}`, type, defaultOpeningCash: '1000.00' })).body.data.id as string;
+      a = await mk(`IA${rnd}`, 'BRANCH'); b = await mk(`IB${rnd}`, 'BRANCH'); gw = await mk(`IG${rnd}`, 'GODOWN');
+      const user = async (u: string, loc: string) => {
+        await http().post('/api/v1/users').set(as(owner)).send({ username: u, password: 'Test@12345', fullName: `Mgr ${u}`, roleCodes: ['BRANCH_MANAGER'], locationIds: [loc] }).expect(201);
+        return (await login(u, 'Test@12345')).body.data.accessToken as string;
+      };
+      mgrA = await user(`ima${rnd}`, a); mgrB = await user(`imb${rnd}`, b);
+      supplier = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `Inv Supplier ${rnd}` })).body.data.id;
+      const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
+      uL = boot.units.find((u: any) => u.code === 'L').id; uKg = boot.units.find((u: any) => u.code === 'KG').id; uMl = boot.units.find((u: any) => u.code === 'ML').id;
+      uG = boot.units.find((u: any) => u.code === 'G').id;
+    });
+
+    it('items are configurable: the owner adds them, units must fit, names are unique, managers cannot add', async () => {
+      expect((await http().post('/api/v1/items').set(as(mgrA)).send({ nameEn: `X${rnd}`, category: 'DAIRY', baseUnitId: uMl })).status).toBe(403);
+      const m = await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Test Milk ${rnd}`, nameTa: 'சோதனை பால்', category: 'Dairy', baseUnitId: uMl, purchaseUnitId: uL, isPerishable: true, dailyCountRequired: true, varianceThresholdPct: '5' });
+      expect(m.status).toBe(201);
+      expect(m.body.data.code).toMatch(/^ITM\d{3,}$/);
+      expect(m.body.data.category).toBe('DAIRY');
+      itemM = m.body.data.id;
+      const s = await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Test Sugar ${rnd}`, category: 'GRAIN', baseUnitId: uG, purchaseUnitId: uKg });
+      expect(s.status).toBe(201);
+      itemS = s.body.data.id;
+      expect((await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `test milk ${rnd}`, category: 'DAIRY', baseUnitId: uMl })).status).toBe(409);
+      expect((await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Bad ${rnd}`, category: 'DAIRY', baseUnitId: uMl, purchaseUnitId: uKg })).body.error.code).toBe('INVALID_UNIT'); // kg does not convert to ml
+      const list = (await http().get('/api/v1/items').set(as(mgrA))).body.data as any[];
+      const got = list.find((i) => i.id === itemM);
+      expect(got).toMatchObject({ baseUnit: 'ML', purchaseUnit: 'L', displayUnit: 'L', displayFactor: '1000' });
+      // every kind of item the brief asks for exists in the template list or can be added; per-location minimum stock
+      await http().put(`/api/v1/items/${itemM}/locations/${a}`).set(as(owner)).send({ minStock: '20000' }).expect(200);
+      expect((await http().put(`/api/v1/items/${itemM}/locations/${a}`).set(as(mgrA)).send({ minStock: '1' })).status).toBe(403);
+    });
+
+    it('opening stock and purchases: stock builds up in the ledger and the day starts from yesterday\'s close', async () => {
+      await buy(owner, { locationId: a, businessDate: addDaysStr(today, -1), items: [line(itemM, uL, '100', '50')] }).then((r) => expect(r.status).toBe(201)); // 100 L
+      await buy(owner, { locationId: a, items: [line(itemM, uL, '20', '50')] }).then((r) => expect(r.status).toBe(201)); // +20 L today
+      await buy(owner, { locationId: gw, items: [line(itemM, uL, '50', '50')] }).then((r) => expect(r.status).toBe(201)); // the warehouse
+      const r = await row(a, itemM);
+      expect(r).toMatchObject({ opening: '100000', purchases: '20000', transfersIn: '0', transfersOut: '0', consumption: '0', wastage: '0', expected: '120000', unit: 'ML', displayUnit: 'L', physical: null });
+    });
+
+    it('transfers: request, approve, dispatch (stock leaves the sender), receive (arrives), short quantity is lost in transit with a reason', async () => {
+      // a manager cannot request or send stock, and cannot receive at someone else's branch
+      const body = { fromLocationId: gw, toLocationId: a, businessDate: today, items: [{ itemId: itemM, quantity: '10', unitId: uL }], vehicleRef: 'TN01AB1234', remarks: 'Weekly top-up' };
+      expect((await http().post('/api/v1/transfers').set(as(mgrA)).send(body)).status).toBe(403);
+      const t1 = await http().post('/api/v1/transfers').set(as(owner)).send(body);
+      expect(t1.status).toBe(201);
+      expect(t1.body.data).toMatchObject({ status: 'APPROVED', vehicleRef: 'TN01AB1234' }); // the owner can approve at once
+      expect(t1.body.data.items[0].sentQty).toBe('10000');
+      const id1 = t1.body.data.id;
+      expect((await http().post(`/api/v1/transfers/${id1}/receive`).set(as(owner)).send({})).status).toBe(409); // not dispatched yet
+
+      // more than the warehouse holds cannot be sent
+      const big = await http().post('/api/v1/transfers').set(as(owner)).send({ ...body, items: [{ itemId: itemM, quantity: '9999', unitId: uL }] });
+      expect((await http().post(`/api/v1/transfers/${big.body.data.id}/dispatch`).set(as(owner))).body.error.code).toBe('STOCK_INSUFFICIENT');
+      await http().post(`/api/v1/transfers/${big.body.data.id}/cancel`).set(as(owner)).send({ reason: 'Too much' }).expect(200);
+
+      await http().post(`/api/v1/transfers/${id1}/dispatch`).set(as(owner)).expect(200);
+      expect((await row(gw, itemM)).transfersOut).toBe('10000');
+      expect((await http().post(`/api/v1/transfers/${id1}/dispatch`).set(as(owner))).status).toBe(409); // once only
+      expect((await http().post(`/api/v1/transfers/${id1}/receive`).set(as(mgrB)).send({})).status).toBe(404); // B cannot even see it (row-level security)
+      await http().post(`/api/v1/transfers/${id1}/receive`).set(as(mgrA)).send({}).expect(200);
+      expect((await http().get(`/api/v1/transfers/${id1}`).set(as(owner))).body.data.status).toBe('RECEIVED');
+      expect((await row(a, itemM)).transfersIn).toBe('10000');
+
+      // A sends 5 L on to B; B receives only 4.5 L and must say why
+      const t2 = await http().post('/api/v1/transfers').set(as(owner)).send({ fromLocationId: a, toLocationId: b, businessDate: today, items: [{ itemId: itemM, quantity: '5', unitId: uL }] });
+      await http().post(`/api/v1/transfers/${t2.body.data.id}/dispatch`).set(as(owner)).expect(200);
+      expect((await http().post(`/api/v1/transfers/${t2.body.data.id}/receive`).set(as(mgrB)).send({ items: [{ itemId: itemM, receivedQty: '4500' }] })).body.error.code).toBe('REASON_REQUIRED');
+      expect((await http().post(`/api/v1/transfers/${t2.body.data.id}/receive`).set(as(mgrB)).send({ items: [{ itemId: itemM, receivedQty: '6000', reason: 'x' }] })).body.error.code).toBe('RECEIVED_MORE');
+      await http().post(`/api/v1/transfers/${t2.body.data.id}/receive`).set(as(mgrB)).send({ items: [{ itemId: itemM, receivedQty: '4500', reason: 'SPILLED' }] }).expect(200);
+      const done = (await http().get(`/api/v1/transfers/${t2.body.data.id}`).set(as(owner))).body.data;
+      expect(done.status).toBe('PARTIALLY_RECEIVED');
+      expect(done.items[0]).toMatchObject({ sentQty: '5000', receivedQty: '4500', varianceReason: 'SPILLED' });
+      expect(done.lostValue).toBe('25'); // 500 ml at 0.05
+      expect((await row(a, itemM)).transfersOut).toBe('5000');
+      expect((await row(b, itemM)).transfersIn).toBe('4500');
+      expect((await http().get(`/api/v1/transfers?locationId=${b}`).set(as(mgrB))).body.data.map((t: any) => t.code)).toContain(done.code);
+      // the receiving manager sees the sender's name too, although the warehouse is outside their own scope
+      const seen = (await http().get(`/api/v1/transfers?locationId=${a}`).set(as(mgrA))).body.data.find((t: any) => t.toLocationId === b);
+      expect(seen.toLocationName).toBe(`Inv IB${rnd}`);
+      expect((await http().get(`/api/v1/transfers?locationId=${a}`).set(as(mgrA))).body.data.find((t: any) => t.id === id1).fromLocationName).toBe(`Inv IG${rnd}`);
+    });
+
+    it('consumption: what was used is set per item and can be corrected; a change is a new ledger row, never an edit', async () => {
+      const set = (qty: string, token = mgrA, loc = a) => http().put('/api/v1/stock/consumption').set(as(token)).send({ locationId: loc, businessDate: today, items: [{ itemId: itemM, quantity: qty }] });
+      expect((await set('30000')).status).toBe(200);
+      expect((await row(a, itemM)).consumption).toBe('30000');
+      expect((await set('25000')).body.data.changed).toBe(1);
+      expect((await row(a, itemM)).consumption).toBe('25000'); // corrected down: the day nets to 25 L
+      expect((await set('25000')).body.data.changed).toBe(0); // no change, nothing posted
+      await set('30000');
+      expect((await row(a, itemM)).consumption).toBe('30000');
+      expect((await set('1000', mgrA, b)).status).toBe(403); // B is not A's manager
+      // more used than the books hold is allowed but flagged
+      const warn = await set('999999999'.slice(0, 6), mgrB, b);
+      expect(warn.status).toBe(200);
+      expect(warn.body.data.warnings.map((w: any) => w.code)).toContain('NEGATIVE_STOCK');
+      await set('0', mgrB, b);
+    });
+
+    it('wastage: stock goes down at once, a photo is needed for larger losses, approval decides if the loss is accepted; a rejected one gives the stock back', async () => {
+      const w = (qty: string, extra: object = {}) => http().post('/api/v1/wastage').set(as(mgrA)).send({ locationId: a, businessDate: today, itemId: itemM, quantity: qty, unitId: uL, reason: 'SPOILED', ...extra });
+      const small = await w('2'); // 2 L = 100 at 0.05: within the manager's limit of 200
+      expect(small.status).toBe(201);
+      expect(small.body.data).toMatchObject({ approvalStatus: 'APPROVED', estimatedValue: '100', baseQuantity: '2000' });
+      expect((await w('6')).body.error.code).toBe('PHOTO_REQUIRED'); // 300 is above the photo threshold
+      const big = await w('6', { attachmentKeys: [await photo(mgrA, a)], reasonNote: 'Fridge failed' });
+      expect(big.status).toBe(201);
+      expect(big.body.data.approvalStatus).toBe('SUBMITTED'); // 300 is above the manager's limit
+      wasteBig = big.body.data.id;
+      expect((await row(a, itemM)).wastage).toBe('8000'); // both are out of stock already
+
+      expect((await http().post(`/api/v1/wastage/${wasteBig}/approve`).set(as(mgrA))).status).toBe(403);
+      expect((await http().post(`/api/v1/wastage/${wasteBig}/reject`).set(as(owner)).send({})).body.error.code).toBe('REASON_REQUIRED');
+      await http().post(`/api/v1/wastage/${wasteBig}/reject`).set(as(owner)).send({ reason: 'Fridge log shows it was fine' }).expect(200);
+      expect((await row(a, itemM)).wastage).toBe('2000'); // the 6 L is back on the books: a shortage will show at the count
+
+      const list = (await http().get(`/api/v1/wastage?locationId=${a}`).set(as(owner))).body;
+      const rejected = list.data.find((x: any) => x.id === wasteBig);
+      expect(rejected).toMatchObject({ approvalStatus: 'REJECTED', rejectionReason: 'Fridge log shows it was fine', itemName: `Test Milk ${rnd}`, unitCode: 'L', enteredByName: expect.any(String), receiptCount: 1 });
+      expect(list.meta.totalValue).toBe('100'); // rejected entries are not counted
+      const cancelMe = await w('1');
+      expect(cancelMe.body.data.approvalStatus).toBe('APPROVED');
+      expect((await http().post(`/api/v1/wastage/${cancelMe.body.data.id}/cancel`).set(as(mgrA)).send({})).status).toBe(409); // approved ones cannot be cancelled
+      await http().post(`/api/v1/wastage/${cancelMe.body.data.id}/reverse`).set(as(owner)).send({}).catch(() => undefined);
+    });
+
+    it('expected closing = opening + purchases + transfers in - transfers out - consumption - wastage', async () => {
+      // A: opening 100,000 + purchases 20,000 + in 10,000 - out 5,000 - consumption 30,000 - wastage 3,000 (2 L + the 1 L approved above)
+      const r = await row(a, itemM);
+      expect(r).toMatchObject({ opening: '100000', purchases: '20000', transfersIn: '10000', transfersOut: '5000', consumption: '30000', wastage: '3000', other: '0', adjustment: '0', expected: '92000' });
+      expect(Number(r.avgCost)).toBeCloseTo(0.05, 4);
+      const day = (await rec(a)).body.data;
+      expect(day.totals.wastageValue).toBe('150');
+      expect(day.rows.length).toBeGreaterThanOrEqual(2); // both new items are tracked here
+      // managers only see their own branch; the day before is what today opened with
+      expect((await rec(b, mgrA)).status).toBe(403);
+      expect(await row(a, itemM, owner, addDaysStr(today, -1))).toMatchObject({ opening: '0', purchases: '100000', expected: '100000' });
+    });
+
+    it('physical count: a small difference is a shortage that is accepted at once and corrects the books', async () => {
+      const save = async (lines: object[], token = mgrA, loc = a, complete = true) => {
+        const items = complete ? await full(loc, token, lines) : lines;
+        return http().put(`/api/v1/stock/counts/${loc}/${today}`).set(as(token)).send({ items });
+      };
+      // counting only some of the daily items is refused when the count is sent in
+      await save([{ itemId: itemM, physicalQty: '91000' }], mgrA, a, false).then((r) => expect(r.status).toBe(200));
+      const incomplete = await http().post(`/api/v1/stock/counts/${a}/${today}/submit`).set(as(mgrA));
+      expect(incomplete.status).toBe(422);
+      expect(incomplete.body.error.code).toBe('COUNT_INCOMPLETE');
+      const saved = await save([{ itemId: itemM, physicalQty: '91000' }]); // 1 L short of 92 L: ~1.1%, under the 5% threshold
+      expect(saved.status).toBe(200);
+      expect(saved.body.data).toMatchObject({ status: 'IN_PROGRESS', significant: 0 });
+      const draft = await row(a, itemM);
+      expect(draft).toMatchObject({ physical: '91000', variance: '-1000', varianceValue: '-50', label: 'SHORTAGE' });
+      // every item that must be counted daily has to be in: the milk-like item is one; it is counted here
+      const sub = await http().post(`/api/v1/stock/counts/${a}/${today}/submit`).set(as(mgrA));
+      expect(sub.status).toBe(200);
+      expect(sub.body.data.status).toBe('APPROVED'); // no significant difference: nothing to approve
+
+      const after = await row(a, itemM);
+      expect(after).toMatchObject({ expected: '92000', physical: '91000', variance: '-1000', label: 'SHORTAGE', adjustment: '-1000' });
+      // the books now say what was physically there
+      const level = ((await http().get(`/api/v1/stock?locationId=${a}`).set(as(owner))).body.data as any[]).find((x) => x.itemId === itemM);
+      expect(level.quantity).toBe('91000');
+      // an approved count is final for the day
+      expect((await save([{ itemId: itemM, physicalQty: '90000' }])).body.error.code).toBe('COUNT_APPROVED');
+      expect((await http().put('/api/v1/stock/consumption').set(as(mgrA)).send({ locationId: a, businessDate: today, items: [{ itemId: itemM, quantity: '1' }] })).body.error.code).toBe('COUNT_APPROVED');
+      // tomorrow opens from what was counted
+      const totals = (await rec(a)).body.data.totals;
+      expect(Number(totals.shortageValue)).toBeCloseTo(50, 1);
+    });
+
+    it('a significant difference needs a reason and an explanation, waits for the owner, and can be sent back for a re-count', async () => {
+      await buy(owner, { locationId: b, items: [line(itemM, uL, '10', '50'), line(itemS, uKg, '10', '40')] }).then((r) => expect(r.status).toBe(201));
+      // B: milk expected 4,500 (transfer, after loss) + 10,000 (purchase) = 14,500; sugar 10,000 g
+      expect(await row(b, itemM)).toMatchObject({ transfersIn: '4500', purchases: '10000', expected: '14500' });
+      const save = async (lines: object[]) => {
+        const items = await full(b, mgrB, lines);
+        return http().put(`/api/v1/stock/counts/${b}/${today}`).set(as(mgrB)).send({ items });
+      };
+      // milk counted 12,000: 2,500 short (17%) - significant; sugar counted 10,500: 5% over, right at the limit - not significant
+      const s = await save([{ itemId: itemM, physicalQty: '12000' }, { itemId: itemS, physicalQty: '10500' }]);
+      expect(s.body.data.significant).toBe(1);
+      const sub = await http().post(`/api/v1/stock/counts/${b}/${today}/submit`).set(as(mgrB));
+      expect(sub.status).toBe(422);
+      expect(sub.body.error.code).toBe('VARIANCE_REASON_REQUIRED');
+      await save([{ itemId: itemM, physicalQty: '12000', reason: 'SPILLAGE', explanation: 'Two cans split during delivery' }, { itemId: itemS, physicalQty: '10500' }]);
+      const sent = await http().post(`/api/v1/stock/counts/${b}/${today}/submit`).set(as(mgrB));
+      expect(sent.body.data.status).toBe('SUBMITTED'); // the manager cannot approve their own count
+      countB = sent.body.data.id;
+      expect((await row(b, itemM)).physical).toBe('12000');
+      expect(((await http().get(`/api/v1/stock?locationId=${b}`).set(as(owner))).body.data as any[]).find((x) => x.itemId === itemM).quantity).toBe('14500'); // books unchanged until approved
+      expect((await save([{ itemId: itemM, physicalQty: '1' }])).body.error.code).toBe('COUNT_SUBMITTED');
+      expect((await http().post(`/api/v1/stock/counts/${countB}/approve`).set(as(mgrB))).status).toBe(403);
+
+      // sent back: the manager re-counts
+      expect((await http().post(`/api/v1/stock/counts/${countB}/reject`).set(as(owner)).send({})).body.error.code).toBe('COMMENT_REQUIRED');
+      await http().post(`/api/v1/stock/counts/${countB}/reject`).set(as(owner)).send({ comment: 'Count the milk cans again' }).expect(200);
+      const rd = (await rec(b)).body.data;
+      expect(rd.count).toMatchObject({ status: 'REJECTED', reviewComment: 'Count the milk cans again' });
+      await save([{ itemId: itemM, physicalQty: '12500', reason: 'SPILLAGE', explanation: 'Recounted; two cans split' }, { itemId: itemS, physicalQty: '10500' }]);
+      const again = await http().post(`/api/v1/stock/counts/${b}/${today}/submit`).set(as(mgrB));
+      expect(again.body.data.status).toBe('SUBMITTED');
+      await http().post(`/api/v1/stock/counts/${countB}/approve`).set(as(owner)).expect(200);
+      expect(await row(b, itemM)).toMatchObject({ expected: '14500', physical: '12500', variance: '-2000', label: 'SHORTAGE', adjustment: '-2000' });
+      expect(await row(b, itemS)).toMatchObject({ expected: '10000', physical: '10500', variance: '500', label: 'EXCESS', adjustment: '500' });
+      const lv = ((await http().get(`/api/v1/stock?locationId=${b}`).set(as(owner))).body.data as any[]);
+      expect(lv.find((x) => x.itemId === itemM).quantity).toBe('12500');
+      expect(lv.find((x) => x.itemId === itemS).quantity).toBe('10500');
+    });
+
+    it('variance report: shortage, excess and wastage in a period, by item and location, with the reason and who counted', async () => {
+      const rep = (await http().get(`/api/v1/stock/variance-report?from=${today}&to=${today}&locationId=${b}`).set(as(owner))).body.data;
+      expect(rep.summary).toMatchObject({ shortageCount: 1, excessCount: 1 });
+      expect(rep.summary.shortageValue).toBe('100'); // 2,000 ml at 0.05
+      expect(rep.summary.excessValue).toBe('20'); // 500 g at 0.04
+      expect(rep.summary.net).toBe('-80');
+      const short = rep.rows.find((r: any) => r.label === 'SHORTAGE');
+      expect(short).toMatchObject({ itemName: `Test Milk ${rnd}`, unit: 'ML', expected: '14500', physical: '12500', variance: '-2000', reason: 'SPILLAGE', isSignificant: true, status: 'APPROVED', countedBy: expect.any(String) });
+      expect(rep.byItem[0]).toMatchObject({ shortageValue: '100' });
+      expect(rep.byLocation).toHaveLength(1);
+
+      const onlyShort = (await http().get(`/api/v1/stock/variance-report?from=${today}&to=${today}&locationId=${b}&type=shortage`).set(as(owner))).body.data;
+      expect(onlyShort.rows).toHaveLength(1);
+      expect((await http().get(`/api/v1/stock/variance-report?from=${today}&to=${today}&locationId=${b}&type=excess`).set(as(owner))).body.data.rows[0].itemName).toBe(`Test Sugar ${rnd}`);
+
+      // branch A: the 1 L shortage and 3 L (150) of accepted wastage
+      const ra = (await http().get(`/api/v1/stock/variance-report?from=${today}&to=${today}&locationId=${a}`).set(as(owner))).body.data;
+      expect(ra.summary).toMatchObject({ shortageCount: 1, shortageValue: '50', wastageValue: '150' });
+      // the list of counts, for approvals
+      const counts = (await http().get(`/api/v1/stock/counts?locationId=${b}`).set(as(owner))).body.data as any[];
+      expect(counts[0]).toMatchObject({ status: 'APPROVED', significant: 1, locationCode: `IB${rnd}` });
+      // a manager reads only their own branch
+      expect((await http().get(`/api/v1/stock/variance-report?from=${today}&to=${today}&locationId=${b}`).set(as(mgrA))).status).toBe(403);
+      expect((await http().get(`/api/v1/stock/variance-report?from=${today}&to=${addDaysStr(today, -1)}`).set(as(owner))).status).toBe(422);
+    });
+
+    it('wastage summary: total, by reason, item and branch, and over time', async () => {
+      const s = (await http().get(`/api/v1/wastage/summary?locationId=${a}&from=${today}&to=${today}`).set(as(owner))).body.data;
+      expect(s.totals.value).toBe('150');
+      expect(s.byReason[0]).toMatchObject({ reason: 'SPOILED', value: '150', sharePct: 100 });
+      expect(s.byItem[0]).toMatchObject({ name: `Test Milk ${rnd}`, value: '150' });
+      expect(s.buckets).toHaveLength(1);
+    });
+
+    it('offline wastage entries sync through the outbox and are applied once', async () => {
+      const uuid = randomUUID();
+      const op = { clientUuid: uuid, entityType: 'WASTAGE', op: 'CREATE', payload: { locationId: a, businessDate: addDaysStr(today, -1), itemId: itemM, quantity: '1', unitId: uL, reason: 'EXPIRED' } };
+      const first = await http().post('/api/v1/sync/batch').set(as(mgrA)).send({ deviceId: 'inv-device', operations: [op] });
+      expect(first.body.data.results[0].result).toBe('APPLIED');
+      const dup = await http().post('/api/v1/sync/batch').set(as(mgrA)).send({ deviceId: 'inv-device', operations: [op] });
+      expect(dup.body.data.results[0].result).toBe('DUPLICATE');
     });
   });
 });

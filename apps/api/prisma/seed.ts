@@ -96,6 +96,7 @@ const TA: Record<string, string> = {
   Repairs: 'பழுதுபார்ப்பு', Cleaning: 'சுத்தம்', 'Cooking oil': 'சமையல் எண்ணெய்', Packaging: 'பேக்கிங்', Miscellaneous: 'இதர',
   'Coffee powder': 'காபித் தூள்', Ginger: 'இஞ்சி', Cardamom: 'ஏலக்காய்', 'Paper cup 150 ml': 'காகிதக் குவளை 150 மி.லி',
   Glass: 'கண்ணாடி டம்ளர்', 'Water bottle 1 L': 'தண்ணீர் பாட்டில் 1 லி',
+  Snacks: 'சிற்றுண்டிகள்', 'Packaging material': 'பேக்கிங் பொருட்கள்', 'Other raw materials': 'மற்ற மூலப்பொருட்கள்',
 };
 
 const LOCATIONS = [
@@ -144,6 +145,9 @@ const ITEMS: Array<[string, string, string, string, string, string, boolean, str
   ['ITM008', 'Paper cup 150 ml', 'PACKAGING', 'PCS', '1.20', 'PKT', false, '500'],
   ['ITM009', 'Glass', 'CONSUMABLE', 'PCS', '25.00', 'PCS', false, '20'],
   ['ITM010', 'Water bottle 1 L', 'CONSUMABLE', 'PCS', '12.00', 'PCS', false, '24'],
+  ['ITM011', 'Snacks', 'SNACKS', 'PCS', '8.00', 'PCS', false, '40'],
+  ['ITM012', 'Packaging material', 'PACKAGING', 'PCS', '3.00', 'PCS', false, '100'],
+  ['ITM013', 'Other raw materials', 'RAW_MATERIAL', 'G', '0.10', 'KG', false, '1000'],
 ];
 
 const SUPPLIERS: Array<[string, string, number]> = [
@@ -432,10 +436,10 @@ async function seedDemoHistory(branches: Array<{ id: string; code: string; card_
 }
 
 /**
- * Demo-only wastage and stock consumption so the dashboard's wastage and consumption charts have data
- * before the stock module exists. Consumption is derived from each day's sales (tea recipe: 90 ml milk,
- * 4 g tea powder, 8 g sugar, 1 cup per ~15 rupees). Ledger rows are written without stock_balances, so
- * never seed this into a database you plan to run the real stock module on.
+ * Demo-only stock history, written the way the real module writes it (ledger rows + balances) so the reconciliation, the variance
+ * report and the wastage charts all have data: opening stock 31 days ago, consumption from each day's sales (tea recipe: 90 ml milk,
+ * 4 g tea powder, 8 g sugar, 1 cup per ~15 rupees), some wastage, and an approved physical count each day for the last 12 days with
+ * small shortages and excesses. The godown gets an opening stock too.
  */
 async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>) {
   if (await prisma.wastage.count()) return; // idempotent
@@ -443,40 +447,48 @@ async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>
   const items = await prisma.inventoryItem.findMany();
   const item = (code: string) => items.find((i) => i.code === code)!;
   const today = toDate(todayIST());
+  const openingDay = addDays(today, -31);
   const perCup: Array<[string, number]> = [['ITM001', 90], ['ITM002', 4], ['ITM004', 8], ['ITM008', 1]];
+  const wasteItems = ['ITM001', 'ITM002', 'ITM004'];
   const reasons = ['SPOILED', 'EXCESS_PREPARATION', 'BURNT', 'DAMAGED'] as const;
-  let w = 0, c = 0;
+  const countReasons = ['MEASUREMENT', 'SPILLAGE', 'UNRECORDED_USE', 'COUNTING_ERROR'];
+  let w = 0, c = 0, k = 0;
 
-  // approved days are locked by trigger; the seed runs as the owner, so lift the lock only for this insert
-  await prisma.$executeRawUnsafe('ALTER TABLE wastage DISABLE TRIGGER t_lock_wastage');
+  // approved days are locked by trigger; the seed runs as the owner, so lift the locks only for these inserts
+  for (const t of ['wastage', 'stock_counts']) await prisma.$executeRawUnsafe(`ALTER TABLE ${t} DISABLE TRIGGER t_lock_${t}`);
   try {
     for (const [bi, b] of branches.entries()) {
       const manager = await prisma.user.findUniqueOrThrow({ where: { username: `manager${bi + 1}` } });
       const rand = rng(5000 + bi);
+      const sales = await prisma.dailySales.findMany({ where: { location_id: b.id } });
+      const avgCups = sales.length ? sales.reduce((a, r) => a.plus(r.total_sales), D(0)).div(sales.length).div(15) : D(300);
+      const bal = new Map<string, Prisma.Decimal>();
+      const post = async (code: string, date: Date, type: 'OPENING' | 'CONSUMPTION' | 'WASTAGE' | 'COUNT_ADJUSTMENT', qty: Prisma.Decimal, src: string, srcId: string, by: string) => {
+        const it = item(code);
+        bal.set(code, (bal.get(code) ?? D(0)).plus(qty));
+        await prisma.inventoryTransaction.create({
+          data: {
+            location_id: b.id, item_id: it.id, business_date: date, txn_type: type, quantity: qty, unit_cost: it.avg_cost, value: qty.mul(it.avg_cost).toDecimalPlaces(2),
+            balance_after: bal.get(code)!, source_type: src, source_id: srcId, created_by: by,
+          },
+        });
+      };
+      for (const [code, per] of perCup) await post(code, openingDay, 'OPENING', avgCups.mul(per).mul(45).toDecimalPlaces(3), 'OPENING', b.id, owner.id);
+
       for (let back = 30; back >= 1; back--) {
         const date = addDays(today, -back);
-        const sales = await prisma.dailySales.findFirst({ where: { location_id: b.id, business_date: date } });
+        const day = sales.find((s) => s.business_date.getTime() === date.getTime());
         const closing = await prisma.dailyClosing.findFirst({ where: { location_id: b.id, business_date: date } });
-        if (!sales || !closing) continue;
-
-        const cups = sales.total_sales.div(15);
+        if (!day || !closing) continue;
+        const cups = day.total_sales.div(15);
         for (const [code, per] of perCup) {
-          const it = item(code);
-          const qty = cups.mul(per).mul(0.9 + rand() * 0.2).toDecimalPlaces(3);
-          await prisma.inventoryTransaction.create({
-            data: {
-              location_id: b.id, item_id: it.id, business_date: date, txn_type: 'CONSUMPTION', quantity: qty.neg(),
-              unit_cost: it.avg_cost, value: qty.mul(it.avg_cost).neg().toDecimalPlaces(2), balance_after: D(0),
-              source_type: 'CLOSING', source_id: closing.id, created_by: manager.id,
-            },
-          });
+          await post(code, date, 'CONSUMPTION', cups.mul(per).mul(0.9 + rand() * 0.2).toDecimalPlaces(3).neg(), 'CLOSING', closing.id, manager.id);
           c++;
         }
-
         if (rand() < 0.45) {
-          const it = item(['ITM001', 'ITM002', 'ITM004'][Math.floor(rand() * 3)]);
+          const it = item(wasteItems[Math.floor(rand() * wasteItems.length)]);
           const qty = D(Math.round(300 + rand() * 1700)).div(it.code === 'ITM001' ? 1 : 10);
-          await prisma.wastage.create({
+          const row = await prisma.wastage.create({
             data: {
               code: await nextCode('WST', 'seq_code_wastage', b.code), location_id: b.id, business_date: date, item_id: it.id,
               quantity: qty, unit_id: it.base_unit_id, base_quantity: qty, estimated_value: qty.mul(it.avg_cost).toDecimalPlaces(2),
@@ -484,14 +496,62 @@ async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>
               approved_by: owner.id, approved_at: date, source: 'SYSTEM',
             },
           });
+          await post(it.code, date, 'WASTAGE', qty.neg(), 'WASTAGE', row.id, manager.id);
           w++;
         }
+
+        // an approved physical count at the end of each of the last 12 days
+        if (back <= 12) {
+          const count = await prisma.stockCount.create({
+            data: { location_id: b.id, business_date: date, count_type: 'CLOSING', status: 'APPROVED', counted_by: manager.id, approved_by: owner.id, approved_at: date, created_by: manager.id },
+          });
+          for (const [code] of perCup) {
+            const it = item(code);
+            const expected = bal.get(code)!;
+            const physical = expected.mul(1 + (rand() * 0.08 - 0.055)).toDecimalPlaces(3); // between -5.5% and +2.5%
+            const variance = physical.minus(expected);
+            const significant = expected.greaterThan(0) && variance.abs().div(expected).mul(100).greaterThan(5);
+            await prisma.stockCountItem.create({
+              data: {
+                stock_count_id: count.id, item_id: it.id, expected_qty: expected, physical_qty: physical, variance_qty: variance, variance_value: variance.mul(it.avg_cost).toDecimalPlaces(2),
+                is_significant: significant, reason: variance.isZero() ? null : countReasons[Math.floor(rand() * countReasons.length)],
+                explanation: significant ? 'Counted twice at closing; difference confirmed by the manager.' : null,
+              },
+            });
+            if (!variance.isZero()) await post(code, date, 'COUNT_ADJUSTMENT', variance, 'STOCK_COUNT', count.id, owner.id);
+            k++;
+          }
+        }
+      }
+      for (const [code, qty] of bal) {
+        const it = item(code);
+        await prisma.stockBalance.upsert({
+          where: { location_id_item_id: { location_id: b.id, item_id: it.id } },
+          update: { quantity: qty, avg_cost: it.avg_cost, value: qty.mul(it.avg_cost).toDecimalPlaces(2), last_counted_on: addDays(today, -1) },
+          create: { location_id: b.id, item_id: it.id, quantity: qty, avg_cost: it.avg_cost, value: qty.mul(it.avg_cost).toDecimalPlaces(2), last_counted_on: addDays(today, -1) },
+        });
+      }
+    }
+
+    // the central warehouse holds a stock too, so transfers to branches can be tried straight away
+    const godown = await prisma.location.findFirst({ where: { code: 'GDN01' } });
+    if (godown) {
+      for (const it of items) {
+        const qty = D(it.code === 'ITM001' ? 200000 : it.code === 'ITM002' || it.code === 'ITM004' ? 60000 : it.code === 'ITM013' ? 30000 : 3000);
+        await prisma.inventoryTransaction.create({
+          data: { location_id: godown.id, item_id: it.id, business_date: openingDay, txn_type: 'OPENING', quantity: qty, unit_cost: it.avg_cost, value: qty.mul(it.avg_cost).toDecimalPlaces(2), balance_after: qty, source_type: 'OPENING', source_id: godown.id, created_by: owner.id },
+        });
+        await prisma.stockBalance.upsert({
+          where: { location_id_item_id: { location_id: godown.id, item_id: it.id } },
+          update: { quantity: qty, avg_cost: it.avg_cost, value: qty.mul(it.avg_cost).toDecimalPlaces(2) },
+          create: { location_id: godown.id, item_id: it.id, quantity: qty, avg_cost: it.avg_cost, value: qty.mul(it.avg_cost).toDecimalPlaces(2) },
+        });
       }
     }
   } finally {
-    await prisma.$executeRawUnsafe('ALTER TABLE wastage ENABLE TRIGGER t_lock_wastage');
+    for (const t of ['wastage', 'stock_counts']) await prisma.$executeRawUnsafe(`ALTER TABLE ${t} ENABLE TRIGGER t_lock_${t}`);
   }
-  console.log(`Demo stock extras: ${w} wastage entries, ${c} consumption ledger rows.`);
+  console.log(`Demo stock: ${w} wastage entries, ${c} consumption rows, ${k} counted lines.`);
 }
 
 main()

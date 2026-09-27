@@ -49,3 +49,18 @@ export const EXCEPTION_KEY: Record<string, MessageKey> = {
   CASH_SURPLUS: 'exCashSurplus',
   APPROVAL_PENDING: 'exApprovalPending',
 };
+
+export const COUNT_REASON_KEY: Record<string, MessageKey> = {
+  MEASUREMENT: 'crMeasurement', SPILLAGE: 'crSpillage', UNRECORDED_USE: 'crUnrecordedUse', UNRECORDED_WASTAGE: 'crUnrecordedWastage',
+  SUPPLIER_SHORT: 'crSupplierShort', THEFT_SUSPECTED: 'crTheft', COUNTING_ERROR: 'crCountingError', OTHER: 'crOther',
+};
+
+export const WASTAGE_REASON_KEY: Record<string, MessageKey> = {
+  SPOILED: 'wrSpoiled', EXPIRED: 'wrExpired', BURNT: 'wrBurnt', DAMAGED: 'wrDamaged', EXCESS_PREPARATION: 'wrExcessPrep',
+  STAFF_CONSUMPTION: 'wrStaff', COMPLIMENTARY: 'wrComplimentary', OTHER: 'wrOther',
+};
+
+export const TRANSFER_STATUS_KEY: Record<string, MessageKey> = {
+  DRAFT: 'trPending', PENDING_APPROVAL: 'trPending', APPROVED: 'trApproved', DISPATCHED: 'trDispatched',
+  RECEIVED: 'trReceived', PARTIALLY_RECEIVED: 'trPartial', CANCELLED: 'trCancelled',
+};

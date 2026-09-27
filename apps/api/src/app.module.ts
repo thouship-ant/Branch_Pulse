@@ -12,6 +12,7 @@ import { DailyModule } from './daily/daily.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { HealthController } from './health.controller';
 import { InsightsModule } from './insights/insights.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SyncModule } from './sync/sync.module';
 
@@ -26,6 +27,7 @@ import { SyncModule } from './sync/sync.module';
     DailyModule,
     ExpensesModule,
     InsightsModule,
+    InventoryModule,
     PurchasesModule,
     SyncModule,
   ],

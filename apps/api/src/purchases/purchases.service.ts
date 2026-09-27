@@ -14,6 +14,7 @@ import { Envelope } from '../common/response';
 import { RulesService } from '../common/rules.service';
 import { SettingsService } from '../common/settings.service';
 import { bucketKeys, bucketStart } from '../expenses/expense-report.service';
+import { LedgerService } from '../inventory/ledger.service';
 
 export const PAYMENT_MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT'];
 const RATE_RE = /^\d{1,8}(\.\d{1,4})?$/;
@@ -95,6 +96,7 @@ export class PurchasesService {
     private readonly settings: SettingsService,
     private readonly codes: CodesService,
     private readonly attachments: AttachmentsService,
+    private readonly ledger: LedgerService,
   ) {}
 
   // ------------------------------------------------------------ create
@@ -265,19 +267,8 @@ export class PurchasesService {
   }
 
   /** Atomic stock movement with weighted-average cost. Returns the balance after. */
-  async moveStock(tx: Tx, locationId: string, itemId: string, qty: Dec, value: Dec, unitCost: Dec): Promise<Dec> {
-    const rows = await tx.$queryRaw<Array<{ quantity: Prisma.Decimal }>>`
-      INSERT INTO stock_balances (location_id, item_id, quantity, avg_cost, value, last_txn_at, version)
-      VALUES (${locationId}::uuid, ${itemId}::uuid, ${qty.toString()}::numeric, ${unitCost.toString()}::numeric, ${value.toString()}::numeric, now(), 1)
-      ON CONFLICT (location_id, item_id) DO UPDATE SET
-        quantity = stock_balances.quantity + EXCLUDED.quantity,
-        value = stock_balances.value + EXCLUDED.value,
-        avg_cost = CASE WHEN stock_balances.quantity + EXCLUDED.quantity > 0
-                        THEN round((stock_balances.value + EXCLUDED.value) / (stock_balances.quantity + EXCLUDED.quantity), 4)
-                        ELSE stock_balances.avg_cost END,
-        last_txn_at = now(), version = stock_balances.version + 1
-      RETURNING quantity`;
-    return D(rows[0].quantity);
+  moveStock(tx: Tx, locationId: string, itemId: string, qty: Dec, value: Dec, unitCost: Dec): Promise<Dec> {
+    return this.ledger.moveStock(tx, locationId, itemId, qty, value, unitCost);
   }
 
   // ------------------------------------------------------------ workflow

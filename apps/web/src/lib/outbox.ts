@@ -12,7 +12,7 @@ export type OpState = 'PENDING' | 'SENDING' | 'DONE' | 'CONFLICT' | 'REJECTED';
 
 export interface OutboxOp {
   clientUuid: string; // primary key
-  entityType: 'EXPENSE' | 'PURCHASE' | 'DAILY_SALES' | 'CASH_RECONCILIATION' | 'CASH_TRANSACTION';
+  entityType: 'EXPENSE' | 'PURCHASE' | 'WASTAGE' | 'DAILY_SALES' | 'CASH_RECONCILIATION' | 'CASH_TRANSACTION';
   op: 'CREATE' | 'UPDATE';
   payload: Record<string, any>;
   baseVersion?: number;

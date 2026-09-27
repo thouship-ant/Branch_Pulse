@@ -137,6 +137,7 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; perm?
   { href: '/cash', key: 'cash', icon: 'wallet', perm: 'cash:view' },
   { href: '/expenses', key: 'expenses', icon: 'card', perm: 'expense:view' },
   { href: '/purchases', key: 'purchases', icon: 'bag', perm: 'purchase:view' },
+  { href: '/inventory', key: 'invTitle', icon: 'box', perm: 'stock:view' },
   { href: '/approvals', key: 'approvals', icon: 'shield', perm: 'expense:approve' },
   { href: '/branches', key: 'branches', icon: 'store', perm: 'location:manage' },
 ];

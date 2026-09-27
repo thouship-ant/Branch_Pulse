@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { PurchaseForm, type LocationOption } from '@/components/purchases/PurchaseForm';
 import { PurchaseLedger } from '@/components/purchases/PurchaseLedger';
 import { PurchaseOverview } from '@/components/purchases/PurchaseOverview';
-import { StockLevels } from '@/components/purchases/StockLevels';
 import { SupplierManager } from '@/components/purchases/SupplierManager';
 import { SupplierReports } from '@/components/purchases/SupplierReports';
 import { Sheet, Warnings } from '@/components/ui';
@@ -12,7 +11,7 @@ import { api, type Warning } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
-type Tab = 'overview' | 'purchases' | 'suppliers' | 'reports' | 'stock';
+type Tab = 'overview' | 'purchases' | 'suppliers' | 'reports';
 
 /** Owner / accountant / stock manager: purchases, suppliers and what is owed to them, and the stock the purchases feed. */
 export default function PurchasesPage() {
@@ -33,7 +32,6 @@ export default function PurchasesPage() {
   const tabs: Array<[Tab, string]> = [['overview', t('tabOverview')], ['purchases', t('tabPurchases')]];
   if (can('supplier:view')) tabs.push(['suppliers', t('tabSuppliers')]);
   if (can('supplier:pay')) tabs.push(['reports', t('supplierReports')]);
-  if (can('stock:view')) tabs.push(['stock', t('tabStock')]);
 
   return (
     <div className="space-y-4">
@@ -58,7 +56,6 @@ export default function PurchasesPage() {
       {tab === 'purchases' && <PurchaseLedger key={pendingOnly ? 'pending' : 'all'} locations={receiving} initialStatus={pendingOnly ? 'SUBMITTED' : ''} refreshKey={refresh} onChanged={bump} />}
       {tab === 'suppliers' && <SupplierManager payLocations={locations} onChanged={bump} />}
       {tab === 'reports' && <SupplierReports locations={receiving} />}
-      {tab === 'stock' && <StockLevels locations={receiving} refreshKey={refresh} />}
 
       <Sheet open={adding} onClose={() => setAdding(false)} title={t('newPurchase')}>
         <PurchaseForm locations={receiving} onSaved={(r) => { setAdding(false); setNotice(r); bump(); setTab('purchases'); setPendingOnly(false); }} />
