@@ -112,7 +112,8 @@ export function Chips<T extends string>({
           <button
             key={o.value} type="button" role="radio" aria-checked={value === o.value}
             onClick={() => onChange(o.value)}
-            className={`min-h-touch rounded-card border px-4 text-base font-medium ${value === o.value ? 'border-brand bg-brand text-white' : 'border-slate-300 bg-surface'}`}
+            className={`min-h-[44px] rounded-full border px-4 text-[15px] font-semibold transition duration-150 active:scale-[0.97] ${value === o.value ? 'border-transparent text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)]' : 'border-slate-300 bg-surface text-ink shadow-sm hover:border-slate-400 hover:bg-slate-50'}`}
+            style={value === o.value ? { backgroundImage: 'linear-gradient(180deg,#3574ee,#1f55d8)' } : undefined}
           >
             {value === o.value && <span aria-hidden>✓ </span>}{o.label}
           </button>
@@ -165,13 +166,15 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   }, [open]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div className="anim-fade fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={onClose}>
       <div
         ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-xl outline-none sm:rounded-2xl"
+        className="anim-sheet max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] border border-slate-200/70 bg-surface p-5 pt-3 outline-none sm:rounded-2xl sm:pt-5"
+        style={{ boxShadow: 'var(--shadow-pop)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden />
+        <h2 className="mb-4 text-lg font-bold tracking-tight">{title}</h2>
         {children}
       </div>
     </div>

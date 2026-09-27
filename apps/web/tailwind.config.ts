@@ -9,7 +9,7 @@ export default {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
+      fontFamily: { sans: ['var(--font-inter)', 'var(--font-tamil)', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
       colors: {
         brand: { DEFAULT: '#2563eb', dark: '#1d4ed8', light: '#dbeafe' }, // blue primary, AA contrast with white text
         surface: 'rgb(var(--surface) / <alpha-value>)', // cards, sidebar, inputs
@@ -21,7 +21,7 @@ export default {
         violet: v('violet', [50, 300, 800, 900]),
         sky: v('sky', [50, 300, 900]),
       },
-      borderRadius: { card: '8px' },
+      borderRadius: { card: '12px' },
       minHeight: { touch: '48px' }, // >= 48 px touch targets
       minWidth: { touch: '48px' },
     },

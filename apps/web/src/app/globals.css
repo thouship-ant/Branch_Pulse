@@ -6,11 +6,11 @@
 :root {
   color-scheme: light;
   --surface: 255 255 255;
-  --ink: 30 41 59;
+  --ink: 24 34 54;
 
-  --slate-50: 245 247 251;  /* page background */
-  --slate-100: 238 241 246;
-  --slate-200: 227 232 239;
+  --slate-50: 244 246 251;  /* page background */
+  --slate-100: 237 240 246;
+  --slate-200: 226 231 240;
   --slate-300: 203 213 225;
   --slate-400: 148 163 184;
   --slate-500: 100 116 139;
@@ -29,6 +29,14 @@
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
   --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
   --diverge-neg: #e34948; /* diverging pair: series-1 blue above zero, red below */
+
+  /* surfaces */
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 16px 32px -14px rgb(37 99 235 / 0.28);
+  --shadow-pop: 0 24px 60px -20px rgb(15 23 42 / 0.45);
+  --backdrop-a: rgb(37 99 235 / 0.075);
+  --backdrop-b: rgb(99 102 241 / 0.055);
+  --glass: rgb(255 255 255 / 0.78);
 }
 
 .dark {
@@ -58,13 +66,34 @@
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
   --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
   --diverge-neg: #e66767;
+
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 10px 30px -16px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 18px 36px -16px rgb(59 130 246 / 0.35);
+  --shadow-pop: 0 30px 70px -20px rgb(0 0 0 / 0.75);
+  --backdrop-a: rgb(59 130 246 / 0.10);
+  --backdrop-b: rgb(129 140 248 / 0.07);
+  --glass: rgb(23 32 51 / 0.78);
 }
 
 /* default border colour follows the theme (Tailwind's preflight default is a fixed light grey) */
 @layer base { *, ::before, ::after { border-color: rgb(var(--slate-200)); } }
 
-html, body { background: rgb(var(--slate-50)); color: rgb(var(--ink)); font-family: theme('fontFamily.sans'); }
-body { -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom); }
+html { scroll-behavior: smooth; }
+html, body { color: rgb(var(--ink)); font-family: theme('fontFamily.sans'); font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
+body {
+  -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom);
+  background:
+    radial-gradient(900px 480px at 100% -120px, var(--backdrop-a), transparent 62%),
+    radial-gradient(700px 420px at -8% -60px, var(--backdrop-b), transparent 60%),
+    rgb(var(--slate-50));
+  background-attachment: fixed;
+}
+::selection { background: rgb(37 99 235 / 0.22); }
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--slate-300)) transparent; }
+::-webkit-scrollbar { height: 8px; width: 8px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); border-radius: 8px; }
+:focus-visible { outline: 2px solid rgb(59 130 246 / 0.7); outline-offset: 2px; border-radius: 8px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
 
 /* brand blue is too dark for text on dark surfaces; a few single-shade text colours need a lift too */
 .dark .text-brand { color: #60a5fa; }
@@ -75,15 +104,82 @@ body { -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-i
 .dark input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.8); }
 
 @layer components {
-  .card { @apply rounded-card border border-slate-200 bg-surface p-4 shadow-sm; }
-  .btn { @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-card px-5 text-base font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
-  .btn-secondary { @apply btn border border-slate-300 bg-surface text-ink hover:bg-slate-100; }
-  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
-  .field { @apply min-h-touch w-full rounded-card border border-slate-300 bg-surface px-3 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30; }
-  .label { @apply mb-1 block text-sm font-medium text-slate-600; }
+  /* surfaces */
+  .card { @apply rounded-card border border-slate-200/80 bg-surface p-4; box-shadow: var(--shadow-card); }
+  a.card, button.card { @apply transition duration-200 ease-out; }
+  a.card:hover, button.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); border-color: rgb(37 99 235 / 0.35); }
+  a.card:active, button.card:active { transform: translateY(0); }
+
+  /* buttons */
+  .btn { @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-[10px] px-5 text-base font-semibold transition duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary {
+    @apply btn text-white hover:brightness-110;
+    background-image: linear-gradient(180deg, #3574ee 0%, #1f55d8 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 8px 18px -8px rgb(37 99 235 / 0.7);
+  }
+  .btn-primary:disabled { box-shadow: none; filter: saturate(0.7); }
+  .btn-secondary { @apply btn border border-slate-300 bg-surface text-ink shadow-sm hover:border-slate-400 hover:bg-slate-50; }
+  .btn-danger {
+    @apply btn text-white hover:brightness-110;
+    background-image: linear-gradient(180deg, #e5484d 0%, #c62828 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 8px 18px -8px rgb(220 38 38 / 0.6);
+  }
+  .btn-danger:disabled { box-shadow: none; filter: saturate(0.7); }
+
+  /* form fields */
+  .field { @apply min-h-touch w-full rounded-[10px] border border-slate-300 bg-surface px-3 text-base text-ink outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-brand focus:ring-4 focus:ring-brand/15; box-shadow: inset 0 1px 1px rgb(15 23 42 / 0.03); }
+  .field:disabled { @apply bg-slate-100 text-slate-500; }
+  .label { @apply mb-1.5 block text-[13px] font-semibold text-slate-600; }
   .chip { @apply inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium; }
-  .skeleton { @apply animate-pulse rounded-card bg-slate-200; }
-  .nav-item { @apply flex min-h-touch items-center gap-3 rounded-card px-3 font-medium text-slate-600 transition hover:bg-slate-100; }
-  .nav-item-active { @apply bg-brand-light text-brand-dark hover:bg-brand-light; }
+  .skeleton { @apply rounded-card; background: linear-gradient(90deg, rgb(var(--slate-200)) 25%, rgb(var(--slate-100)) 50%, rgb(var(--slate-200)) 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+
+  /* navigation */
+  .nav-item { @apply relative flex min-h-[44px] items-center gap-3 rounded-[10px] px-3 text-[15px] font-medium text-slate-600 transition duration-150 hover:bg-slate-100 hover:text-ink; }
+  .nav-item svg { @apply shrink-0 opacity-75 transition; }
+  .nav-item:hover svg { @apply opacity-100; }
+  .nav-item-active { @apply bg-brand-light font-semibold text-brand-dark hover:bg-brand-light hover:text-brand-dark; }
+  .nav-item-active svg { @apply opacity-100; }
+  .nav-item-active::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: #2563eb; }
+  .dark .nav-item-active::before { background: #60a5fa; }
+  .dark .nav-item-active, .dark .nav-item-active:hover { background-color: rgb(59 130 246 / 0.16); color: #bfdbfe; }
+}
+
+/* ---- tables: quiet uppercase headers, gentle row hover ---- */
+table { border-collapse: separate; border-spacing: 0; }
+table thead th {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgb(var(--slate-500));
+  background: rgb(var(--slate-50)); border-bottom: 1px solid rgb(var(--slate-200)); white-space: normal;
+}
+table thead th:first-child { border-top-left-radius: 12px; }
+table thead th:last-child { border-top-right-radius: 12px; }
+table tbody tr { transition: background-color 0.12s ease; }
+table tbody tr:hover { background: rgb(var(--slate-50) / 0.85); }
+table tfoot td, table tfoot th { border-top: 1px solid rgb(var(--slate-200)); }
+.divide-y > :not([hidden]) ~ :not([hidden]) { border-color: rgb(var(--slate-200) / 0.75); }
+
+/* ---- tabs: a segmented control instead of underlines ---- */
+[role='tablist'] {
+  display: inline-flex; max-width: 100%; gap: 2px; padding: 4px; overflow-x: auto; border-bottom: 0; border-radius: 12px;
+  background: rgb(var(--slate-100)); box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.05); margin-left: 0; margin-right: 0;
+}
+[role='tablist'] > [role='tab'] {
+  min-height: 38px; padding: 0 14px; border: 0; border-bottom: 0; border-radius: 9px; white-space: nowrap; font-size: 0.875rem; font-weight: 600;
+  color: rgb(var(--slate-600)); transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+[role='tablist'] > [role='tab']:hover { color: rgb(var(--ink)); background: rgb(var(--surface) / 0.55); }
+[role='tablist'] > [role='tab'][aria-selected='true'] {
+  background: rgb(var(--surface)); color: #1d4ed8; box-shadow: 0 1px 2px rgb(15 23 42 / 0.10), 0 4px 10px -4px rgb(15 23 42 / 0.12);
+}
+.dark [role='tablist'] > [role='tab'][aria-selected='true'] { color: #93c5fd; background: rgb(var(--slate-200)); }
+
+/* ---- motion ---- */
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(18px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+main > * { animation: rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-fade { animation: fade 0.18s ease-out both; }
+.anim-sheet { animation: sheet-in 0.24s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

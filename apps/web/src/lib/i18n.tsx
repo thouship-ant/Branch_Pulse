@@ -139,6 +139,12 @@ const en = {
   itemsTitle: 'Items', editItem: 'Edit item', baseUnitLabel: 'Stock unit', purchaseUnitLabel: 'Purchase unit', perishable: 'Perishable', dailyCountLabel: 'Count every day',
   allowedPct: 'Allowed difference (%)', allowedQty: 'Allowed difference (quantity)', minStockLabel: 'Minimum stock', itemName: 'Item name', unitsHint: 'Quantities are kept in the stock unit.',
   itemSaved: 'Saved', displayIn: 'shown in', stockUnitHint: 'Enter in', reconHint: 'Opening + purchases + transfers in - transfers out - consumption - wastage = expected closing. Count what is on the shelf and the difference shows as shortage or excess.',
+  navOverview: 'Overview', navDaily: 'Daily', navMoney: 'Money', navStockGroup: 'Stock', navSetup: 'Setup', moreLabel: 'More',
+  loginTitle: 'Welcome back', loginSub: 'Sign in to keep every branch on pulse.', loginTagline: 'Every branch. One pulse.',
+  loginHero: 'Daily closing, cash, expenses, purchases and stock for all your shops, in one calm place.',
+  loginP1: 'Daily closing and cash, checked and approved', loginP2: 'Expenses, purchases and supplier dues under control',
+  loginP3: 'Stock reconciled every day, shortages caught early', showPassword: 'Show password', hidePassword: 'Hide password',
+  stepsDone: 'steps done today', allDoneToday: 'All done for today', keepGoing: 'Keep going',
 };
 
 const ta: typeof en = {
@@ -272,6 +278,12 @@ const ta: typeof en = {
   itemsTitle: 'பொருட்கள்', editItem: 'பொருளைத் திருத்து', baseUnitLabel: 'இருப்பு அலகு', purchaseUnitLabel: 'கொள்முதல் அலகு', perishable: 'எளிதில் கெடும்', dailyCountLabel: 'தினமும் எண்ணு',
   allowedPct: 'அனுமதிக்கப்பட்ட வித்தியாசம் (%)', allowedQty: 'அனுமதிக்கப்பட்ட வித்தியாசம் (அளவு)', minStockLabel: 'குறைந்தபட்ச இருப்பு', itemName: 'பொருளின் பெயர்', unitsHint: 'அளவுகள் இருப்பு அலகில் வைக்கப்படுகின்றன.',
   itemSaved: 'சேமிக்கப்பட்டது', displayIn: 'காட்டப்படுவது', stockUnitHint: 'உள்ளிடவும்', reconHint: 'தொடக்க இருப்பு + கொள்முதல் + வரவு மாற்றம் − அனுப்பிய மாற்றம் − பயன்பாடு − வீணாக்கம் = எதிர்பார்க்கும் இறுதி இருப்பு. அலமாரியில் உள்ளதை எண்ணினால் வித்தியாசம் பற்றாக்குறை அல்லது கூடுதலாகக் காட்டும்.',
+  navOverview: 'மேலோட்டம்', navDaily: 'தினசரி', navMoney: 'பணம்', navStockGroup: 'இருப்பு', navSetup: 'அமைப்பு', moreLabel: 'மேலும்',
+  loginTitle: 'மீண்டும் வரவேற்கிறோம்', loginSub: 'எல்லாக் கிளைகளையும் கண்காணிக்க உள்நுழையவும்.', loginTagline: 'ஒவ்வொரு கிளையும். ஒரே துடிப்பு.',
+  loginHero: 'உங்கள் எல்லாக் கடைகளுக்குமான தினசரி முடிவு, ரொக்கம், செலவுகள், கொள்முதல், இருப்பு ஆகியவை ஒரே இடத்தில்.',
+  loginP1: 'தினசரி முடிவும் ரொக்கமும் சரிபார்த்து அங்கீகரிக்கப்படும்', loginP2: 'செலவுகள், கொள்முதல், விநியோகஸ்தர் நிலுவை கட்டுப்பாட்டில்',
+  loginP3: 'தினமும் இருப்பு பொருத்தம், பற்றாக்குறை உடனே தெரியும்', showPassword: 'கடவுச்சொல்லைக் காட்டு', hidePassword: 'கடவுச்சொல்லை மறை',
+  stepsDone: 'படிகள் இன்று முடிந்தன', allDoneToday: 'இன்றைய பணிகள் முடிந்தன', keepGoing: 'தொடருங்கள்',
 };
 
 export type MessageKey = keyof typeof en;

@@ -191,12 +191,12 @@ function Tile({
   const cls = tone === 'bad' ? 'border-red-300' : tone === 'warn' ? 'border-amber-300' : '';
   return (
     <div className={`card flex items-center gap-3 ${cls}`}>
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${TINT[tone === 'bad' ? 'red' : tone === 'warn' ? 'amber' : tint]}`}>
+      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${TINT[tone === 'bad' ? 'red' : tone === 'warn' ? 'amber' : tint]}`}>
         <Icon name={icon} size={22} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-sm text-slate-600">{label}</p>
-        <p className="text-xl font-bold tabular-nums">{value}</p>
+        <p className="truncate text-sm font-medium text-slate-600">{label}</p>
+        <p className="text-[22px] font-extrabold leading-tight tracking-tight tabular-nums">{value}</p>
         {sub && <p className="text-xs text-slate-600">{sub}</p>}
       </div>
     </div>

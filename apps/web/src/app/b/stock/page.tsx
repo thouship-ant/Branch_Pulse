@@ -32,10 +32,10 @@ export default function StockPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">{t('stock')}</h2>
-      <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-slate-200 px-4" role="tablist">
+      <div className="flex w-full gap-1 overflow-x-auto" role="tablist">
         {tabs.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={`min-h-touch whitespace-nowrap border-b-2 px-3 text-sm font-semibold ${tab === k ? 'border-brand text-brand' : 'border-transparent text-slate-600'}`}>{label}</button>
+            className="shrink-0">{label}</button>
         ))}
       </div>
       {tab === 'count' && <Reconciliation locations={[]} fixedLocationId={locationId} />}

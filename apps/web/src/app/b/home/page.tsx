@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Icon, type IconName } from '@/components/Icon';
 import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime } from '@/lib/dates';
@@ -45,20 +46,31 @@ export default function BranchHome() {
   const queuedExpenses = ops.filter((o) => o.entityType === 'EXPENSE' && o.state !== 'DONE').length;
   const counted = cash?.actualClosing != null;
 
-  const cards: Array<{ href: string; title: string; detail: string; done: boolean }> = [
-    { href: '/b/sales', title: t('sales'), detail: sales ? formatINR(sales.totalSales) : '—', done: !!sales },
+  const cards: Array<{ href: string; title: string; detail: string; done: boolean; icon: IconName }> = [
+    { href: '/b/sales', title: t('sales'), detail: sales ? formatINR(sales.totalSales) : '—', done: !!sales, icon: 'trend' },
     {
-      href: '/b/expense', title: t('expenses'),
+      href: '/b/expense', icon: 'card', title: t('expenses'),
       detail: `${formatINR(String(total), { decimals: false })} (${live.length + queuedExpenses})`, done: live.length + queuedExpenses > 0,
     },
-    { href: '/b/cash', title: t('cashRecon'), detail: counted ? formatINR(cash.actualClosing) : '—', done: counted },
+    { href: '/b/cash', title: t('cashRecon'), detail: counted ? formatINR(cash.actualClosing) : '—', done: counted, icon: 'wallet' },
   ];
+  const submitted = ['SUBMITTED', 'APPROVED'].includes(closing?.status ?? 'PENDING');
+  const stepsDone = cards.filter((c) => c.done).length + (submitted ? 1 : 0);
+  const stepsTotal = cards.length + 1;
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-sm text-slate-500">{t('today')} · {prettyDate(date)}</p>
-        <h2 className="text-xl font-bold">{t('checklist')}</h2>
+      <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef4ff] to-[#f5f0ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
+        <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-brand/10 blur-2xl" aria-hidden />
+        <p className="text-sm font-medium text-slate-600">{t('today')} · {prettyDate(date)}</p>
+        <div className="mt-0.5 flex items-end justify-between gap-3">
+          <h2 className="text-xl font-extrabold tracking-tight">{t('checklist')}</h2>
+          <p className="text-sm font-semibold tabular-nums text-brand-dark">{stepsDone}/{stepsTotal} <span className="font-medium text-slate-600">{t('stepsDone')}</span></p>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70 dark:bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={stepsTotal} aria-valuenow={stepsDone}>
+          <div className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
+        </div>
+        <p className="mt-2 text-xs font-medium text-slate-600">{stepsDone === stepsTotal ? `✓ ${t('allDoneToday')}` : t('keepGoing')}</p>
       </div>
       <ErrorBox error={error} />
 
@@ -96,24 +108,28 @@ export default function BranchHome() {
       <ul className="space-y-3">
         {cards.map((c) => (
           <li key={c.href}>
-            <Link href={c.href} className="card flex min-h-[64px] items-center justify-between">
-              <div>
+            <Link href={c.href} className="card flex min-h-[72px] items-center gap-3">
+              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${c.done ? 'bg-emerald-50 text-emerald-800' : 'bg-brand-light text-brand-dark'}`}><Icon name={c.icon} size={22} /></span>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold">{c.title}</p>
-                <p className="text-lg tabular-nums">{c.detail}</p>
+                <p className="text-lg font-bold tabular-nums">{c.detail}</p>
               </div>
               <span className={`chip ${c.done ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-slate-100 text-slate-600'}`}>
                 <span aria-hidden>{c.done ? '✓' : '○'}</span>{c.done ? t('done') : t('notDone')}
               </span>
+              <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
             </Link>
           </li>
         ))}
         <li>
-          <Link href="/b/closing" className="card flex min-h-[64px] items-center justify-between">
-            <div>
+          <Link href="/b/closing" className="card flex min-h-[72px] items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-800"><Icon name="check" size={22} /></span>
+            <div className="min-w-0 flex-1">
               <p className="font-semibold">{t('closing')}</p>
               {closing?.submittedAt && <p className="text-sm text-slate-500">{prettyTime(closing.submittedAt)}</p>}
             </div>
             <StatusPill status={closing?.status ?? 'PENDING'} />
+            <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
           </Link>
         </li>
       </ul>
