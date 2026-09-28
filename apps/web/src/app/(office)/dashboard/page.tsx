@@ -134,6 +134,14 @@ export default function Dashboard() {
           tone={tl.hasCashShortage ? 'bad' : 'ok'}
         />
         <Tile icon="clock" tint="blue" label={`${t('pending')} ${t('closings')}`} value={`${tl.pendingClosings} / ${tl.branchCount}`} tone={tl.pendingClosings ? 'warn' : 'ok'} />
+        <Tile icon="box" tint="sky" label={t('stockValue')} value={formatINR(tl.totalStockValue, { decimals: false })} />
+        <Tile
+          icon="alert" tint="amber" label={t('stockVarianceLabel')} value={formatINR(tl.stockVariance, { decimals: false })}
+          sub={dec(tl.stockVariance).isNegative() ? `▼ ${t('shortage')}` : dec(tl.stockVariance).isZero() ? undefined : `▲ ${t('excess')}`}
+          tone={dec(tl.stockVariance).isNegative() ? 'bad' : undefined}
+        />
+        <Tile icon="user" tint="violet" label={t('salaryPayableLabel')} value={formatINR(tl.salaryPayable, { decimals: false })} />
+        <Tile icon="store" tint="amber" label={t('rOutstanding')} value={formatINR(tl.supplierOutstanding, { decimals: false })} />
       </section>
 
       {/* Band 3: branch table */}

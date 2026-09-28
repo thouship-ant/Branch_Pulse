@@ -4,6 +4,7 @@ import { can, Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
 import { BranchReportService } from './branch-report.service';
 import { AssignManagerDto, CreateLocationDto, LocationsService, UpdateLocationDto } from './locations.service';
 import { ApprovalLimitDto, CategoryDto, MasterService, SettingValueDto, UpdateCategoryDto } from './master.service';
+import { CreateRoleDto, RolePermissionsDto, RolesService, UpdateRoleDto } from './roles.service';
 import { CreateUserDto, UpdateUserDto, UsersService } from './users.service';
 
 @Controller('locations')
@@ -101,6 +102,36 @@ export class UsersController {
   @Post(':id/sessions/revoke') @HttpCode(200) @RequirePermissions('user:manage')
   revoke(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string) {
     return this.auth.revokeUserSessions(id, ctx);
+  }
+}
+
+@Controller()
+export class RolesController {
+  constructor(private readonly svc: RolesService) {}
+
+  @Get('roles') @RequirePermissions('role:manage')
+  list() {
+    return this.svc.listRoles();
+  }
+
+  @Get('permissions') @RequirePermissions('role:manage')
+  perms() {
+    return this.svc.listPermissions();
+  }
+
+  @Post('roles') @RequirePermissions('role:manage')
+  create(@Ctx() ctx: ReqCtx, @Body() dto: CreateRoleDto) {
+    return this.svc.createRole(ctx, dto);
+  }
+
+  @Patch('roles/:id') @RequirePermissions('role:manage')
+  update(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateRoleDto) {
+    return this.svc.updateRole(ctx, id, dto);
+  }
+
+  @Put('roles/:id/permissions') @RequirePermissions('role:manage')
+  putPerms(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: RolePermissionsDto) {
+    return this.svc.putRolePermissions(ctx, id, dto);
   }
 }
 

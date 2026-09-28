@@ -157,10 +157,13 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group
   { href: '/expenses', key: 'expenses', icon: 'card', group: 'money', perm: 'expense:view' },
   { href: '/purchases', key: 'purchases', icon: 'bag', group: 'money', perm: 'purchase:view' },
   { href: '/approvals', key: 'approvals', icon: 'shield', group: 'money', perm: 'expense:approve' },
+  { href: '/pl', key: 'plTitle', icon: 'trend', group: 'money', perm: 'pl:view' },
   { href: '/inventory', key: 'invTitle', icon: 'box', group: 'stock', perm: 'stock:view' },
   { href: '/recipes', key: 'recipesTitle', icon: 'sparkle', group: 'stock', perm: 'recipe:view' },
   { href: '/employees', key: 'employeesTitle', icon: 'user', group: 'people', perm: 'staff:view' },
   { href: '/branches', key: 'branches', icon: 'store', group: 'setup', perm: 'location:manage' },
+  { href: '/users', key: 'usersTitle', icon: 'users', group: 'setup', perm: 'user:manage' },
+  { href: '/settings', key: 'settingsTitle', icon: 'settings', group: 'setup', perm: 'settings:manage' },
 ];
 const PHONE_SLOTS = 4; // the rest live under "More"
 

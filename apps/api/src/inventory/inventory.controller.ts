@@ -5,6 +5,7 @@ import {
   ListCountsQuery, ReconciliationQuery, ReconciliationService, ReviewCountDto, SaveCountDto, SetConsumptionDto, VarianceReportQuery,
 } from './reconciliation.service';
 import { CreateTransferDto, ListTransfersQuery, ReceiveTransferDto, TransferActionDto, TransfersService } from './transfers.service';
+import { CreateUnitDto, UnitsService, UpdateUnitDto } from './units.service';
 import { CreateWastageDto, ListWastageQuery, WastageActionDto, WastageService, WastageSummaryQuery } from './wastage.service';
 
 @Controller('items')
@@ -29,6 +30,27 @@ export class ItemsController {
   @Put(':id/locations/:locationId') @RequirePermissions('item:manage')
   setLocation(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Param('locationId', ParseUUIDPipe) locationId: string, @Body() dto: LocationSettingDto) {
     return this.svc.setLocation(ctx, id, locationId, dto);
+  }
+}
+
+/** Units of measure (LLD s2 settings). */
+@Controller('units')
+export class UnitsController {
+  constructor(private readonly svc: UnitsService) {}
+
+  @Get() @RequirePermissions('item:manage')
+  list() {
+    return this.svc.list();
+  }
+
+  @Post() @RequirePermissions('item:manage')
+  create(@Ctx() ctx: ReqCtx, @Body() dto: CreateUnitDto) {
+    return this.svc.create(ctx, dto);
+  }
+
+  @Patch(':id') @RequirePermissions('item:manage')
+  update(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUnitDto) {
+    return this.svc.update(ctx, id, dto);
   }
 }
 

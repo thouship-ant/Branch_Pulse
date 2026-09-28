@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { addDays, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 
-export type Preset = '7' | '30' | '90' | 'month' | 'custom';
+export type Preset = 'today' | '7' | '30' | '90' | 'month' | 'year' | 'custom';
 
 /** Period state shared by every screen that scopes its content to a date range. */
 export function usePeriod(initial: Preset = '30') {
@@ -13,7 +13,9 @@ export function usePeriod(initial: Preset = '30') {
   const [custom, setCustom] = useState({ from: addDays(today, -29), to: today });
   const range = useMemo(() => {
     if (preset === 'custom') return custom;
+    if (preset === 'today') return { from: today, to: today };
     if (preset === 'month') return { from: `${today.slice(0, 7)}-01`, to: today };
+    if (preset === 'year') return { from: `${today.slice(0, 4)}-01-01`, to: today };
     return { from: addDays(today, -(Number(preset) - 1)), to: today };
   }, [preset, custom, today]);
   const days = (new Date(range.to).getTime() - new Date(range.from).getTime()) / 86_400_000;
@@ -24,10 +26,14 @@ export function usePeriod(initial: Preset = '30') {
 export type Period = ReturnType<typeof usePeriod>;
 
 /** Presets first (7 / 30 / 90 days, this month), then a custom range: one row above what it scopes. */
-export function PeriodPicker({ period, label }: { period: Period; label: string }) {
+export function PeriodPicker({ period, label, presets: presetsOverride }: { period: Period; label: string; presets?: Preset[] }) {
   const { t } = useT();
   const { preset, setPreset, custom, setCustom, today } = period;
-  const presets: Array<[Preset, string]> = [['7', t('last7')], ['30', t('last30')], ['90', t('last90')], ['month', t('relThisMonth')], ['custom', t('customRange')]];
+  const labels: Record<Preset, string> = {
+    today: t('today'), '7': t('last7'), '30': t('last30'), '90': t('last90'), month: t('relThisMonth'), year: t('relThisYear'), custom: t('customRange'),
+  };
+  const order = presetsOverride ?? (['7', '30', '90', 'month', 'custom'] as Preset[]);
+  const presets: Array<[Preset, string]> = order.map((id) => [id, labels[id]]);
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="flex flex-wrap overflow-hidden rounded-card border border-slate-300" role="radiogroup" aria-label={label}>

@@ -30,6 +30,11 @@ const PATHS: Record<string, string[]> = {
   sparkle: ['M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z'],
   close: ['M18 6L6 18', 'M6 6l12 12'],
   user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M8 7a4 4 0 1 1 8 0 4 4 0 0 1-8 0z'],
+  users: ['M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', 'M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', 'M23 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75'],
+  settings: [
+    'M4 21L4 14', 'M4 10L4 3', 'M12 21L12 12', 'M12 8L12 3', 'M20 21L20 16', 'M20 12L20 3',
+    'M1 14L7 14', 'M9 8L15 8', 'M17 16L23 16',
+  ],
 };
 
 export type IconName = keyof typeof PATHS;

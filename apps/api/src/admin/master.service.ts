@@ -138,8 +138,12 @@ export class MasterService {
   }
 
   // ---- approval limits (LLD s2, s12)
-  listLimits() {
-    return this.prisma.approvalLimit.findMany({ orderBy: [{ role_id: 'asc' }, { entity_type: 'asc' }] });
+  async listLimits() {
+    const [limits, roles] = await Promise.all([
+      this.prisma.approvalLimit.findMany({ orderBy: [{ role_id: 'asc' }, { entity_type: 'asc' }] }),
+      this.prisma.role.findMany({ select: { id: true, code: true, name: true } }),
+    ]);
+    return limits.map((l) => ({ ...l, role_code: roles.find((r) => r.id === l.role_id)?.code, role_name: roles.find((r) => r.id === l.role_id)?.name }));
   }
 
   putLimit(ctx: ReqCtx, dto: ApprovalLimitDto) {

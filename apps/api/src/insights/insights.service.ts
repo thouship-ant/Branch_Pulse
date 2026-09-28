@@ -7,6 +7,7 @@ import { addDays, fmtDate, timeIST, toDate, todayIST } from '../common/dates';
 import { D, ZERO, sum } from '../common/money';
 import { PrismaService } from '../common/prisma.service';
 import { SettingsService } from '../common/settings.service';
+import { supplierTotals } from '../purchases/supplier-reports.service';
 
 type Dec = Prisma.Decimal;
 
@@ -65,7 +66,7 @@ export class InsightsService {
       const ids = branches.map((b) => b.id);
       const live = { location_id: { in: ids }, business_date: date, status: 'ACTIVE' as const };
 
-      const [sales, prevSales, exp, pur, was, recons, closings] = await Promise.all([
+      const [sales, prevSales, exp, pur, was, recons, closings, stockVal, countVariances, unpaidSalary, suppliers] = await Promise.all([
         tx.dailySales.findMany({ where: live }),
         tx.dailySales.aggregate({
           where: { location_id: { in: ids }, business_date: prev, status: 'ACTIVE' },
@@ -76,7 +77,13 @@ export class InsightsService {
         tx.wastage.groupBy({ by: ['location_id'], where: { ...live, approval_status: IN_FLIGHT }, _sum: { estimated_value: true } }),
         tx.cashReconciliation.findMany({ where: { location_id: { in: ids }, business_date: date } }),
         tx.dailyClosing.findMany({ where: { location_id: { in: ids }, business_date: date } }),
+        // stock on hand right now, salary still owed, and supplier dues are point-in-time balances, not tied to this one date
+        tx.stockBalance.aggregate({ where: { location_id: { in: ids } }, _sum: { value: true } }),
+        tx.stockCountItem.findMany({ where: { count: { location_id: { in: ids }, business_date: date } }, select: { variance_value: true } }),
+        tx.salary.findMany({ where: { location_id: { in: ids }, payment_status: { in: ['UNPAID', 'PARTIAL'] } }, select: { payable: true, paid_amount: true } }),
+        tx.supplier.findMany({ where: { status: 'ACTIVE' }, select: { id: true, opening_balance: true } }),
       ]);
+      const supTotals = await supplierTotals(tx, suppliers);
 
       const rows = branches.map((b) => {
         const s = sales.find((x) => x.location_id === b.id);
@@ -125,6 +132,10 @@ export class InsightsService {
           hasCashShortage: variances.some((v) => v.isNegative()),
           pendingClosings: rows.filter((r) => OPEN.includes(r.closingStatus)).length,
           branchCount: rows.length,
+          totalStockValue: D(stockVal._sum.value ?? 0),
+          stockVariance: sum(countVariances.map((v) => v.variance_value ?? ZERO)),
+          salaryPayable: sum(unpaidSalary.map((s) => s.payable.minus(s.paid_amount))),
+          supplierOutstanding: sum([...supTotals.values()].map((t) => t.outstanding)),
         },
         vsLastWeek: { salesPrevious: previous, salesChangePct: change },
         branches: rows,

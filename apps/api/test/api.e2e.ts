@@ -591,6 +591,45 @@ describe('Branch Pulse API (e2e)', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.branches.map((b: { locationId: string }) => b.locationId)).toEqual([ownLoc]);
     });
+
+    it('stock value, stock variance, salary payable and supplier outstanding are real point-in-time balances, not tied to one day', async () => {
+      const dloc = (await http().post('/api/v1/locations').set(as(owner)).send({ code: `DB${rnd}`, name: `Dashboard Test ${rnd}`, type: 'BRANCH', defaultOpeningCash: '500.00' })).body.data.id;
+      const supplierId = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `Dashboard Supplier ${rnd}` })).body.data.id;
+      const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
+      const uKg = boot.units.find((u: any) => u.code === 'KG').id;
+      const uG = boot.units.find((u: any) => u.code === 'G').id;
+      const itemId = (await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Dashboard Item ${rnd}`, category: 'RAW_MATERIAL', baseUnitId: uG, purchaseUnitId: uKg })).body.data.id;
+
+      // 5 kg @ 40/kg = 200 stock value, all cash (no supplier outstanding from this one)
+      await http().post('/api/v1/purchases').set(as(owner)).send({
+        locationId: dloc, businessDate: today, paymentMode: 'CASH', supplierId, items: [{ itemId, unitId: uKg, quantity: '5', rate: '40' }],
+      }).expect(201);
+
+      const before = (await http().get(`/api/v1/dashboard/summary?date=${today}`).set(as(owner))).body.data.tiles;
+
+      // a credit purchase raises company-wide supplier outstanding by exactly its credit amount
+      await http().post('/api/v1/purchases').set(as(owner)).send({
+        locationId: dloc, businessDate: today, paymentMode: 'CREDIT', supplierId, dueDate: addDaysStr(today, 10), items: [{ itemId, unitId: uKg, quantity: '1', rate: '40' }],
+      }).expect(201);
+
+      // a physical count 500 g short of expected (2 kg @ 40/kg -> -20); the dashboard tile only needs it saved, not submitted
+      await http().put(`/api/v1/stock/counts/${dloc}/${today}`).set(as(owner)).send({ items: [{ itemId, physicalQty: '5500' }] }).expect(200);
+
+      // an unpaid, un-approved payroll run still counts as owed
+      const empId = (await http().post('/api/v1/employees').set(as(owner)).send({
+        fullName: `Dashboard Employee ${rnd}`, locationId: dloc, jobRole: 'Staff', joiningDate: addDaysStr(today, -10), salaryType: 'DAILY', baseSalary: '300',
+      })).body.data.id;
+      await http().put('/api/v1/attendance').set(as(owner)).send({ locationId: dloc, businessDate: today, items: [{ employeeId: empId, status: 'PRESENT' }] }).expect(200);
+      await http().post('/api/v1/salary/compute').set(as(owner)).send({ employeeId: empId, month: today.slice(0, 7) }).expect(201);
+
+      const after = (await http().get(`/api/v1/dashboard/summary?date=${today}&locationIds=${dloc}`).set(as(owner))).body.data.tiles;
+      expect(after.totalStockValue).toBe('240'); // 5kg + 1kg @ 40/kg, minus nothing sold or wasted; the unapproved count above hasn't touched the books yet
+      expect(after.stockVariance).toBe('-20'); // 500g short @ 40/kg
+      expect(after.salaryPayable).toBe('300'); // 1 present day, unpaid
+
+      const afterAll = (await http().get(`/api/v1/dashboard/summary?date=${today}`).set(as(owner))).body.data.tiles;
+      expect(Number(afterAll.supplierOutstanding) - Number(before.supplierOutstanding)).toBeCloseTo(40, 2);
+    });
   });
 
   // ------------------------------------------------------------------ dashboard charts (LLD s17 band 4)
@@ -2201,6 +2240,74 @@ describe('Branch Pulse API (e2e)', () => {
       expect(Number(res.body.data.totalSales)).toBeGreaterThanOrEqual(5000);
       expect(Number(res.body.data.rawMaterial)).toBeGreaterThanOrEqual(20);
       expect((await http().get(`/api/v1/pl/consolidated?from=${today}&to=${today}`).set(as(manager))).status).toBe(403);
+    });
+  });
+
+  describe('settings admin: units, roles & permissions, approval limits', () => {
+    it('units: create a base unit and a derived unit, then edit the derived unit\'s name and factor without touching history', async () => {
+      const baseCode = `BU${rnd}`;
+      const base = await http().post('/api/v1/units').set(as(owner)).send({ code: baseCode, name: 'Test base unit' });
+      expect(base.status).toBe(201);
+      expect(base.body.data.factorToBase).toBe('1');
+
+      const derivedCode = `DU${rnd}`;
+      const derived = await http().post('/api/v1/units').set(as(owner)).send({ code: derivedCode, name: 'Test derived unit', baseUnitId: base.body.data.id, factorToBase: '12' });
+      expect(derived.status).toBe(201);
+      expect(derived.body.data.factorToBase).toBe('12');
+
+      // duplicate code is rejected
+      expect((await http().post('/api/v1/units').set(as(owner)).send({ code: baseCode, name: 'dup' })).status).toBe(409);
+      // a base unit can never carry a conversion factor
+      expect((await http().patch(`/api/v1/units/${base.body.data.id}`).set(as(owner)).send({ factorToBase: '5' })).status).toBe(422);
+      // branch managers cannot manage units
+      expect((await http().post('/api/v1/units').set(as(manager)).send({ code: `X${rnd}`, name: 'nope' })).status).toBe(403);
+
+      const updated = await http().patch(`/api/v1/units/${derived.body.data.id}`).set(as(owner)).send({ name: 'Renamed unit', factorToBase: '24' });
+      expect(updated.status).toBe(200);
+      expect(updated.body.data).toMatchObject({ name: 'Renamed unit', factorToBase: '24' });
+    });
+
+    it('roles: create a custom role, assign permissions, and refuse to leave zero active roles holding role:manage', async () => {
+      const list = await http().get('/api/v1/roles').set(as(owner));
+      expect(list.status).toBe(200);
+      const owner_role = list.body.data.find((r: any) => r.code === 'OWNER');
+      expect(owner_role.permissions).toContain('role:manage');
+      expect((await http().get('/api/v1/roles').set(as(manager))).status).toBe(403);
+
+      const perms = await http().get('/api/v1/permissions').set(as(owner));
+      expect(perms.status).toBe(200);
+      expect(perms.body.data.some((p: any) => p.code === 'expense:view')).toBe(true);
+
+      const code = `CUSTOM${rnd}`;
+      const created = await http().post('/api/v1/roles').set(as(owner)).send({ code, name: 'Custom Role', scopeMode: 'ASSIGNED', permissionCodes: ['stock:view'] });
+      expect(created.status).toBe(201);
+      expect(created.body.data.permissions).toEqual(['stock:view']);
+
+      const putPerms = await http().put(`/api/v1/roles/${created.body.data.id}/permissions`).set(as(owner)).send({ permissionCodes: ['stock:view', 'wastage:create'] });
+      expect(putPerms.status).toBe(200);
+      expect(putPerms.body.data.permissions.sort()).toEqual(['stock:view', 'wastage:create']);
+
+      // only OWNER holds role:manage in this deployment; stripping it would lock everyone out of this screen
+      const strip = await http().put(`/api/v1/roles/${owner_role.id}/permissions`).set(as(owner)).send({ permissionCodes: owner_role.permissions.filter((p: string) => p !== 'role:manage') });
+      expect(strip.status).toBe(422);
+
+      // a role with active users cannot be deactivated
+      expect((await http().patch(`/api/v1/roles/${created.body.data.id}`).set(as(owner)).send({ status: 'INACTIVE' })).status).toBe(200); // no users assigned yet: allowed
+    });
+
+    it('approval limits: list includes the role code/name, and an owner can raise a role\'s limit for an entity type', async () => {
+      const before = await http().get('/api/v1/approval-limits').set(as(owner));
+      expect(before.status).toBe(200);
+      const bm = before.body.data.find((l: any) => l.roleCode === 'BRANCH_MANAGER' && l.entityType === 'EXPENSE');
+      expect(bm).toBeDefined();
+      expect(bm.roleName).toBe('Branch Manager');
+
+      const put = await http().put('/api/v1/approval-limits').set(as(owner)).send({ roleCode: 'BRANCH_MANAGER', entityType: 'EXPENSE', maxAmount: '750.00' });
+      expect(put.status).toBe(200);
+      const after = await http().get('/api/v1/approval-limits').set(as(owner));
+      expect(after.body.data.find((l: any) => l.roleCode === 'BRANCH_MANAGER' && l.entityType === 'EXPENSE').maxAmount).toBe('750');
+
+      expect((await http().put('/api/v1/approval-limits').set(as(manager)).send({ roleCode: 'BRANCH_MANAGER', entityType: 'EXPENSE', maxAmount: '1' })).status).toBe(403);
     });
   });
 });
