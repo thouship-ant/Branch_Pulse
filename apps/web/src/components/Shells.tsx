@@ -145,9 +145,10 @@ export function BranchShell({ children }: { children: ReactNode }) {
 }
 
 // ------------------------------------------------------------------ owner / back office
-type Group = 'overview' | 'daily' | 'money' | 'stock' | 'setup';
+type Group = 'overview' | 'daily' | 'money' | 'stock' | 'people' | 'setup';
 const GROUPS: Array<{ id: Group; key: MessageKey }> = [
-  { id: 'overview', key: 'navOverview' }, { id: 'daily', key: 'navDaily' }, { id: 'money', key: 'navMoney' }, { id: 'stock', key: 'navStockGroup' }, { id: 'setup', key: 'navSetup' },
+  { id: 'overview', key: 'navOverview' }, { id: 'daily', key: 'navDaily' }, { id: 'money', key: 'navMoney' }, { id: 'stock', key: 'navStockGroup' },
+  { id: 'people', key: 'navPeople' }, { id: 'setup', key: 'navSetup' },
 ];
 const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group: Group; perm?: string }> = [
   { href: '/dashboard', key: 'dashboard', icon: 'grid', group: 'overview', perm: 'dashboard:view' },
@@ -158,6 +159,7 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group
   { href: '/approvals', key: 'approvals', icon: 'shield', group: 'money', perm: 'expense:approve' },
   { href: '/inventory', key: 'invTitle', icon: 'box', group: 'stock', perm: 'stock:view' },
   { href: '/recipes', key: 'recipesTitle', icon: 'sparkle', group: 'stock', perm: 'recipe:view' },
+  { href: '/employees', key: 'employeesTitle', icon: 'user', group: 'people', perm: 'staff:view' },
   { href: '/branches', key: 'branches', icon: 'store', group: 'setup', perm: 'location:manage' },
 ];
 const PHONE_SLOTS = 4; // the rest live under "More"

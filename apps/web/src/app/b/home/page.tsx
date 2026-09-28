@@ -9,10 +9,12 @@ import { prettyDate, prettyTime } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { formatINR } from '@/lib/money';
 import { discard, keepMine, useOutbox } from '@/lib/outbox';
+import { useSession } from '@/lib/session';
 import { useBranch } from '@/lib/useBranch';
 
 export default function BranchHome() {
   const { t } = useT();
+  const { can } = useSession();
   const { locationId, date } = useBranch();
   const [screen, setScreen] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -132,6 +134,15 @@ export default function BranchHome() {
             <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
           </Link>
         </li>
+        {can('staff:view') && (
+          <li>
+            <Link href="/b/staff" className="card flex min-h-[72px] items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><Icon name="user" size={22} /></span>
+              <div className="min-w-0 flex-1"><p className="font-semibold">{t('employeesTitle')}</p></div>
+              <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
+            </Link>
+          </li>
+        )}
       </ul>
     </div>
   );

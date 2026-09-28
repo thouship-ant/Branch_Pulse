@@ -64,3 +64,12 @@ export const TRANSFER_STATUS_KEY: Record<string, MessageKey> = {
   DRAFT: 'trPending', PENDING_APPROVAL: 'trPending', APPROVED: 'trApproved', DISPATCHED: 'trDispatched',
   RECEIVED: 'trReceived', PARTIALLY_RECEIVED: 'trPartial', CANCELLED: 'trCancelled',
 };
+
+export const ATTENDANCE_STATUS_KEY: Record<string, MessageKey> = {
+  PRESENT: 'stPresent', ABSENT: 'stAbsent', LEAVE: 'stLeave', HALF_DAY: 'stHalfDay', WEEK_OFF: 'stWeekOff', HOLIDAY: 'stHoliday',
+};
+
+export const ADVANCE_STATUS_KEY: Record<string, MessageKey> = {
+  REQUESTED: 'advRequested', MANAGER_APPROVED: 'advManagerApproved', APPROVED: 'advApproved', REJECTED: 'rejected',
+  PAID: 'advPaid', CLOSED: 'advClosed', CANCELLED: 'cancelled',
+};

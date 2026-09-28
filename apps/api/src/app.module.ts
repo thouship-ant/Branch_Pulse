@@ -14,6 +14,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { HealthController } from './health.controller';
 import { InsightsModule } from './insights/insights.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { PLModule } from './pl/pl.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { RecipesModule } from './recipes/recipes.module';
 import { SyncModule } from './sync/sync.module';
@@ -31,6 +32,7 @@ import { SyncModule } from './sync/sync.module';
     ExpensesModule,
     InsightsModule,
     InventoryModule,
+    PLModule,
     PurchasesModule,
     RecipesModule,
     SyncModule,

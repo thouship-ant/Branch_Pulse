@@ -25,10 +25,12 @@ export class CryptoService {
     return Buffer.concat([iv, cipher.getAuthTag(), ciphertext]);
   }
 
-  decrypt(blob: Buffer): string {
-    const iv = blob.subarray(0, IV_LEN);
-    const tag = blob.subarray(IV_LEN, IV_LEN + TAG_LEN);
-    const ciphertext = blob.subarray(IV_LEN + TAG_LEN);
+  /** Accepts a Buffer or any Uint8Array (e.g. what Prisma hands back for a Bytes column) - both are byte-identical at runtime. */
+  decrypt(blob: Uint8Array): string {
+    const buf = Buffer.from(blob.buffer, blob.byteOffset, blob.byteLength);
+    const iv = buf.subarray(0, IV_LEN);
+    const tag = buf.subarray(IV_LEN, IV_LEN + TAG_LEN);
+    const ciphertext = buf.subarray(IV_LEN + TAG_LEN);
     const decipher = createDecipheriv(ALGO, this.key, iv);
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');

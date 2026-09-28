@@ -127,7 +127,7 @@ describe('Branch Pulse API (e2e)', () => {
   describe('branch isolation', () => {
     beforeAll(async () => {
       // give the OTHER branch some data so a leak would be visible
-      const categoryId = (await http().get('/api/v1/expense-categories').set(as(owner))).body.data[0].id;
+      const categoryId = (await http().get('/api/v1/expense-categories').set(as(owner))).body.data.find((c: any) => !c.parentId).id;
       await http()
         .post('/api/v1/expenses')
         .set(as(owner))
@@ -199,7 +199,7 @@ describe('Branch Pulse API (e2e)', () => {
     let salesVersion: number;
 
     beforeAll(async () => {
-      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data[0].id;
+      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data.find((c: any) => !c.parentId).id;
     });
 
     it('saves the day\'s sales; a split that does not add up saves with a warning', async () => {
@@ -507,7 +507,7 @@ describe('Branch Pulse API (e2e)', () => {
     const opUuid = randomUUID();
 
     beforeAll(async () => {
-      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data[0].id;
+      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data.find((c: any) => !c.parentId).id;
     });
 
     const batch = (operations: object[]) =>
@@ -704,7 +704,7 @@ describe('Branch Pulse API (e2e)', () => {
 
     it('SRS example: opening 2,000 + cash sales 10,000 - cash expenses 1,500 = expected 10,500; counted 10,200 = shortage 300', async () => {
       await http().put(`/api/v1/daily-sales?locationId=${br}&date=${today}`).set(as(mgr)).send({ totalSales: '10000.00', cashSales: '10000.00' }).expect(200);
-      const cat = (await http().get('/api/v1/expense-categories').set(as(mgr))).body.data[0].id;
+      const cat = (await http().get('/api/v1/expense-categories').set(as(mgr))).body.data.find((c: any) => !c.parentId).id;
       const key = await photo(mgr, br);
       const exp = await http().post('/api/v1/expenses').set(as(mgr)).send({ locationId: br, businessDate: today, categoryId: cat, amount: '1500.00', paymentMode: 'CASH', attachmentKeys: [key] });
       expect(exp.status).toBe(201);
@@ -2012,6 +2012,195 @@ describe('Branch Pulse API (e2e)', () => {
       const trend = (await http().get(`/api/v1/recipes/raw-material-cost-trend?itemId=${itemMilk}&from=${today}&to=${today}`).set(as(owner))).body.data;
       expect(trend.points).toEqual([{ date: today, unitCost: '0.06' }]);
       expect((await http().get(`/api/v1/recipes/raw-material-cost-trend?itemId=${itemMilk}`).set(as(manager))).status).toBe(403);
+    });
+  });
+
+  // ------------------------------------------------------------------ employee management
+  describe('employee management', () => {
+    let eloc: string;
+    let mgrE: string;
+    let accountant: string;
+    let empId: string;
+    const month = today.slice(0, 7);
+
+    beforeAll(async () => {
+      eloc = (await http().post('/api/v1/locations').set(as(owner)).send({ code: `EL${rnd}`, name: `Emp Test ${rnd}`, type: 'BRANCH', defaultOpeningCash: '500.00' })).body.data.id;
+      await http().post('/api/v1/users').set(as(owner)).send({ username: `eme${rnd}`, password: 'Test@12345', fullName: 'Emp Mgr', roleCodes: ['BRANCH_MANAGER'], locationIds: [eloc] }).expect(201);
+      mgrE = (await login(`eme${rnd}`, 'Test@12345')).body.data.accessToken;
+      accountant = (await login('accountant')).body.data.accessToken;
+    });
+
+    it('is management data, not recruitment: only the owner creates employee records, with every requested field', async () => {
+      const body = {
+        fullName: `Test Waiter ${rnd}`, locationId: eloc, jobRole: 'Waiter', phone: '9876500000', joiningDate: addDaysStr(today, -60),
+        salaryType: 'DAILY', baseSalary: '500', overtimeRatePerHour: '50',
+      };
+      expect((await http().post('/api/v1/employees').set(as(mgrE)).send(body)).status).toBe(403);
+      const created = await http().post('/api/v1/employees').set(as(owner)).send(body);
+      expect(created.status).toBe(201);
+      expect(created.body.data.code).toMatch(/^EMP\d{6,}$/);
+      expect(created.body.data.hasBankDetails).toBe(false);
+      empId = created.body.data.id;
+
+      // BANK/UPI payment needs bank details; a manager can view the roster but not the record's money terms beyond that
+      const noBank = await http().post('/api/v1/employees').set(as(owner)).send({ ...body, fullName: `Test Bank ${rnd}`, paymentMethod: 'BANK' });
+      expect(noBank.body.error.code).toBe('BANK_DETAILS_REQUIRED');
+      const withBank = await http().post('/api/v1/employees').set(as(owner)).send({
+        ...body, fullName: `Test Bank2 ${rnd}`, paymentMethod: 'BANK', bankDetails: { accountHolder: 'Test Waiter', accountNumber: '1234567890', ifsc: 'HDFC0001234' },
+      });
+      expect(withBank.status).toBe(201);
+      expect(withBank.body.data.hasBankDetails).toBe(true);
+      expect(JSON.stringify(withBank.body.data)).not.toContain('1234567890'); // never in a normal response
+      const bankId = withBank.body.data.id;
+      expect((await http().get(`/api/v1/employees/${bankId}/bank-details`).set(as(accountant))).status).toBe(403); // staff:view only, not staff:manage
+      const decrypted = (await http().get(`/api/v1/employees/${bankId}/bank-details`).set(as(owner))).body.data;
+      expect(decrypted).toMatchObject({ accountNumber: '1234567890', ifsc: 'HDFC0001234' });
+    });
+
+    it('attendance: a roster the branch manager marks day by day, present/absent/leave/half-day/overtime, corrected in place', async () => {
+      const mark = (token: string, businessDate: string, items: any[]) => http().put('/api/v1/attendance').set(as(token)).send({ locationId: eloc, businessDate, items });
+      await mark(owner, today, [{ employeeId: empId, status: 'PRESENT', overtimeHours: '2' }]).then((r) => expect(r.status).toBe(200));
+      await mark(mgrE, addDaysStr(today, -1), [{ employeeId: empId, status: 'HALF_DAY' }]).then((r) => expect(r.status).toBe(200));
+      const roster = (await http().get(`/api/v1/attendance/roster?locationId=${eloc}&date=${today}`).set(as(mgrE))).body.data as any[];
+      expect(roster.find((r) => r.employeeId === empId)).toMatchObject({ status: 'PRESENT', overtimeHours: '2' });
+      // correcting the same day is an upsert, not a new row
+      await mark(owner, today, [{ employeeId: empId, status: 'ABSENT' }]).then((r) => expect(r.status).toBe(200));
+      const history = (await http().get(`/api/v1/attendance/history?employeeId=${empId}&from=${addDaysStr(today, -1)}&to=${today}`).set(as(owner))).body.data as any[];
+      expect(history).toHaveLength(2);
+      expect(history.find((h: any) => h.businessDate.slice(0, 10) === today)?.status).toBe('ABSENT');
+      // put it back to PRESENT + 2h overtime for the payroll math below
+      await mark(owner, today, [{ employeeId: empId, status: 'PRESENT', overtimeHours: '2' }]).then((r) => expect(r.status).toBe(200));
+    });
+
+    let advanceId: string;
+    it('advance workflow: employee request -> manager approval -> owner/accountant approval -> payment, cash leaves the till', async () => {
+      const reqBody = { employeeId: empId, amount: '1000', reason: 'Medical emergency', monthlyRecovery: '200' };
+      expect((await http().post('/api/v1/advances').set(as(accountant)).send(reqBody)).status).toBe(403); // accountant cannot request, only manager/staff
+      const req = await http().post('/api/v1/advances').set(as(mgrE)).send(reqBody);
+      expect(req.status).toBe(201);
+      expect(req.body.data.code).toMatch(/^ADV-/);
+      advanceId = req.body.data.id;
+
+      expect((await http().post(`/api/v1/advances/${advanceId}/approve`).set(as(accountant))).status).toBe(409); // not manager-approved yet
+      expect((await http().post(`/api/v1/advances/${advanceId}/manager-approve`).set(as(accountant))).status).toBe(403); // accountant lacks manager_approve
+      await http().post(`/api/v1/advances/${advanceId}/manager-approve`).set(as(mgrE)).expect(200);
+      expect((await http().post(`/api/v1/advances/${advanceId}/approve`).set(as(mgrE))).status).toBe(403); // manager cannot give the final approval
+      await http().post(`/api/v1/advances/${advanceId}/approve`).set(as(accountant)).expect(200);
+
+      const paid = await http().post(`/api/v1/advances/${advanceId}/pay`).set(as(accountant)).send({ paymentMode: 'CASH' });
+      expect(paid.status).toBe(200);
+      expect(paid.body.data).toMatchObject({ status: 'PAID', paidAmount: '1000', remainingAmount: '1000' });
+      const txns = (await http().get(`/api/v1/cash/transactions?locationId=${eloc}&date=${paid.body.data.paidOn.slice(0, 10)}`).set(as(owner))).body.data as any[];
+      expect(txns.find((t: any) => t.txnType === 'ADVANCE_PAYMENT')).toMatchObject({ amount: '1000', direction: -1 });
+    });
+
+    it('salary: basic (daily rate x present days) + overtime - advance recovery = payable, approved then paid', async () => {
+      expect((await http().post('/api/v1/salary/compute').set(as(mgrE)).send({ employeeId: empId, month })).status).toBe(403); // payroll is owner/accountant only
+      const computed = await http().post('/api/v1/salary/compute').set(as(accountant)).send({ employeeId: empId, month });
+      expect(computed.status).toBe(201);
+      // 1 present (500) + 1 half-day (250) = 750 basic; 2h overtime x 50 = 100; minus 200 advance recovery = 650
+      expect(computed.body.data).toMatchObject({ presentDays: '1.5', overtimeHours: '2', basicEarned: '750', overtimeAmount: '100', advanceRecovery: '200', payable: '650', approvalStatus: 'DRAFT' });
+      const salaryId = computed.body.data.id;
+
+      expect((await http().get('/api/v1/salary').set(as(mgrE))).status).toBe(403);
+      const listed = (await http().get(`/api/v1/salary?employeeId=${empId}&month=${month}`).set(as(accountant))).body.data as any[];
+      expect(listed[0]).toMatchObject({ id: salaryId, employeeCode: expect.any(String) });
+
+      await http().post(`/api/v1/salary/${salaryId}/pay`).set(as(accountant)).send({ amount: '650', paymentMode: 'BANK_TRANSFER' }).then((r) => expect(r.status).toBe(409)); // not approved yet
+      await http().post(`/api/v1/salary/${salaryId}/approve`).set(as(accountant)).expect(200);
+      const paid = await http().post(`/api/v1/salary/${salaryId}/pay`).set(as(accountant)).send({ amount: '650', paymentMode: 'BANK_TRANSFER' });
+      expect(paid.status).toBe(200);
+      expect(paid.body.data).toMatchObject({ paymentStatus: 'PAID', paidAmount: '650' });
+
+      // paying the salary in full actually recovers the advance: 1000 - 200 = 800 remaining
+      const advance = (await http().get(`/api/v1/advances/${advanceId}`).set(as(owner))).body.data;
+      expect(advance).toMatchObject({ status: 'PAID', recoveredAmount: '200', remainingAmount: '800' });
+      expect(advance.repayments).toHaveLength(1);
+      expect(advance.repayments[0]).toMatchObject({ amount: '200', mode: 'SALARY', salaryId });
+    });
+
+    it('a direct cash repayment (outside payroll) closes the advance once nothing remains', async () => {
+      const req = await http().post('/api/v1/advances').set(as(mgrE)).send({ employeeId: empId, amount: '300', reason: 'Second advance' });
+      await http().post(`/api/v1/advances/${req.body.data.id}/manager-approve`).set(as(mgrE)).expect(200);
+      await http().post(`/api/v1/advances/${req.body.data.id}/approve`).set(as(accountant)).expect(200);
+      await http().post(`/api/v1/advances/${req.body.data.id}/pay`).set(as(accountant)).send({ paymentMode: 'UPI' }).expect(200);
+      const repaid = await http().post(`/api/v1/advances/${req.body.data.id}/repay`).set(as(accountant)).send({ amount: '300' });
+      expect(repaid.status).toBe(200);
+      expect(repaid.body.data).toMatchObject({ status: 'CLOSED', remainingAmount: '0', recoveredAmount: '300' });
+    });
+
+    it('either approval stage can reject; the requester can cancel their own still-pending request', async () => {
+      const r1 = await http().post('/api/v1/advances').set(as(mgrE)).send({ employeeId: empId, amount: '150', reason: 'to be rejected' });
+      expect((await http().post(`/api/v1/advances/${r1.body.data.id}/reject`).set(as(mgrE)).send({})).body.error.code).toBe('REASON_REQUIRED');
+      await http().post(`/api/v1/advances/${r1.body.data.id}/reject`).set(as(mgrE)).send({ reason: 'Not eligible' }).expect(200);
+      expect((await http().get(`/api/v1/advances/${r1.body.data.id}`).set(as(owner))).body.data).toMatchObject({ status: 'REJECTED', rejectionReason: 'Not eligible' });
+
+      const r2 = await http().post('/api/v1/advances').set(as(mgrE)).send({ employeeId: empId, amount: '150', reason: 'to be cancelled' });
+      expect((await http().post(`/api/v1/advances/${r2.body.data.id}/cancel`).set(as(accountant)).send({})).status).toBe(403); // not who requested it
+      await http().post(`/api/v1/advances/${r2.body.data.id}/cancel`).set(as(mgrE)).send({}).expect(200);
+      expect((await http().get(`/api/v1/advances/${r2.body.data.id}`).set(as(owner))).body.data.status).toBe('CANCELLED');
+    });
+  });
+
+  // ------------------------------------------------------------------ management P&L
+  describe('management P&L', () => {
+    let ploc: string;
+    let rentCat: string;
+    let rawCat: string;
+    const month = today.slice(0, 7);
+
+    beforeAll(async () => {
+      ploc = (await http().post('/api/v1/locations').set(as(owner)).send({ code: `PL${rnd}`, name: `PL Test ${rnd}`, type: 'BRANCH', defaultOpeningCash: '500.00' })).body.data.id;
+      const cats = (await http().get('/api/v1/expense-categories').set(as(owner))).body.data as any[];
+      rentCat = cats.find((c) => c.plBucket === 'RENT' && !c.parentId).id;
+      rawCat = cats.find((c) => c.plBucket === 'RAW_MATERIAL' && !c.parentId).id;
+
+      await http().put(`/api/v1/daily-sales?locationId=${ploc}&date=${today}`).set(as(owner)).send({ totalSales: '5000.00', cashSales: '5000.00' }).expect(200);
+      await http().post('/api/v1/expenses').set(as(owner)).send({ locationId: ploc, businessDate: today, categoryId: rentCat, amount: '500.00', paymentMode: 'CASH' }).expect(201);
+      // a raw-material expense logged by hand (not through Purchases) must not be lost, but also must not double-count against the consumption-based raw material line
+      await http().post('/api/v1/expenses').set(as(owner)).send({ locationId: ploc, businessDate: today, categoryId: rawCat, amount: '50.00', paymentMode: 'CASH' }).expect(201);
+
+      const supplierId = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `PL Supplier ${rnd}` })).body.data.id;
+      const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
+      const uMl = boot.units.find((u: any) => u.code === 'ML').id;
+      const uL = boot.units.find((u: any) => u.code === 'L').id;
+      const itemId = (await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `PL Item ${rnd}`, category: 'RAW_MATERIAL', baseUnitId: uMl, purchaseUnitId: uL })).body.data.id;
+      await http().post('/api/v1/purchases').set(as(owner)).send({
+        locationId: ploc, businessDate: today, paymentMode: 'CASH', supplierId, items: [{ itemId, unitId: uL, quantity: '10', rate: '20' }],
+      }).expect(201); // 10 L @ 20/L = 10000 ml @ 0.02/ml
+      await http().put('/api/v1/stock/consumption').set(as(owner)).send({ locationId: ploc, businessDate: today, items: [{ itemId, quantity: '1000' }] }).expect(200); // 1000 ml used @ 0.02 = 20
+
+      await http().post('/api/v1/wastage').set(as(owner)).send({ locationId: ploc, businessDate: today, itemId, quantity: '50', unitId: uMl, reason: 'SPOILED' }).expect(201); // 50 ml @ 0.02 = 1
+
+      const empId = (await http().post('/api/v1/employees').set(as(owner)).send({
+        fullName: `PL Employee ${rnd}`, locationId: ploc, jobRole: 'Staff', joiningDate: addDaysStr(today, -30), salaryType: 'DAILY', baseSalary: '200',
+      })).body.data.id;
+      await http().put('/api/v1/attendance').set(as(owner)).send({ locationId: ploc, businessDate: today, items: [{ employeeId: empId, status: 'PRESENT' }] }).expect(200);
+      await http().post('/api/v1/salary/compute').set(as(owner)).send({ employeeId: empId, month }).expect(201); // payable 200 (1 present day x 200/day)
+    });
+
+    it('branch P&L: sales - raw material (actual consumption) - salary (payroll) - rent - other (folded manual entries) - wastage = operating profit', async () => {
+      expect((await http().get(`/api/v1/pl/branch?locationId=${ploc}&from=${today}&to=${today}`).set(as(manager))).status).toBe(403);
+      const res = await http().get(`/api/v1/pl/branch?locationId=${ploc}&from=${today}&to=${today}`).set(as(owner));
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({
+        label: 'MANAGEMENT P&L', totalSales: '5000', rawMaterial: '20', salary: '200', rent: '500', electricity: '0', transport: '0', maintenance: '0',
+        otherExpenses: '50', wastage: '1', salesDays: 1, avgDailySales: '5000',
+      });
+      // 5000 - 20 - 200 - 500 - 0 - 0 - 0 - 50 - 1 = 4229
+      expect(res.body.data.operatingProfit).toBe('4229');
+      expect(res.body.data.marginPct).toBe('84.6');
+    });
+
+    it('consolidated P&L: every branch rolled into one total, for an owner-chosen date range', async () => {
+      const res = await http().get(`/api/v1/pl/consolidated?from=${today}&to=${today}`).set(as(owner));
+      expect(res.status).toBe(200);
+      expect(res.body.data.label).toBe('CONSOLIDATED BUSINESS P&L');
+      expect(res.body.data.branchCount).toBeGreaterThan(0);
+      // this branch's own contributions must be included in the roll-up
+      expect(Number(res.body.data.totalSales)).toBeGreaterThanOrEqual(5000);
+      expect(Number(res.body.data.rawMaterial)).toBeGreaterThanOrEqual(20);
+      expect((await http().get(`/api/v1/pl/consolidated?from=${today}&to=${today}`).set(as(manager))).status).toBe(403);
     });
   });
 });
