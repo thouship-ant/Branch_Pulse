@@ -9,7 +9,9 @@ const KINDS = {
   wastage: { seq: 'seq_code_wastage', prefix: 'WST', perLocation: true },
   supplierPayment: { seq: 'seq_code_supplier_payment', prefix: 'SPY', perLocation: true },
   advance: { seq: 'seq_code_advance', prefix: 'ADV', perLocation: true },
-  employee: { seq: 'seq_code_employee', prefix: 'EMP', perLocation: false },
+  // employees use their own short EMP001-style code (employees.code is VARCHAR(10), too narrow for
+  // this service's dated PREFIX-YY-NNNNNN format) - see EmployeesService.nextCode, which still draws
+  // from seq_code_employee directly.
 } as const;
 
 export type CodeKind = keyof typeof KINDS;

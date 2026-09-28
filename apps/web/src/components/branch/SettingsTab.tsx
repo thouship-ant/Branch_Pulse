@@ -5,7 +5,7 @@ import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { ActiveChip, ErrorBox, Sheet } from '../ui';
 import { BranchForm } from './BranchForm';
-import { applyManager, emptyManager, ManagerChooser, managerProblem, type ManagerChoice } from './manager';
+import { applyManager, emptyManager, ManagerChooser, managerProblem, type ManagerChoice, type ManagerRole } from './manager';
 
 /** Edit details, opening cash and rent, assign the manager, and switch the branch on or off. */
 export function SettingsTab({ branch, onChanged }: { branch: any; onChanged: () => void }) {
@@ -14,7 +14,8 @@ export function SettingsTab({ branch, onChanged }: { branch: any; onChanged: () 
   const [choice, setChoice] = useState<ManagerChoice>(emptyManager('existing'));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isBranch = branch.type === 'BRANCH';
+  // branches are run by a Branch Manager, godowns by a Stock / Purchase Manager; the head office has no manager
+  const managerRole: ManagerRole | null = branch.type === 'BRANCH' ? 'BRANCH_MANAGER' : branch.type === 'GODOWN' ? 'STOCK_MANAGER' : null;
   const active = branch.status === 'ACTIVE';
 
   async function run(fn: () => Promise<unknown>) {
@@ -32,7 +33,7 @@ export function SettingsTab({ branch, onChanged }: { branch: any; onChanged: () 
       </section>
 
       <div className="space-y-4">
-        {isBranch && (
+        {managerRole && (
           <section className="card space-y-3" aria-label={t('manager')}>
             <h3 className="font-semibold">{t('manager')}</h3>
             {branch.manager ? (
@@ -59,7 +60,7 @@ export function SettingsTab({ branch, onChanged }: { branch: any; onChanged: () 
 
       <Sheet open={sheet === 'manager'} onClose={() => setSheet(null)} title={branch.manager ? t('changeManager') : t('assignManager')}>
         <div className="space-y-4">
-          <ManagerChooser value={choice} onChange={setChoice} allowNone={false} currentBranchId={branch.id} />
+          <ManagerChooser value={choice} onChange={setChoice} allowNone={false} currentBranchId={branch.id} roleCode={managerRole ?? undefined} />
           <ErrorBox error={error} />
           <div className="flex justify-end gap-2">
             <button className="btn-secondary" onClick={() => setSheet(null)}>{t('cancel')}</button>
@@ -68,7 +69,7 @@ export function SettingsTab({ branch, onChanged }: { branch: any; onChanged: () 
               onClick={() => {
                 const problem = managerProblem(choice, t);
                 if (problem) { setError(problem); return; }
-                void run(() => applyManager(branch.id, choice));
+                void run(() => applyManager(branch.id, choice, managerRole ?? undefined));
               }}
             >{t('confirm')}</button>
           </div>

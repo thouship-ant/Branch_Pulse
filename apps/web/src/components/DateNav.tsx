@@ -12,16 +12,16 @@ export function DateNav({ date, onChange, id }: { date: string; onChange: (d: st
   const today = todayIST();
   const rel = relativeLabel(date, today);
   const label = 'key' in rel ? t(rel.key) : String(rel.year);
-  const step = 'flex h-full w-10 shrink-0 items-center justify-center text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent';
+  const step = 'flex h-full w-8 shrink-0 items-center justify-center text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent';
 
   return (
     <div>
       <label htmlFor={id} className="label">{label}</label>
-      <div className="inline-flex h-12 items-stretch divide-x divide-slate-300 overflow-hidden rounded-card border border-slate-300 bg-surface focus-within:ring-2 focus-within:ring-brand">
+      <div className="inline-flex h-10 items-stretch divide-x divide-slate-300 overflow-hidden rounded-card border border-slate-300 bg-surface text-sm focus-within:ring-2 focus-within:ring-brand">
         <button type="button" className={step} aria-label="Previous day" onClick={() => onChange(addDays(date, -1))}>←</button>
         <input
           id={id} type="date" value={date} max={today} onChange={(e) => onChange(e.target.value || today)}
-          className="min-w-0 bg-transparent px-2 text-base text-ink outline-none"
+          className="min-w-0 bg-transparent px-2 text-sm text-ink outline-none"
         />
         <button type="button" className={step} aria-label="Next day" disabled={date >= today} onClick={() => onChange(addDays(date, 1))}>→</button>
       </div>

@@ -9,11 +9,13 @@ import { CommonModule } from './common/common.module';
 import { JwtAuthGuard, LocationScopeGuard, PermissionsGuard } from './common/guards';
 import { ResponseInterceptor } from './common/response';
 import { DailyModule } from './daily/daily.module';
+import { EmployeesModule } from './employees/employees.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { HealthController } from './health.controller';
 import { InsightsModule } from './insights/insights.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { PurchasesModule } from './purchases/purchases.module';
+import { RecipesModule } from './recipes/recipes.module';
 import { SyncModule } from './sync/sync.module';
 
 @Module({
@@ -25,10 +27,12 @@ import { SyncModule } from './sync/sync.module';
     AuthModule,
     AdminModule,
     DailyModule,
+    EmployeesModule,
     ExpensesModule,
     InsightsModule,
     InventoryModule,
     PurchasesModule,
+    RecipesModule,
     SyncModule,
   ],
   controllers: [HealthController],

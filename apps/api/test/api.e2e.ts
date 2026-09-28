@@ -6,6 +6,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { addDaysStr, todayIST } from '../src/common/dates';
 import { PrismaService } from '../src/common/prisma.service';
+import { RecipesService } from '../src/recipes/recipes.service';
 import { configureApp } from '../src/setup';
 
 const PASSWORD = 'ChangeMe@123'; // seed password
@@ -1926,6 +1927,91 @@ describe('Branch Pulse API (e2e)', () => {
       expect(first.body.data.results[0].result).toBe('APPLIED');
       const dup = await http().post('/api/v1/sync/batch').set(as(mgrA)).send({ deviceId: 'inv-device', operations: [op] });
       expect(dup.body.data.results[0].result).toBe('DUPLICATE');
+    });
+  });
+
+  // ------------------------------------------------------------------ recipe / cost management
+  describe('recipe / cost management', () => {
+    let loc: string;
+    let supplierId: string;
+    let itemMilk: string, itemSugar: string, itemCup: string;
+    let uL2: string, uMl2: string, uG2: string, uKg2: string, uPcs2: string;
+    let recipeId: string;
+
+    beforeAll(async () => {
+      loc = (await http().post('/api/v1/locations').set(as(owner)).send({ code: `RC${rnd}`, name: `Recipe Test ${rnd}`, type: 'BRANCH', defaultOpeningCash: '500.00' })).body.data.id;
+      supplierId = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `Recipe Supplier ${rnd}` })).body.data.id;
+      const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
+      uL2 = boot.units.find((u: any) => u.code === 'L').id; uMl2 = boot.units.find((u: any) => u.code === 'ML').id;
+      uG2 = boot.units.find((u: any) => u.code === 'G').id; uKg2 = boot.units.find((u: any) => u.code === 'KG').id;
+      uPcs2 = boot.units.find((u: any) => u.code === 'PCS').id;
+
+      itemMilk = (await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Recipe Milk ${rnd}`, category: 'DAIRY', baseUnitId: uMl2, purchaseUnitId: uL2 })).body.data.id;
+      itemSugar = (await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Recipe Sugar ${rnd}`, category: 'GRAIN', baseUnitId: uG2, purchaseUnitId: uKg2 })).body.data.id;
+      itemCup = (await http().post('/api/v1/items').set(as(owner)).send({ nameEn: `Recipe Cup ${rnd}`, category: 'PACKAGING', baseUnitId: uPcs2 })).body.data.id;
+
+      // one purchase each, at one location, so the company-wide average cost is exactly this purchase's rate
+      const buy = (itemId: string, unitId: string, quantity: string, rate: string) =>
+        http().post('/api/v1/purchases').set(as(owner)).send({ locationId: loc, businessDate: today, paymentMode: 'CASH', supplierId, items: [{ itemId, unitId, quantity, rate }] });
+      await buy(itemMilk, uL2, '10', '60').then((r) => expect(r.status).toBe(201)); // 60/L -> 0.06/ml
+      await buy(itemSugar, uKg2, '5', '40').then((r) => expect(r.status).toBe(201)); // 40/kg -> 0.04/g
+      await buy(itemCup, uPcs2, '100', '0.50').then((r) => expect(r.status).toBe(201)); // 0.50 each
+    });
+
+    it('is management accounting, not billing: a manager cannot define recipes; the owner can, priced from current purchase rates', async () => {
+      const body = {
+        nameEn: `Test Tea ${rnd}`, yieldQty: '1', sellingPrice: '15',
+        items: [{ itemId: itemMilk, quantity: '90', unitId: uMl2 }, { itemId: itemSugar, quantity: '8', unitId: uG2 }, { itemId: itemCup, quantity: '1', unitId: uPcs2 }],
+      };
+      expect((await http().post('/api/v1/recipes').set(as(manager)).send(body)).status).toBe(403);
+      const created = await http().post('/api/v1/recipes').set(as(owner)).send(body);
+      expect(created.status).toBe(201);
+      expect(created.body.data.code).toMatch(/^RCP\d{3,}$/);
+      recipeId = created.body.data.id;
+
+      // 90ml milk @0.06 = 5.40, 8g sugar @0.04 = 0.32, 1 cup @0.50 = 0.50 -> total 6.22
+      const detail = (await http().get(`/api/v1/recipes/${recipeId}`).set(as(owner))).body.data;
+      expect(detail.totalCost).toBe('6.22');
+      expect(detail.costPerUnit).toBe('6.22'); // yield is 1
+      expect(detail.marginPct).toBe('58.5'); // (15 - 6.22) / 15
+      expect(detail.breakdown).toHaveLength(3);
+      expect(detail.breakdown.find((b: any) => b.itemId === itemMilk)).toMatchObject({ lineCost: '5.4', unitCost: '0.06' });
+    });
+
+    it('recipes appear in the list with the same live cost; a branch manager can neither see nor change them', async () => {
+      expect((await http().get('/api/v1/recipes').set(as(manager))).status).toBe(403);
+      const list = (await http().get('/api/v1/recipes').set(as(owner))).body.data as any[];
+      expect(list.find((r) => r.id === recipeId)).toMatchObject({ totalCost: '6.22', ingredientCount: 3 });
+      expect((await http().patch(`/api/v1/recipes/${recipeId}`).set(as(manager)).send({ sellingPrice: '20' })).status).toBe(403);
+    });
+
+    it('changing a quantity changes the estimated cost; a duplicate name or ingredient is rejected', async () => {
+      const dupName = await http().post('/api/v1/recipes').set(as(owner)).send({ nameEn: `Test Tea ${rnd}`, yieldQty: '1', items: [{ itemId: itemMilk, quantity: '1', unitId: uMl2 }] });
+      expect(dupName.status).toBe(409);
+      const dupItem = await http().patch(`/api/v1/recipes/${recipeId}`).set(as(owner)).send({ items: [{ itemId: itemMilk, quantity: '90', unitId: uMl2 }, { itemId: itemMilk, quantity: '5', unitId: uG2 }] });
+      expect(dupItem.body.error.code).toBe('DUPLICATE_ITEM');
+      const updated = await http().patch(`/api/v1/recipes/${recipeId}`).set(as(owner)).send({
+        items: [{ itemId: itemMilk, quantity: '180', unitId: uMl2 }, { itemId: itemSugar, quantity: '8', unitId: uG2 }, { itemId: itemCup, quantity: '1', unitId: uPcs2 }],
+      });
+      expect(updated.status).toBe(200);
+      const detail = (await http().get(`/api/v1/recipes/${recipeId}`).set(as(owner))).body.data;
+      expect(detail.totalCost).toBe('11.62'); // milk doubled: 10.80 + 0.32 + 0.50
+    });
+
+    it('every change snapshots today\'s cost, so the cost-trend report has a point to show and a % change since the range started', async () => {
+      const svc = app.get(RecipesService);
+      await svc.snapshotAll(); // same as the nightly job; idempotent for a day already snapshotted by create/update
+      const trend = (await http().get(`/api/v1/recipes/${recipeId}/cost-trend?from=${today}&to=${today}`).set(as(owner))).body.data;
+      expect(trend.points).toHaveLength(1);
+      expect(trend.points[0].costPerUnit).toBe('11.62');
+      expect(trend.change).toBeTruthy();
+      expect(Number(trend.change.changePct)).toBe(0); // only one day of history so far: no change to report yet
+    });
+
+    it('a raw material\'s own purchase-price trend, independent of any recipe', async () => {
+      const trend = (await http().get(`/api/v1/recipes/raw-material-cost-trend?itemId=${itemMilk}&from=${today}&to=${today}`).set(as(owner))).body.data;
+      expect(trend.points).toEqual([{ date: today, unitCost: '0.06' }]);
+      expect((await http().get(`/api/v1/recipes/raw-material-cost-trend?itemId=${itemMilk}`).set(as(manager))).status).toBe(403);
     });
   });
 });

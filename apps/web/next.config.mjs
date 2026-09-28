@@ -14,6 +14,9 @@ const nextConfig = {
     : {}),
   reactStrictMode: true,
   poweredByHeader: false,
+  // The app has its own fixed header/bottom-nav in every corner of the screen; the dev route
+  // indicator badge would otherwise sit on top of them (e.g. the phone bottom nav's first tab).
+  devIndicators: false,
   // Same-origin API: the browser only ever talks to the web origin, so the SameSite=Strict
   // refresh cookie works and no CORS is needed.
   async rewrites() {

@@ -79,6 +79,8 @@
 @layer base { *, ::before, ::after { border-color: rgb(var(--slate-200)); } }
 
 html { scroll-behavior: smooth; }
+/* a horizontally-scrollable table (or any wide element) must never drag the whole page sideways with it */
+html, body { overflow-x: hidden; }
 html, body { color: rgb(var(--ink)); font-family: theme('fontFamily.sans'); font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
 body {
   -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom);

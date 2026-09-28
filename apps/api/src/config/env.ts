@@ -17,4 +17,6 @@ export const env = {
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT ?? 10), // per IP per minute (HLD s8)
   cookieSecure: (process.env.COOKIE_SECURE ?? String(isProd)) === 'true',
   uploadDir: process.env.UPLOAD_DIR ?? './uploads',
+  // AES-256-GCM key for encrypting employee bank details at rest: 64 hex characters (32 bytes).
+  bankDetailsKey: required('BANK_DETAILS_KEY', '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
 };

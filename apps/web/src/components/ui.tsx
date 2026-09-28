@@ -5,6 +5,7 @@ import { cleanAmount } from '@/lib/money';
 import { useT, type MessageKey } from '@/lib/i18n';
 import { useOutbox } from '@/lib/outbox';
 import type { Warning } from '@/lib/api';
+import { Icon } from './Icon';
 
 // ------------------------------------------------------------------ status: colour + icon + word, never colour alone
 const STATUS: Record<string, { icon: string; cls: string; key: MessageKey }> = {
@@ -152,6 +153,7 @@ export function ErrorBox({ error }: { error: string | null }) {
 
 /** Bottom sheet on phones, centred dialog on desktop. */
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  const { t } = useT();
   const ref = useRef<HTMLDivElement>(null);
   // parents pass a new onClose on every render: keep the latest in a ref so typing in a field never re-runs the effect
   // (which would move focus back to the dialog after every keystroke)
@@ -166,15 +168,23 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   }, [open]);
   if (!open) return null;
   return (
-    <div className="anim-fade fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={onClose}>
+    <div className="anim-fade fixed inset-0 z-50 flex h-[100dvh] items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={onClose}>
       <div
         ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
-        className="anim-sheet max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] border border-slate-200/70 bg-surface p-5 pt-3 outline-none sm:rounded-2xl sm:pt-5"
-        style={{ boxShadow: 'var(--shadow-pop)' }}
+        className="anim-sheet max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[24px] border border-slate-200/70 bg-surface p-5 pt-3 outline-none sm:rounded-2xl sm:pt-5"
+        style={{ boxShadow: 'var(--shadow-pop)', WebkitOverflowScrolling: 'touch' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden />
-        <h2 className="mb-4 text-lg font-bold tracking-tight">{title}</h2>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h2 className="text-lg font-bold tracking-tight">{title}</h2>
+          <button
+            type="button" onClick={onClose} aria-label={t('close')}
+            className="-mr-1.5 -mt-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-ink"
+          >
+            <Icon name="close" size={18} />
+          </button>
+        </div>
         {children}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { amt } from '@/lib/money';
 import { AutoTextarea, Chips, ErrorBox, MoneyInput, TextField } from '../ui';
-import { applyManager, emptyManager, ManagerChooser, managerProblem, type ManagerChoice } from './manager';
+import { applyManager, emptyManager, ManagerChooser, managerProblem, type ManagerChoice, type ManagerRole } from './manager';
 
 type LocType = 'BRANCH' | 'GODOWN' | 'CENTRAL_OFFICE';
 
@@ -65,6 +65,8 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
   }
 
   const codeOk = /^[A-Z][A-Z0-9]{1,9}$/.test(v.code);
+  // branches are run by a Branch Manager, godowns by a Stock / Purchase Manager; the head office has no manager
+  const managerRole: ManagerRole | null = v.type === 'BRANCH' ? 'BRANCH_MANAGER' : v.type === 'GODOWN' ? 'STOCK_MANAGER' : null;
 
   async function submit() {
     setBusy(true); setError(null); setSaved(false);
@@ -81,11 +83,11 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
         onDone(after);
         return;
       }
-      const problem = v.type === 'BRANCH' ? managerProblem(manager, t) : null;
+      const problem = managerRole ? managerProblem(manager, t) : null;
       if (problem) { setError(problem); return; }
       const loc = await api.post('/locations', { ...body, code: v.code, type: v.type });
-      if (v.type === 'BRANCH' && manager.mode !== 'none') {
-        try { await applyManager(loc.id, manager); }
+      if (managerRole && manager.mode !== 'none') {
+        try { await applyManager(loc.id, manager, managerRole); }
         catch (e) { setCreated(loc); setError(`${t('managerFailed')}: ${e instanceof ApiError ? e.message : ''}`); return; }
       }
       onDone(loc);
@@ -143,8 +145,8 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
       <AutoTextarea id="bnotes" label={t('notesLabel')} value={v.notes} onChange={(x) => set('notes', x)} />
 
 
-      {mode === 'add' && v.type === 'BRANCH' && !created && (
-        <div className="rounded-card border border-slate-200 p-3"><ManagerChooser value={manager} onChange={setManager} allowNone /></div>
+      {mode === 'add' && managerRole && !created && (
+        <div className="rounded-card border border-slate-200 p-3"><ManagerChooser value={manager} onChange={setManager} allowNone roleCode={managerRole} /></div>
       )}
 
       <ErrorBox error={error} />

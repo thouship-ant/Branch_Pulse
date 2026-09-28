@@ -32,7 +32,7 @@ const PERMISSIONS: Record<string, string[]> = {
   transfer: ['view', 'create', 'dispatch', 'approve', 'receive'],
   count: ['view', 'enter', 'submit', 'approve'], wastage: ['view', 'create', 'approve'],
   recipe: ['view', 'manage'], staff: ['view', 'manage'], attendance: ['view', 'mark'],
-  salary: ['manage', 'approve', 'pay'], advance: ['request', 'manager_approve', 'approve', 'pay'],
+  salary: ['manage', 'approve', 'pay'], advance: ['view', 'request', 'manager_approve', 'approve', 'pay'],
   dashboard: ['view'], alert: ['view', 'manage'], pl: ['view'], report: ['view', 'export'], audit: ['view'],
 };
 const ALL_PERMS = Object.entries(PERMISSIONS).flatMap(([m, acts]) => acts.map((a) => `${m}:${a}`));
@@ -46,7 +46,7 @@ const ROLES: Array<{ code: string; name: string; scope: 'ALL' | 'ASSIGNED'; perm
       'expense:view', 'expense:approve', 'expense:reverse', 'purchase:view', 'purchase:approve',
       'supplier:view', 'supplier:pay', 'stock:view', 'transfer:view', 'count:view', 'wastage:view',
       'recipe:view', 'staff:view', 'attendance:view', 'salary:manage', 'salary:approve', 'salary:pay',
-      'advance:approve', 'advance:pay', 'dashboard:view', 'alert:view', 'pl:view',
+      'advance:view', 'advance:approve', 'advance:pay', 'dashboard:view', 'alert:view', 'pl:view',
       'report:view', 'report:export', 'audit:view',
     ],
   },
@@ -67,13 +67,13 @@ const ROLES: Array<{ code: string; name: string; scope: 'ALL' | 'ASSIGNED'; perm
       'closing:view', 'closing:submit', 'expense:view', 'expense:create', 'expense:edit',
       'purchase:view', 'purchase:create', 'supplier:view', 'stock:view', 'transfer:view', 'transfer:receive',
       'count:view', 'count:enter', 'count:submit', 'wastage:view', 'wastage:create',
-      'staff:view', 'attendance:view', 'attendance:mark', 'advance:request', 'advance:manager_approve',
+      'staff:view', 'attendance:view', 'attendance:mark', 'advance:view', 'advance:request', 'advance:manager_approve',
       'alert:view', 'report:view', 'report:export',
     ],
   },
   {
     code: 'STAFF', name: 'Staff', scope: 'ASSIGNED',
-    perms: ['stock:view', 'count:enter', 'wastage:create', 'attendance:mark', 'advance:request'],
+    perms: ['stock:view', 'count:enter', 'wastage:create', 'attendance:mark', 'advance:view', 'advance:request'],
   },
 ];
 

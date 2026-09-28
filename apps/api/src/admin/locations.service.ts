@@ -88,22 +88,24 @@ export class LocationsService {
   }
 
   /**
-   * Make `userId` the manager of a branch (or clear it with null). A branch manager runs exactly one branch,
-   * so the user's other assignment is moved, and the previous manager of this branch loses access to it.
+   * Make `userId` the manager of a branch or godown (or clear it with null). A manager runs exactly one
+   * location, so the user's other assignment is moved, and the previous manager loses access to it.
+   * Branches are run by a Branch Manager; a godown by a Stock / Purchase Manager.
    */
   assignManager(ctx: ReqCtx, locationId: string, userId: string | null | undefined) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const loc = await tx.location.findUnique({ where: { id: locationId } });
       if (!loc) throw notFound('Location');
-      if (loc.type !== 'BRANCH') throw validation('INVALID_LOCATION', 'Only branches have a manager', 'locationId');
+      if (loc.type !== 'BRANCH' && loc.type !== 'GODOWN') throw validation('INVALID_LOCATION', 'Only branches and godowns have a manager', 'locationId');
+      const requiredRole = loc.type === 'BRANCH' ? 'BRANCH_MANAGER' : 'STOCK_MANAGER';
 
       if (userId) {
         const user = await tx.user.findUnique({ where: { id: userId }, include: { roles: { include: { role: true } } } });
         if (!user || user.status !== 'ACTIVE') throw notFound('User');
-        if (!user.roles.some((r) => r.role.code === 'BRANCH_MANAGER')) {
-          throw validation('INVALID_MANAGER', 'Choose a user with the Branch Manager role', 'userId');
+        if (!user.roles.some((r) => r.role.code === requiredRole)) {
+          throw validation('INVALID_MANAGER', `Choose a user with the ${requiredRole === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Stock / Purchase Manager'} role`, 'userId');
         }
-        // one branch per manager: clear any branch they managed before and replace their assignment
+        // one location per manager: clear any location they managed before and replace their assignment
         await tx.location.updateMany({ where: { manager_user_id: userId, id: { not: locationId } }, data: { manager_user_id: null } });
         await tx.userLocation.deleteMany({ where: { user_id: userId } });
         await tx.userLocation.create({ data: { user_id: userId, location_id: locationId } });

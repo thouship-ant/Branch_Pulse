@@ -16,10 +16,12 @@ export interface ManagerChoice {
 
 export const emptyManager = (mode: ManagerChoice['mode'] = 'none'): ManagerChoice => ({ mode, userId: '', fullName: '', username: '', password: '', mobile: '' });
 
+export type ManagerRole = 'BRANCH_MANAGER' | 'STOCK_MANAGER';
+
 export interface EligibleManager { id: string; fullName: string; username: string; branchId: string | null; branchName: string | null }
 
-/** Active users holding the Branch Manager role, with the branch each one currently runs. */
-export function useEligibleManagers(pick: (en?: string | null, ta?: string | null) => string): EligibleManager[] {
+/** Active users holding the given role, with the location each one currently runs. */
+export function useEligibleManagers(pick: (en?: string | null, ta?: string | null) => string, roleCode: ManagerRole = 'BRANCH_MANAGER'): EligibleManager[] {
   const [list, setList] = useState<EligibleManager[]>([]);
   useEffect(() => {
     let alive = true;
@@ -28,7 +30,7 @@ export function useEligibleManagers(pick: (en?: string | null, ta?: string | nul
         if (!alive) return;
         setList(
           (users as any[])
-            .filter((u) => u.status === 'ACTIVE' && u.roles.includes('BRANCH_MANAGER'))
+            .filter((u) => u.status === 'ACTIVE' && u.roles.includes(roleCode))
             .map((u) => {
               const loc = (locs as any[]).find((l) => u.locationIds.includes(l.id));
               return { id: u.id, fullName: u.fullName, username: u.username, branchId: loc?.id ?? null, branchName: loc ? pick(loc.name, loc.nameTa) : null };
@@ -37,7 +39,7 @@ export function useEligibleManagers(pick: (en?: string | null, ta?: string | nul
       })
       .catch(() => undefined);
     return () => { alive = false; };
-  }, [pick]);
+  }, [pick, roleCode]);
   return list;
 }
 
@@ -51,14 +53,14 @@ export function managerProblem(m: ManagerChoice, t: (k: any) => string): string 
   return null;
 }
 
-/** Creates the manager's login when needed, then assigns them to the branch. Throws ApiError on failure. */
-export async function applyManager(branchId: string, m: ManagerChoice) {
+/** Creates the manager's login when needed, then assigns them to the location. Throws ApiError on failure. */
+export async function applyManager(branchId: string, m: ManagerChoice, roleCode: ManagerRole = 'BRANCH_MANAGER') {
   if (m.mode === 'none') return;
   let userId = m.userId;
   if (m.mode === 'new') {
     const user = await api.post('/users', {
       username: m.username.trim(), password: m.password, fullName: m.fullName.trim(),
-      mobile: m.mobile.trim() || undefined, roleCodes: ['BRANCH_MANAGER'], locationIds: [branchId],
+      mobile: m.mobile.trim() || undefined, roleCodes: [roleCode], locationIds: [branchId],
     });
     userId = user.id;
   }
@@ -66,10 +68,10 @@ export async function applyManager(branchId: string, m: ManagerChoice) {
 }
 
 export function ManagerChooser({
-  value, onChange, allowNone, currentBranchId,
-}: { value: ManagerChoice; onChange: (v: ManagerChoice) => void; allowNone: boolean; currentBranchId?: string }) {
+  value, onChange, allowNone, currentBranchId, roleCode = 'BRANCH_MANAGER',
+}: { value: ManagerChoice; onChange: (v: ManagerChoice) => void; allowNone: boolean; currentBranchId?: string; roleCode?: ManagerRole }) {
   const { t, pick } = useT();
-  const eligible = useEligibleManagers(pick);
+  const eligible = useEligibleManagers(pick, roleCode);
   const set = (patch: Partial<ManagerChoice>) => onChange({ ...value, ...patch });
   const picked = eligible.find((e) => e.id === value.userId);
   const modes = [

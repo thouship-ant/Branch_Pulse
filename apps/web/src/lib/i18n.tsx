@@ -28,7 +28,7 @@ const en = {
   branch: 'Branch', net: 'Net', cashVariance: 'Cash variance', status: 'Status',
   vsLastWeek: 'vs same day last week', waiting: 'entries waiting to sync', synced: 'All saved',
   offline: 'Offline - entries will sync when you are back online',
-  comment: 'Comment', cancel: 'Cancel', confirm: 'Confirm', loading: 'Loading', retry: 'Try again',
+  comment: 'Comment', cancel: 'Cancel', confirm: 'Confirm', loading: 'Loading', retry: 'Try again', close: 'Close',
   language: 'தமிழ்', comingSoon: 'This part arrives in the next phase.',
   needReceipt: 'Receipt photo needed', mismatch: 'Split does not match the total',
   prechecks: 'Before you submit', keepMine: 'Keep mine', keepServer: 'Keep server copy',
@@ -145,6 +145,13 @@ const en = {
   loginP1: 'Daily closing and cash, checked and approved', loginP2: 'Expenses, purchases and supplier dues under control',
   loginP3: 'Stock reconciled every day, shortages caught early', showPassword: 'Show password', hidePassword: 'Hide password',
   stepsDone: 'steps done today', allDoneToday: 'All done for today', keepGoing: 'Keep going',
+  recipesTitle: 'Recipes', addRecipe: 'Add recipe', editRecipe: 'Edit recipe', recipeCode: 'Recipe code', yieldQtyLabel: 'Yield (servings)',
+  sellingPriceLabel: 'Selling price', ingredientsLabel: 'Ingredients', addIngredient: 'Add ingredient', removeIngredient: 'Remove ingredient',
+  estimatedCostLabel: 'Estimated cost', costPerServing: 'Cost per serving', grossMarginLabel: 'Gross margin', noRecipes: 'No recipes yet.',
+  recipeSaved: 'Recipe saved', costTrendTitle: 'Cost over time', rawMaterialTrendTitle: 'Raw material price trend', chooseRawMaterial: 'Choose an item',
+  costChangeLabel: 'Change over this period', notBillingHint: 'Management accounting only — this never generates a bill.', tabRawMaterial: 'Raw material trend',
+  ingredientLabel: 'Ingredient', lineCostLabel: 'Cost', unitCostLabel: 'Unit cost', noMargin: 'Set a selling price to see margin', tabRecipeList: 'Recipes',
+  recipeNameLabel: 'Recipe name',
 };
 
 const ta: typeof en = {
@@ -167,7 +174,7 @@ const ta: typeof en = {
   branch: 'கிளை', net: 'நிகரம்', cashVariance: 'ரொக்க வித்தியாசம்', status: 'நிலை',
   vsLastWeek: 'கடந்த வாரம் அதே நாளுடன்', waiting: 'பதிவுகள் ஒத்திசைவுக்காக காத்திருக்கின்றன', synced: 'அனைத்தும் சேமிக்கப்பட்டன',
   offline: 'இணையம் இல்லை - இணைந்ததும் பதிவுகள் ஒத்திசைக்கப்படும்',
-  comment: 'கருத்து', cancel: 'ரத்து', confirm: 'உறுதி', loading: 'ஏற்றுகிறது', retry: 'மீண்டும் முயற்சி',
+  comment: 'கருத்து', cancel: 'ரத்து', confirm: 'உறுதி', loading: 'ஏற்றுகிறது', retry: 'மீண்டும் முயற்சி', close: 'மூடு',
   language: 'English', comingSoon: 'இந்தப் பகுதி அடுத்த கட்டத்தில் வரும்.',
   needReceipt: 'ரசீது புகைப்படம் தேவை', mismatch: 'பிரிவுகள் மொத்தத்துடன் பொருந்தவில்லை',
   prechecks: 'சமர்ப்பிக்கும் முன்', keepMine: 'என்னுடையதை வை', keepServer: 'சர்வர் பதிவை வை',
@@ -284,6 +291,13 @@ const ta: typeof en = {
   loginP1: 'தினசரி முடிவும் ரொக்கமும் சரிபார்த்து அங்கீகரிக்கப்படும்', loginP2: 'செலவுகள், கொள்முதல், விநியோகஸ்தர் நிலுவை கட்டுப்பாட்டில்',
   loginP3: 'தினமும் இருப்பு பொருத்தம், பற்றாக்குறை உடனே தெரியும்', showPassword: 'கடவுச்சொல்லைக் காட்டு', hidePassword: 'கடவுச்சொல்லை மறை',
   stepsDone: 'படிகள் இன்று முடிந்தன', allDoneToday: 'இன்றைய பணிகள் முடிந்தன', keepGoing: 'தொடருங்கள்',
+  recipesTitle: 'செய்முறைகள்', addRecipe: 'செய்முறை சேர்', editRecipe: 'செய்முறையைத் திருத்து', recipeCode: 'செய்முறைக் குறியீடு', yieldQtyLabel: 'விளைச்சல் (பரிமாறல்கள்)',
+  sellingPriceLabel: 'விற்பனை விலை', ingredientsLabel: 'பொருட்கள்', addIngredient: 'பொருள் சேர்', removeIngredient: 'பொருளை நீக்கு',
+  estimatedCostLabel: 'மதிப்பிடப்பட்ட செலவு', costPerServing: 'ஒரு பரிமாறலுக்கான செலவு', grossMarginLabel: 'மொத்த லாப வீதம்', noRecipes: 'இன்னும் செய்முறைகள் இல்லை.',
+  recipeSaved: 'செய்முறை சேமிக்கப்பட்டது', costTrendTitle: 'காலப்போக்கில் செலவு', rawMaterialTrendTitle: 'மூலப்பொருள் விலைப் போக்கு', chooseRawMaterial: 'ஒரு பொருளைத் தேர்ந்தெடு',
+  costChangeLabel: 'இந்தக் காலத்தில் மாற்றம்', notBillingHint: 'நிர்வாகக் கணக்கியலுக்கு மட்டும் — இது பில் உருவாக்காது.', tabRawMaterial: 'மூலப்பொருள் போக்கு',
+  ingredientLabel: 'பொருள்', lineCostLabel: 'செலவு', unitCostLabel: 'அலகு விலை', noMargin: 'லாப வீதத்தைக் காண விற்பனை விலையை அமைக்கவும்', tabRecipeList: 'செய்முறைகள்',
+  recipeNameLabel: 'செய்முறையின் பெயர்',
 };
 
 export type MessageKey = keyof typeof en;

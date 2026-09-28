@@ -28,6 +28,7 @@ const PATHS: Record<string, string[]> = {
   more: ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'],
   chevron: ['M9 18l6-6-6-6'],
   sparkle: ['M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z'],
+  close: ['M18 6L6 18', 'M6 6l12 12'],
 };
 
 export type IconName = keyof typeof PATHS;
