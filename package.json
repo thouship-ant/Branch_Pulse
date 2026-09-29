@@ -17,6 +17,9 @@
     "dev:api": "npm -w apps/api run start:dev",
     "dev:web": "npm -w apps/web run dev",
     "build": "npm -w apps/api run build && npm -w apps/web run build",
-    "test": "npm -w apps/api test"
+    "test": "npm -w apps/api test",
+    "prod": "docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build",
+    "prod:api": "npm -w apps/api run start",
+    "prod:web": "npm -w apps/web run start"
   }
 }
