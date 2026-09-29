@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans_Tamil } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
+import { TopLoader } from '@/components/TopLoader';
 import { I18nProvider } from '@/lib/i18n';
 import { SessionProvider } from '@/lib/session';
 import { THEME_SCRIPT, ThemeProvider } from '@/lib/theme';
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <SessionProvider>{children}</SessionProvider>
           </I18nProvider>
         </ThemeProvider>
+        <TopLoader />
         <PwaRegister />
       </body>
     </html>

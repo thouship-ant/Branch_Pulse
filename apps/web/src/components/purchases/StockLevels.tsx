@@ -65,7 +65,7 @@ export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { lo
           <table className="w-full min-w-[520px] text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th scope="col" className="px-3 py-2 text-left">{t('itemLabel')}</th>
+                <th scope="col" className="sticky left-0 z-10 border-r border-slate-200 bg-slate-50 px-3 py-2 text-left">{t('itemLabel')}</th>
                 <th scope="col" className="px-3 py-2 text-right">{t('onHand')}</th>
                 <th scope="col" className="px-3 py-2 text-right">{t('avgCost')}</th>
                 <th scope="col" className="px-3 py-2 text-right">{t('stockValue')}</th>
@@ -74,8 +74,8 @@ export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { lo
             </thead>
             <tbody className="divide-y">
               {rows.map((r) => (
-                <tr key={`${r.locationId}-${r.itemId}`} className="cursor-pointer hover:bg-slate-50" onClick={() => showMoves(r)}>
-                  <th scope="row" className="px-3 py-2 text-left font-medium">
+                <tr key={`${r.locationId}-${r.itemId}`} className="group cursor-pointer hover:bg-slate-50" onClick={() => showMoves(r)}>
+                  <th scope="row" className="sticky left-0 z-10 border-r border-slate-200 bg-surface px-3 py-2 text-left font-medium group-hover:bg-slate-50">
                     {pick(r.itemName, r.itemNameTa)}
                     {r.low && <span className="ml-2 chip border-red-300 bg-red-50 text-red-800"><span aria-hidden>▼</span>{t('lowStock')}</span>}
                     <p className="font-mono text-xs font-normal text-slate-500">{r.itemCode}</p>

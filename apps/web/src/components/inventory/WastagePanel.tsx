@@ -234,7 +234,9 @@ export function WastagePanel({ locations, fixedLocationId, analytics = true }: {
       )}
 
       {!rows ? <Skeleton className="h-48" /> : rows.length === 0 ? <p className="card text-slate-600">{t('noWastage')}</p> : (
-        <section className="card overflow-x-auto p-0" aria-label={t('colWastage')}>
+        <>
+        {/* desktop: every column as a table */}
+        <section className="card hidden overflow-x-auto p-0 lg:block" aria-label={t('colWastage')}>
           <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
@@ -276,6 +278,41 @@ export function WastagePanel({ locations, fixedLocationId, analytics = true }: {
             </tbody>
           </table>
         </section>
+
+        {/* phone: one card per entry */}
+        <ul className="space-y-3 lg:hidden" aria-label={t('colWastage')}>
+          {rows.map((w) => {
+            const st = w.status !== 'ACTIVE' ? w.status : w.approvalStatus;
+            return (
+              <li key={w.id} className={`card space-y-2 text-sm ${w.status !== 'ACTIVE' ? 'opacity-70' : ''}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{pick(w.itemName, w.itemNameTa)}</p>
+                    <p className="text-xs text-slate-500">{prettyDate(day(w.businessDate))} · {w.code}</p>
+                  </div>
+                  <StatusPill status={st} />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex justify-between"><span className="text-slate-600">{t('atLocation')}</span><span>{pick(w.locationName, w.locationNameTa)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-600">{t('quantity')}</span><span className="tabular-nums">{dec(w.quantity).toString()} {w.unitCode}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-600">{t('wastageValue')}</span><span className="font-semibold tabular-nums">{formatINR(w.estimatedValue)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-600">{t('reason')}</span><span>{WASTAGE_REASON_KEY[w.reason] ? t(WASTAGE_REASON_KEY[w.reason]) : w.reason}</span></div>
+                </div>
+                {w.reasonNote && <p className="text-xs text-slate-500">{w.reasonNote}</p>}
+                {w.receiptCount > 0 && <button className="text-xs text-brand underline" onClick={() => viewPhoto(w.id)}>🖼 {w.receiptCount}</button>}
+                <p className="text-xs text-slate-500">{t('enteredBy')}: {w.enteredByName ?? '—'}{w.approvedByName && ` · ${t('approvedBy')}: ${w.approvedByName}`}</p>
+                {w.approvalStatus === 'REJECTED' && w.rejectionReason && <p className="text-xs text-red-700">{w.rejectionReason}</p>}
+                {w.approvalStatus === 'SUBMITTED' && w.status === 'ACTIVE' && can('wastage:approve') && (
+                  <div className="flex gap-2 pt-1">
+                    <button className="btn-primary min-h-[36px] flex-1 px-3 text-sm" disabled={busy === w.id} onClick={() => decide(w.id, 'approve')}>✓ {t('approve')}</button>
+                    <button className="btn-danger min-h-[36px] flex-1 px-3 text-sm" disabled={busy === w.id} onClick={() => setRejecting(w)}>✕ {t('reject')}</button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        </>
       )}
       {meta && (
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">

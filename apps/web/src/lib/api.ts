@@ -24,6 +24,13 @@ export const setAccessToken = (t: string | null) => { accessToken = t; };
 export const getAccessToken = () => accessToken;
 export const setAuthLostHandler = (fn: (() => void) | null) => { onAuthLost = fn; };
 
+// how many requests are in flight right now, for a global "the app is talking to the server" indicator
+let pending = 0;
+const pendingListeners = new Set<() => void>();
+const notifyPending = () => pendingListeners.forEach((fn) => fn());
+export const subscribePending = (fn: () => void) => { pendingListeners.add(fn); return () => { pendingListeners.delete(fn); }; };
+export const getPending = () => pending;
+
 export function deviceId(): string {
   try {
     let id = localStorage.getItem('bp_device_id');
@@ -69,38 +76,51 @@ interface Options extends Omit<RequestInit, 'body'> {
 }
 
 async function request<T>(method: string, path: string, opts: Options = {}, retried = false): Promise<any> {
-  const headers: Record<string, string> = { 'X-Device-Id': deviceId(), ...(opts.headers as Record<string, string>) };
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-  if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
-  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
-
-  let res: Response;
+  // counted once per user-facing call, not per retry: the 401-refresh-and-replay below stays invisible to it
+  if (!retried) { pending++; notifyPending(); }
   try {
-    res = await fetch(`/api/v1${path}`, {
-      method,
-      headers,
-      credentials: 'same-origin',
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-      signal: opts.signal,
-    });
-  } catch {
-    throw new ApiError(0, 'NETWORK', 'No internet connection');
-  }
+    const headers: Record<string, string> = { 'X-Device-Id': deviceId(), ...(opts.headers as Record<string, string>) };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
+    if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
 
-  if (res.status === 401 && !retried && !path.startsWith('/auth/')) {
-    const ok = await refreshSession();
-    if (ok) return request<T>(method, path, opts, true);
-    accessToken = null;
-    onAuthLost?.();
-  }
+    let res: Response;
+    try {
+      res = await fetch(`/api/v1${path}`, {
+        method,
+        headers,
+        credentials: 'same-origin',
+        body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+        signal: opts.signal,
+      });
+    } catch {
+      throw new ApiError(0, 'NETWORK', 'No internet connection');
+    }
 
-  const text = await res.text();
-  const json = text ? JSON.parse(text) : {};
-  if (!res.ok) {
-    const e = json.error ?? {};
-    throw new ApiError(res.status, e.code ?? 'ERROR', e.message ?? res.statusText, e.details, json.requestId);
+    if (res.status === 401 && !retried && !path.startsWith('/auth/')) {
+      const ok = await refreshSession();
+      if (ok) return await request<T>(method, path, opts, true);
+      accessToken = null;
+      onAuthLost?.();
+    }
+
+    const text = await res.text();
+    let json: any;
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      // a proxy/server hiccup (e.g. mid-restart) can hand back a plain-text error page instead of JSON;
+      // surface something the user can act on rather than the raw parser error
+      throw new ApiError(res.status || 0, res.ok ? 'BAD_RESPONSE' : 'SERVER_ERROR', 'The server sent back an unexpected response. Please try again.');
+    }
+    if (!res.ok) {
+      const e = json.error ?? {};
+      throw new ApiError(res.status, e.code ?? 'ERROR', e.message ?? res.statusText, e.details, json.requestId);
+    }
+    return opts.raw ? json : json.data;
+  } finally {
+    if (!retried) { pending--; notifyPending(); }
   }
-  return opts.raw ? json : json.data;
 }
 
 export const api = {
