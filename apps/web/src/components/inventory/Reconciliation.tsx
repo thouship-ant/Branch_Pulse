@@ -14,6 +14,9 @@ import { fmtQty, toBase, toDisplay } from './qty';
 
 const SIGNIFICANT_PCT = 5; // the shop-wide default; the server decides per item
 const clean = (v: string) => v.replace(/[^\d.]/g, '').replace(/^(\d*\.\d{0,3}).*$/, '$1');
+// a zero-width space after ₹ gives the browser one soft-wrap point, so an unusually large figure
+// wraps onto a second line in a narrow summary tile instead of being cut off or overflowing it
+const amt = (v: string) => formatINR(v, { decimals: false }).replace('₹', '₹​');
 
 /** Shortage (below the books), excess (above) or tallied: icon + word, never colour alone. */
 export function VarianceBadge({ variance, size = 'sm' }: { variance: string | null; size?: 'sm' | 'md' }) {
@@ -184,12 +187,12 @@ export function Reconciliation({ locations, fixedLocationId }: { locations: Loca
 
       {!data ? <Skeleton className="h-64" /> : (
         <>
-          <section className="grid grid-cols-2 gap-3 lg:grid-cols-5" aria-label="Summary">
-            <div className="card"><p className="text-sm text-slate-600">{t('colExpected')}</p><p className="text-lg font-bold tabular-nums">{formatINR(tot.expectedValue, { decimals: false })}</p></div>
-            <div className="card"><p className="text-sm text-slate-600">{t('colActual')}</p><p className="text-lg font-bold tabular-nums">{formatINR(tot.physicalValue, { decimals: false })}</p><p className="text-xs text-slate-500">{tot.itemsCounted} / {tot.itemsTotal}</p></div>
-            <div className={`card ${dec(tot.shortageValue).greaterThan(0) ? 'border-red-300' : ''}`}><p className="text-sm text-slate-600">▼ {t('shortage')}</p><p className="text-lg font-bold tabular-nums">{formatINR(tot.shortageValue, { decimals: false })}</p><p className="text-xs text-slate-500">{tot.shortages}</p></div>
-            <div className={`card ${dec(tot.excessValue).greaterThan(0) ? 'border-amber-300' : ''}`}><p className="text-sm text-slate-600">▲ {t('excess')}</p><p className="text-lg font-bold tabular-nums">{formatINR(tot.excessValue, { decimals: false })}</p><p className="text-xs text-slate-500">{tot.excesses}</p></div>
-            <div className="card"><p className="text-sm text-slate-600">{t('colWastage')}</p><p className="text-lg font-bold tabular-nums">{formatINR(tot.wastageValue, { decimals: false })}</p></div>
+          <section className="grid grid-cols-3 gap-2 lg:grid-cols-5 lg:gap-3" aria-label="Summary">
+            <div className="card min-w-0 p-3 lg:p-4"><p className="truncate text-xs text-slate-600 lg:text-sm">{t('colExpected')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.expectedValue)}</p></div>
+            <div className="card min-w-0 p-3 lg:p-4"><p className="truncate text-xs text-slate-600 lg:text-sm">{t('colActual')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.physicalValue)}</p><p className="text-xs text-slate-500">{tot.itemsCounted} / {tot.itemsTotal}</p></div>
+            <div className={`card min-w-0 p-3 lg:p-4 ${dec(tot.shortageValue).greaterThan(0) ? 'border-red-300' : ''}`}><p className="truncate text-xs text-slate-600 lg:text-sm">▼ {t('shortage')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.shortageValue)}</p><p className="text-xs text-slate-500">{tot.shortages}</p></div>
+            <div className={`card min-w-0 p-3 lg:p-4 ${dec(tot.excessValue).greaterThan(0) ? 'border-amber-300' : ''}`}><p className="truncate text-xs text-slate-600 lg:text-sm">▲ {t('excess')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.excessValue)}</p><p className="text-xs text-slate-500">{tot.excesses}</p></div>
+            <div className="card min-w-0 p-3 lg:p-4"><p className="truncate text-xs text-slate-600 lg:text-sm">{t('colWastage')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.wastageValue)}</p></div>
           </section>
 
           {/* desktop: the formula as a table */}

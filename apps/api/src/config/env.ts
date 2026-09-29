@@ -9,7 +9,7 @@ function required(name: string, devDefault?: string): string {
 export const env = {
   isProd,
   port: Number(process.env.PORT ?? 4000),
-  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:3000').split(',').map((s) => s.trim()),
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:3300').split(',').map((s) => s.trim()),
   jwtSecret: required('JWT_ACCESS_SECRET', 'dev-only-access-secret-change-me-32chars'),
   accessTtl: process.env.ACCESS_TOKEN_TTL ?? '15m',
   refreshTtlMobileHours: Number(process.env.REFRESH_TTL_MOBILE_HOURS ?? 168), // 7 days

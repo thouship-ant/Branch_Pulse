@@ -15,7 +15,7 @@ cp apps/api/.env.example apps/api/.env
 npm run db:migrate                              # applies 3 migrations
 npm -w apps/api run db:seed -- --demo           # masters, roles, users + 30 days of history
 npm run dev:api                                 # http://localhost:4000/api/v1
-npm run dev:web                                 # http://localhost:3000
+npm run dev:web                                 # http://localhost:3300
 ```
 
 Seed users (password `ChangeMe@123`, dev only): `owner`, `accountant`, `stockmgr`, `manager1`..`manager6` (one per branch).

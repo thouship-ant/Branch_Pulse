@@ -111,6 +111,9 @@ export class ExpensesService {
       if (amount.greaterThan(receiptAbove) && !dto.attachmentKeys?.length) {
         throw validation('RECEIPT_REQUIRED', `A receipt photo is required for amounts above ${receiptAbove.toFixed(0)}`, 'attachmentKeys');
       }
+      if (cat.requires_supplier && !dto.supplierId) {
+        throw validation('SUPPLIER_REQUIRED', 'Choose a supplier for this category', 'supplierId');
+      }
 
       const warnings = await this.softWarnings(tx, dto, cat, amount, date);
 

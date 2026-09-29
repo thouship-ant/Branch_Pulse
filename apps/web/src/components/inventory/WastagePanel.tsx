@@ -110,8 +110,10 @@ export function WastageForm({ locations, fixedLocationId, onSaved }: { locations
           {photo && <img src={photo.url} alt="Wastage photo" className="h-14 w-14 rounded-card border object-cover" />}
         </div>
       </div>
-      <ErrorBox error={error} />
-      <button className="btn-primary w-full" disabled={busy || !locationId || !itemId || !unitId || dec(qty).lessThanOrEqualTo(0)} onClick={save}>{busy ? t('loading') : t('save')}</button>
+      <div className="sticky bottom-0 -mx-5 -mb-5 space-y-2 border-t border-slate-200 bg-surface px-5 pb-5 pt-3">
+        <ErrorBox error={error} />
+        <button className="btn-primary w-full" disabled={busy || !locationId || !itemId || !unitId || dec(qty).lessThanOrEqualTo(0)} onClick={save}>{busy ? t('loading') : t('save')}</button>
+      </div>
     </div>
   );
 }

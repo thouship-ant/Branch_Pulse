@@ -11,7 +11,7 @@ import { dec, formatINR } from '@/lib/money';
 import { cacheMaster, readMaster, submitOffline, useOutbox } from '@/lib/outbox';
 import { useBranch } from '@/lib/useBranch';
 
-interface Category { id: string; nameEn: string; nameTa?: string; requiresReceiptAbove?: string | null; parentId?: string | null }
+interface Category { id: string; nameEn: string; nameTa?: string; requiresReceiptAbove?: string | null; requiresSupplier?: boolean; parentId?: string | null }
 interface Supplier { id: string; code: string; name: string }
 interface Bootstrap { categories: Category[]; suppliers?: Supplier[]; rules: { receiptAbove: number; backdateDays?: number } }
 
@@ -66,6 +66,8 @@ export default function ExpensePage() {
   const receiptAbove = dec(category?.requiresReceiptAbove ?? boot?.rules.receiptAbove ?? 500);
   const needsReceipt = amount !== '' && dec(amount).greaterThan(receiptAbove);
   const missingReceipt = needsReceipt && !photo;
+  const needsSupplier = !!category?.requiresSupplier;
+  const missingSupplier = needsSupplier && !supplierId;
 
   async function pickPhoto(file: File | undefined) {
     if (!file) return;
@@ -123,7 +125,7 @@ export default function ExpensePage() {
         <div className="grid grid-cols-3 gap-2">
           {top.map((c) => (
             <button
-              key={c.id} type="button" onClick={() => { setCategoryId(c.id); setSubId(''); }} aria-pressed={categoryId === c.id}
+              key={c.id} type="button" onClick={() => { setCategoryId(c.id); setSubId(''); setSupplierId(''); }} aria-pressed={categoryId === c.id}
               className={`min-h-[56px] rounded-card border p-2 text-sm font-medium leading-tight ${categoryId === c.id ? 'border-brand bg-brand text-white' : 'border-slate-300 bg-surface'}`}
             >
               {categoryId === c.id && <span aria-hidden>✓ </span>}{name(c)}
@@ -137,9 +139,9 @@ export default function ExpensePage() {
 
         <MoneyInput id="amount" label={t('amount')} value={amount} onChange={setAmount} required />
         <Chips label={t('paymentMode')} value={mode} onChange={setMode} options={MODES.map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
-        {(boot.suppliers?.length ?? 0) > 0 && (
+        {needsSupplier && (boot.suppliers?.length ?? 0) > 0 && (
           <div>
-            <label htmlFor="supplier" className="label">{t('supplier')}</label>
+            <label htmlFor="supplier" className="label">{t('supplier')}<span className="text-red-600"> * {t('needSupplier')}</span></label>
             <select id="supplier" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
               <option value="">{t('supplierNone')}</option>
               {boot.suppliers!.map((sp) => <option key={sp.id} value={sp.id}>{sp.name}</option>)}
@@ -164,8 +166,8 @@ export default function ExpensePage() {
       <ErrorBox error={error} />
       {info && <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">✓ {info}</p>}
       <div className="grid grid-cols-2 gap-3">
-        <button className="btn-secondary" disabled={busy || !categoryId || !amount || missingReceipt} onClick={() => save(true)}>{t('saveAndAdd')}</button>
-        <button className="btn-primary" disabled={busy || !categoryId || !amount || missingReceipt} onClick={() => save(false)}>{busy ? t('loading') : t('save')}</button>
+        <button className="btn-secondary" disabled={busy || !categoryId || !amount || missingReceipt || missingSupplier} onClick={() => save(true)}>{t('saveAndAdd')}</button>
+        <button className="btn-primary" disabled={busy || !categoryId || !amount || missingReceipt || missingSupplier} onClick={() => save(false)}>{busy ? t('loading') : t('save')}</button>
       </div>
 
       <section aria-label={t('expenses')}>

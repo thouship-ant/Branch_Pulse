@@ -127,7 +127,7 @@ describe('Branch Pulse API (e2e)', () => {
   describe('branch isolation', () => {
     beforeAll(async () => {
       // give the OTHER branch some data so a leak would be visible
-      const categoryId = (await http().get('/api/v1/expense-categories').set(as(owner))).body.data.find((c: any) => !c.parentId).id;
+      const categoryId = (await http().get('/api/v1/expense-categories').set(as(owner))).body.data.find((c: any) => !c.parentId && !c.requiresSupplier).id;
       await http()
         .post('/api/v1/expenses')
         .set(as(owner))
@@ -199,7 +199,7 @@ describe('Branch Pulse API (e2e)', () => {
     let salesVersion: number;
 
     beforeAll(async () => {
-      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data.find((c: any) => !c.parentId).id;
+      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data.find((c: any) => !c.parentId && !c.requiresSupplier).id;
     });
 
     it('saves the day\'s sales; a split that does not add up saves with a warning', async () => {
@@ -507,7 +507,7 @@ describe('Branch Pulse API (e2e)', () => {
     const opUuid = randomUUID();
 
     beforeAll(async () => {
-      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data.find((c: any) => !c.parentId).id;
+      categoryId = (await http().get('/api/v1/expense-categories').set(as(manager))).body.data.find((c: any) => !c.parentId && !c.requiresSupplier).id;
     });
 
     const batch = (operations: object[]) =>
@@ -743,7 +743,7 @@ describe('Branch Pulse API (e2e)', () => {
 
     it('SRS example: opening 2,000 + cash sales 10,000 - cash expenses 1,500 = expected 10,500; counted 10,200 = shortage 300', async () => {
       await http().put(`/api/v1/daily-sales?locationId=${br}&date=${today}`).set(as(mgr)).send({ totalSales: '10000.00', cashSales: '10000.00' }).expect(200);
-      const cat = (await http().get('/api/v1/expense-categories').set(as(mgr))).body.data.find((c: any) => !c.parentId).id;
+      const cat = (await http().get('/api/v1/expense-categories').set(as(mgr))).body.data.find((c: any) => !c.parentId && !c.requiresSupplier).id;
       const key = await photo(mgr, br);
       const exp = await http().post('/api/v1/expenses').set(as(mgr)).send({ locationId: br, businessDate: today, categoryId: cat, amount: '1500.00', paymentMode: 'CASH', attachmentKeys: [key] });
       expect(exp.status).toBe(201);
@@ -2194,12 +2194,12 @@ describe('Branch Pulse API (e2e)', () => {
       rentCat = cats.find((c) => c.plBucket === 'RENT' && !c.parentId).id;
       rawCat = cats.find((c) => c.plBucket === 'RAW_MATERIAL' && !c.parentId).id;
 
+      const supplierId = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `PL Supplier ${rnd}` })).body.data.id;
+
       await http().put(`/api/v1/daily-sales?locationId=${ploc}&date=${today}`).set(as(owner)).send({ totalSales: '5000.00', cashSales: '5000.00' }).expect(200);
       await http().post('/api/v1/expenses').set(as(owner)).send({ locationId: ploc, businessDate: today, categoryId: rentCat, amount: '500.00', paymentMode: 'CASH' }).expect(201);
       // a raw-material expense logged by hand (not through Purchases) must not be lost, but also must not double-count against the consumption-based raw material line
-      await http().post('/api/v1/expenses').set(as(owner)).send({ locationId: ploc, businessDate: today, categoryId: rawCat, amount: '50.00', paymentMode: 'CASH' }).expect(201);
-
-      const supplierId = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `PL Supplier ${rnd}` })).body.data.id;
+      await http().post('/api/v1/expenses').set(as(owner)).send({ locationId: ploc, businessDate: today, categoryId: rawCat, amount: '50.00', paymentMode: 'CASH', supplierId }).expect(201);
       const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
       const uMl = boot.units.find((u: any) => u.code === 'ML').id;
       const uL = boot.units.find((u: any) => u.code === 'L').id;
@@ -2240,6 +2240,35 @@ describe('Branch Pulse API (e2e)', () => {
       expect(Number(res.body.data.totalSales)).toBeGreaterThanOrEqual(5000);
       expect(Number(res.body.data.rawMaterial)).toBeGreaterThanOrEqual(20);
       expect((await http().get(`/api/v1/pl/consolidated?from=${today}&to=${today}`).set(as(manager))).status).toBe(403);
+    });
+  });
+
+  describe('expense category supplier requirement', () => {
+    it('raw-material-purchase categories (Milk, Tea powder, ...) require a supplier; other categories never do', async () => {
+      const sloc = (await http().post('/api/v1/locations').set(as(owner)).send({ code: `SR${rnd}`, name: `Supplier Req ${rnd}`, type: 'BRANCH', defaultOpeningCash: '0' })).body.data.id;
+      const cats = (await http().get('/api/v1/expense-categories').set(as(owner))).body.data as any[];
+      const milk = cats.find((c: any) => c.nameEn === 'Milk' && !c.parentId);
+      expect(milk.requiresSupplier).toBe(true);
+      const rent = cats.find((c: any) => c.nameEn === 'Rent' && !c.parentId);
+      expect(rent.requiresSupplier).toBe(false);
+
+      const noSupplier = await http().post('/api/v1/expenses').set(as(owner)).send({
+        locationId: sloc, businessDate: today, categoryId: milk.id, amount: '100.00', paymentMode: 'CASH',
+      });
+      expect(noSupplier.status).toBe(422);
+      expect(noSupplier.body.error.code).toBe('SUPPLIER_REQUIRED');
+
+      const supplierId = (await http().post('/api/v1/suppliers').set(as(owner)).send({ name: `Milk supplier ${rnd}` })).body.data.id;
+      const withSupplier = await http().post('/api/v1/expenses').set(as(owner)).send({
+        locationId: sloc, businessDate: today, categoryId: milk.id, amount: '100.00', paymentMode: 'CASH', supplierId,
+      });
+      expect(withSupplier.status).toBe(201);
+
+      // a category outside the required list never needs one
+      const rentOk = await http().post('/api/v1/expenses').set(as(owner)).send({
+        locationId: sloc, businessDate: today, categoryId: rent.id, amount: '100.00', paymentMode: 'CASH',
+      });
+      expect(rentOk.status).toBe(201);
     });
   });
 

@@ -17,6 +17,7 @@ export class CategoryDto {
   @IsIn(BUCKETS) plBucket: string;
   @IsOptional() @Matches(MONEY_PATTERN) requiresReceiptAbove?: string;
   @IsOptional() @Matches(MONEY_PATTERN) unusualThreshold?: string;
+  @IsOptional() @IsBoolean() requiresSupplier?: boolean;
   @IsOptional() @IsInt() @Min(0) @Max(9999) sortOrder?: number;
 }
 
@@ -27,6 +28,7 @@ export class UpdateCategoryDto {
   // null clears the override, so the shop-wide default applies again
   @IsOptional() @ValidateIf((_, v) => v !== null) @Matches(MONEY_PATTERN) requiresReceiptAbove?: string | null;
   @IsOptional() @ValidateIf((_, v) => v !== null) @Matches(MONEY_PATTERN) unusualThreshold?: string | null;
+  @IsOptional() @IsBoolean() requiresSupplier?: boolean;
   @IsOptional() @IsInt() @Min(0) @Max(9999) sortOrder?: number;
   @IsOptional() @IsBoolean() active?: boolean;
 }
@@ -72,6 +74,7 @@ export class MasterService {
           pl_bucket: dto.plBucket,
           requires_receipt_above: dto.requiresReceiptAbove ? parseMoney(dto.requiresReceiptAbove, 'requiresReceiptAbove') : null,
           unusual_threshold: dto.unusualThreshold ? parseMoney(dto.unusualThreshold, 'unusualThreshold') : null,
+          requires_supplier: dto.requiresSupplier ?? false,
           sort_order: dto.sortOrder ?? 100,
           created_by: ctx.user.id,
           updated_by: ctx.user.id,
@@ -94,6 +97,7 @@ export class MasterService {
           pl_bucket: dto.plBucket,
           requires_receipt_above: dto.requiresReceiptAbove === null ? null : dto.requiresReceiptAbove ? parseMoney(dto.requiresReceiptAbove, 'requiresReceiptAbove') : undefined,
           unusual_threshold: dto.unusualThreshold === null ? null : dto.unusualThreshold ? parseMoney(dto.unusualThreshold, 'unusualThreshold') : undefined,
+          requires_supplier: dto.requiresSupplier,
           sort_order: dto.sortOrder,
           status: dto.active === undefined ? undefined : dto.active ? 'ACTIVE' : 'INACTIVE',
           updated_by: ctx.user.id,

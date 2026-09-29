@@ -326,6 +326,7 @@ model ExpenseCategory {
   pl_bucket              String       @db.VarChar(20) // RAW_MATERIAL|SALARY|RENT|ELECTRICITY|TRANSPORT|MAINTENANCE|OTHER|NON_PL
   requires_receipt_above Decimal?     @db.Decimal(14, 2)
   unusual_threshold      Decimal?     @db.Decimal(14, 2)
+  requires_supplier      Boolean      @default(false)
   sort_order             Int          @default(0) @db.SmallInt
   status                 RecordStatus @default(ACTIVE)
   created_at             DateTime     @default(now()) @db.Timestamptz

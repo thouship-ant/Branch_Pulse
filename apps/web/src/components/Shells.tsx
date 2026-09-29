@@ -100,7 +100,7 @@ export function BranchShell({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col">
       {/* branded header: the branch is the first thing you see */}
-      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-[#2456e0] via-[#3557d8] to-[#5046e5] px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(37,99,235,0.65)]">
+      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-[#4f9fe8] via-[#9b7cc9] to-[#dd5586] px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(157,90,160,0.55)]">
         <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold ring-2 ring-white/30" aria-hidden>
@@ -195,8 +195,8 @@ export function OfficeShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh md:flex">
-      {/* sidebar: pinned to the window height, only the menu area scrolls if the window is very short */}
-      <aside className={`sticky top-0 hidden h-dvh shrink-0 flex-col self-start border-r border-slate-200/80 bg-surface transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px] p-3' : 'w-[264px] p-4'}`}>
+      {/* sidebar: fixed to the viewport so it never scrolls with the page; only its own menu area scrolls if the window is very short */}
+      <aside className={`fixed inset-y-0 left-0 z-20 hidden h-dvh flex-col border-r border-slate-200/80 bg-surface transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px] p-3' : 'w-[264px] p-4'}`}>
         <div className={`mb-5 flex h-11 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-1'}`}><Logo compact={collapsed} /></div>
         <nav className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5" aria-label="Main">
           {GROUPS.map((g) => {
@@ -234,7 +234,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1">
+      <div className={`min-w-0 flex-1 transition-[margin] duration-200 ${collapsed ? 'md:ml-[76px]' : 'md:ml-[264px]'}`}>
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200/80 bg-[var(--glass)] px-4 py-2 backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <button className="hidden h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 md:flex" onClick={toggleSidebar} aria-label="Toggle sidebar" aria-expanded={!collapsed}>

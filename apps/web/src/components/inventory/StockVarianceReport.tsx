@@ -69,9 +69,10 @@ export function StockVarianceReport({ locations, fixedLocationId }: { locations:
   }
 
   const Tile = ({ icon, label, value, sub, tone }: { icon: IconName; label: string; value: string; sub?: string; tone?: 'bad' | 'warn' }) => (
-    <div className={`card flex items-center gap-3 ${tone === 'bad' ? 'border-red-300' : tone === 'warn' ? 'border-amber-300' : ''}`}>
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${tone === 'bad' ? 'bg-red-50 text-red-800' : 'bg-brand-light text-brand-dark'}`}><Icon name={icon} size={22} /></span>
-      <div className="min-w-0"><p className="text-sm leading-tight text-slate-600">{label}</p><p className="text-xl font-bold tabular-nums">{value}</p>{sub && <p className="text-xs text-slate-600">{sub}</p>}</div>
+    <div className={`card flex min-w-0 items-center gap-2 p-3 sm:gap-3 sm:p-4 ${tone === 'bad' ? 'border-red-300' : tone === 'warn' ? 'border-amber-300' : ''}`}>
+      {/* the icon is decorative and costs ~50px it can't spare on the narrowest phones: it only appears once there's room */}
+      <span className={`hidden h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:flex ${tone === 'bad' ? 'bg-red-50 text-red-800' : 'bg-brand-light text-brand-dark'}`}><Icon name={icon} size={22} /></span>
+      <div className="min-w-0"><p className="truncate text-sm leading-tight text-slate-600">{label}</p><p className="break-words text-lg font-bold leading-tight tabular-nums sm:text-xl">{value}</p>{sub && <p className="truncate text-xs text-slate-600">{sub}</p>}</div>
     </div>
   );
 

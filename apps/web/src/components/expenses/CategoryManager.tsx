@@ -11,9 +11,9 @@ const bucketName = (b: string) => b.replace(/_/g, ' ').toLowerCase().replace(/^.
 
 interface Cat {
   id: string; parentId: string | null; nameEn: string; nameTa: string | null; plBucket: string;
-  requiresReceiptAbove: string | null; unusualThreshold: string | null; sortOrder: number; status: string;
+  requiresReceiptAbove: string | null; unusualThreshold: string | null; requiresSupplier: boolean; sortOrder: number; status: string;
 }
-interface Draft { id?: string; parentId: string; nameEn: string; nameTa: string; plBucket: string; receipt: string; unusual: string; sortOrder: string; active: boolean }
+interface Draft { id?: string; parentId: string; nameEn: string; nameTa: string; plBucket: string; receipt: string; unusual: string; requiresSupplier: boolean; sortOrder: string; active: boolean }
 
 /** Owner: add, rename, reorder and switch off expense categories and sub-categories. Nothing is hard-coded. */
 export function CategoryManager() {
@@ -29,10 +29,10 @@ export function CategoryManager() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const blank = (parentId = '', bucket = 'OTHER', order = 100): Draft => ({ parentId, nameEn: '', nameTa: '', plBucket: bucket, receipt: '', unusual: '', sortOrder: String(order), active: true });
+  const blank = (parentId = '', bucket = 'OTHER', order = 100): Draft => ({ parentId, nameEn: '', nameTa: '', plBucket: bucket, receipt: '', unusual: '', requiresSupplier: false, sortOrder: String(order), active: true });
   const fromCat = (c: Cat): Draft => ({
     id: c.id, parentId: c.parentId ?? '', nameEn: c.nameEn, nameTa: c.nameTa ?? '', plBucket: c.plBucket,
-    receipt: c.requiresReceiptAbove ?? '', unusual: c.unusualThreshold ?? '', sortOrder: String(c.sortOrder), active: c.status === 'ACTIVE',
+    receipt: c.requiresReceiptAbove ?? '', unusual: c.unusualThreshold ?? '', requiresSupplier: c.requiresSupplier, sortOrder: String(c.sortOrder), active: c.status === 'ACTIVE',
   });
 
   async function save() {
@@ -41,6 +41,7 @@ export function CategoryManager() {
     try {
       const common = {
         nameEn: draft.nameEn.trim(), nameTa: draft.nameTa.trim() || undefined, plBucket: draft.plBucket,
+        requiresSupplier: draft.parentId ? undefined : draft.requiresSupplier, // only a top-level category carries this
         sortOrder: Number(draft.sortOrder) || 0,
       };
       if (draft.id) {
@@ -85,6 +86,7 @@ export function CategoryManager() {
                   <p className="font-semibold">{pick(c.nameEn, c.nameTa)} {c.nameTa && <span className="font-normal text-slate-500">· {pick(c.nameTa, c.nameEn)}</span>}</p>
                   <p className="text-xs text-slate-500">
                     {bucketName(c.plBucket)} · {t('receiptAboveLabel')}: {c.requiresReceiptAbove ? formatINR(c.requiresReceiptAbove, { decimals: false }) : t('useDefault')}
+                    {c.requiresSupplier && <> · {t('requiresSupplierLabel')}</>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -128,6 +130,12 @@ export function CategoryManager() {
               <MoneyInput id="cu" label={t('unusualAbove')} value={draft.unusual} onChange={(v) => setDraft({ ...draft, unusual: v })} hint={t('useDefault')} />
             </div>
             <TextField id="co" label="#" value={draft.sortOrder} inputMode="numeric" onChange={(e) => setDraft({ ...draft, sortOrder: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
+            {!draft.parentId && (
+              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
+                <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.requiresSupplier} onChange={(e) => setDraft({ ...draft, requiresSupplier: e.target.checked })} />
+                <span>{t('requiresSupplierLabel')}</span>
+              </label>
+            )}
             {draft.id && (
               <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
                 <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />

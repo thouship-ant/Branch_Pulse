@@ -120,6 +120,9 @@ const CATEGORIES: Array<[string, string]> = [
   ['Cooking oil', 'RAW_MATERIAL'], ['Packaging', 'RAW_MATERIAL'], ['Miscellaneous', 'OTHER'],
 ];
 
+// these are bought from a supplier, so the expense entry screen asks for one; every other category hides the field
+const REQUIRES_SUPPLIER = new Set(['Milk', 'Tea powder', 'Coffee', 'Sugar', 'Snacks / raw materials', 'Cooking oil', 'Gas', 'Packaging']);
+
 // category -> [sub-category, Tamil name]
 const SUB_CATEGORIES: Record<string, Array<[string, string]>> = {
   Milk: [['Cow milk', 'பசும்பால்'], ['Buffalo milk', 'எருமைப்பால்']],
@@ -165,7 +168,9 @@ async function seedUnitsAndCategories() {
   }
   for (const [i, [name, bucket]] of CATEGORIES.entries()) {
     const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: null } });
-    if (!exists) await prisma.expenseCategory.create({ data: { name_en: name, name_ta: TA[name], pl_bucket: bucket, sort_order: i } });
+    if (!exists) {
+      await prisma.expenseCategory.create({ data: { name_en: name, name_ta: TA[name], pl_bucket: bucket, sort_order: i, requires_supplier: REQUIRES_SUPPLIER.has(name) } });
+    }
   }
   // starter sub-categories: the owner can add, rename or switch these off under Expenses > Categories
   for (const [parentName, subs] of Object.entries(SUB_CATEGORIES)) {
