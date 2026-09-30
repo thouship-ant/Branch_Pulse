@@ -31,11 +31,23 @@ const notifyPending = () => pendingListeners.forEach((fn) => fn());
 export const subscribePending = (fn: () => void) => { pendingListeners.add(fn); return () => { pendingListeners.delete(fn); }; };
 export const getPending = () => pending;
 
+// crypto.randomUUID() is only defined in a secure context (HTTPS, or the literal host "localhost") -
+// a phone hitting the dev server over http://<lan-ip>:3300 has `crypto` but not this method, so it throws
+// "is not a function" rather than being undefined. Fall back to a Math.random-based v4 for that case;
+// these ids are only used for local idempotency keys, not for anything security-sensitive.
+export function uuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export function deviceId(): string {
   try {
     let id = localStorage.getItem('bp_device_id');
     if (!id) {
-      id = `pwa-${crypto.randomUUID().slice(0, 8)}`;
+      id = `pwa-${uuid().slice(0, 8)}`;
       localStorage.setItem('bp_device_id', id);
     }
     return id;

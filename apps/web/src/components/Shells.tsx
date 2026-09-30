@@ -41,12 +41,12 @@ function Avatar({ name, className = '' }: { name: string; className?: string }) 
   );
 }
 
-function Logo({ compact }: { compact?: boolean }) {
+function Logo({ compact, onDark = false }: { compact?: boolean; onDark?: boolean }) {
   const { t } = useT();
   return (
     <div className="flex items-center gap-2.5">
       <LogoMark size={compact ? 34 : 36} />
-      {!compact && <span className="text-[19px] font-extrabold tracking-tight text-ink">{t('appName')}</span>}
+      {!compact && <span className={`text-[19px] font-extrabold tracking-tight ${onDark ? 'text-white' : 'text-ink'}`}>{t('appName')}</span>}
     </div>
   );
 }
@@ -235,20 +235,21 @@ export function OfficeShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className={`min-w-0 flex-1 transition-[margin] duration-200 ${collapsed ? 'md:ml-[76px]' : 'md:ml-[264px]'}`}>
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200/80 bg-[var(--glass)] px-4 py-2 backdrop-blur-xl">
-          <div className="flex items-center gap-2">
-            <button className="hidden h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 md:flex" onClick={toggleSidebar} aria-label="Toggle sidebar" aria-expanded={!collapsed}>
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 overflow-hidden bg-gradient-to-br from-[#4f9fe8] via-[#9b7cc9] to-[#dd5586] px-4 py-2 text-white shadow-[0_8px_24px_-12px_rgba(157,90,160,0.55)]">
+          <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
+          <div className="relative flex items-center gap-2">
+            <button className="hidden h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15 md:flex" onClick={toggleSidebar} aria-label="Toggle sidebar" aria-expanded={!collapsed}>
               <Icon name="menu" size={20} />
             </button>
-            <span className="md:hidden"><Logo /></span>
-            <nav aria-label="Breadcrumb" className="ml-1 hidden items-center gap-2 text-sm text-slate-500 sm:flex">
-              {t('appName')} <Icon name="chevron" size={14} className="text-slate-400" /> <span className="font-semibold text-ink">{current ? t(current.key) : ''}</span>
+            <span className="md:hidden"><Logo onDark /></span>
+            <nav aria-label="Breadcrumb" className="ml-1 hidden items-center gap-2 text-sm text-white/75 sm:flex">
+              {t('appName')} <Icon name="chevron" size={14} className="text-white/50" /> <span className="font-semibold text-white">{current ? t(current.key) : ''}</span>
             </nav>
           </div>
-          <div className="flex items-center gap-0.5">
-            <ThemeToggle />
-            <LangSwitch />
-            <button className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 md:hidden" onClick={() => logout()} aria-label={t('logout')}>
+          <div className="relative flex items-center gap-0.5">
+            <ThemeToggle onDark />
+            <LangSwitch onDark />
+            <button className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15 md:hidden" onClick={() => logout()} aria-label={t('logout')}>
               <Icon name="logout" size={19} />
             </button>
           </div>

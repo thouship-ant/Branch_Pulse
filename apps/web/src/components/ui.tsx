@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { createPortal } from 'react-dom';
 import { cleanAmount } from '@/lib/money';
 import { useT, type MessageKey } from '@/lib/i18n';
 import { useOutbox } from '@/lib/outbox';
@@ -167,11 +168,11 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
   if (!open) return null;
-  return (
-    <div className="anim-fade fixed inset-0 z-50 flex h-[100dvh] items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={onClose}>
+  return createPortal(
+    <div className="anim-fade fixed inset-0 z-50 flex h-[100dvh] items-end justify-center bg-slate-900/45 pb-4 backdrop-blur-sm sm:items-center sm:pb-0" onClick={onClose}>
       <div
         ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
-        className="anim-sheet max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[24px] border border-slate-200/70 bg-surface p-5 pt-3 outline-none sm:rounded-2xl sm:pt-5"
+        className="anim-sheet max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[24px] border border-slate-200/70 bg-surface p-5 pt-3 outline-none sm:rounded-2xl sm:pt-5"
         style={{ boxShadow: 'var(--shadow-pop)', WebkitOverflowScrolling: 'touch' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -187,7 +188,8 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

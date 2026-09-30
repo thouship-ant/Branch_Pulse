@@ -2,7 +2,7 @@
 
 import Dexie, { type Table } from 'dexie';
 import { useEffect, useState } from 'react';
-import { api, ApiError, deviceId, uploadAttachment } from './api';
+import { api, ApiError, deviceId, uploadAttachment, uuid } from './api';
 
 /**
  * Offline outbox (LLD s15). Every offline-capable entry is written here FIRST - online or not - so
@@ -57,7 +57,7 @@ export async function enqueue(
 ): Promise<OutboxOp> {
   const row: OutboxOp = {
     ...op,
-    clientUuid: crypto.randomUUID(),
+    clientUuid: uuid(),
     createdAt: new Date().toISOString(),
     attempts: 0,
     state: 'PENDING',
