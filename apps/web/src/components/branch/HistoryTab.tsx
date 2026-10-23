@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime, todayIST } from '@/lib/dates';
@@ -73,10 +74,10 @@ export function HistoryTab({ branchId }: { branchId: string }) {
     <div className="space-y-4">
       <div className="max-w-xs">
         <label htmlFor="ht" className="label">{t('typeLabel')}</label>
-        <select id="ht" className="field" value={entityType} onChange={(e) => setEntityType(e.target.value)}>
+        <Select id="ht" className="field" value={entityType} onChange={(e) => setEntityType(e.target.value)}>
           <option value="">{t('allTypes')}</option>
           {TYPES.map((x) => <option key={x} value={x}>{label(x)}</option>)}
-        </select>
+        </Select>
       </div>
       <ErrorBox error={error} />
       {!rows ? <Skeleton className="h-64" /> : rows.length === 0 ? <p className="card text-slate-600">{t('noHistory')}</p> : (

@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -73,7 +74,7 @@ export function SupplierEditSheet({ open, supplier, onClose, onSaved }: { open: 
               {shown.map((i) => (
                 <li key={i.id}>
                   <label className="flex min-h-[44px] cursor-pointer items-center gap-3 px-3 hover:bg-slate-50">
-                    <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={d.itemIds.includes(i.id)} onChange={() => toggle(i.id)} />
+                    <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={d.itemIds.includes(i.id)} onChange={() => toggle(i.id)} />
                     <span>{pick(i.nameEn, i.nameTa)} <span className="font-mono text-xs text-slate-500">{i.code}</span></span>
                   </label>
                 </li>
@@ -82,8 +83,8 @@ export function SupplierEditSheet({ open, supplier, onClose, onSaved }: { open: 
           </div>
 
           {supplier && (
-            <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-              <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={d.active} onChange={(e) => setD({ ...d, active: e.target.checked })} /> <span>{t('active')}</span>
+            <label className="flex min-h-touch items-center gap-3 px-1">
+              <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={d.active} onChange={(e) => setD({ ...d, active: e.target.checked })} /> <span>{t('active')}</span>
             </label>
           )}
           <ErrorBox error={error} />
@@ -134,17 +135,17 @@ export function PaySheet({ supplier, payLocations, onClose, onPaid }: { supplier
           <Chips label={t('paymentMode')} value={mode} onChange={setMode} options={PAY_MODES.map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
           <div>
             <label htmlFor="pal" className="label">{t('payFrom')} *</label>
-            <select id="pal" className="field" value={loc} onChange={(e) => setLoc(e.target.value)}>
+            <Select id="pal" className="field" value={loc} onChange={(e) => setLoc(e.target.value)}>
               {payLocations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
             {mode === 'CASH' && <p className="mt-1 text-xs text-slate-500">{t('cashRecon')}</p>}
           </div>
           <div>
             <label htmlFor="pap" className="label">{t('settlePurchase')}</label>
-            <select id="pap" className="field" value={purchase} onChange={(e) => { setPurchase(e.target.value); const p = open.find((x) => x.id === e.target.value); if (p && !amount) setAmount(dec(p.creditAmount).toString()); }}>
+            <Select id="pap" className="field" value={purchase} onChange={(e) => { setPurchase(e.target.value); const p = open.find((x) => x.id === e.target.value); if (p && !amount) setAmount(dec(p.creditAmount).toString()); }}>
               <option value="">{t('payOldest')}</option>
               {open.map((p) => <option key={p.id} value={p.id}>{p.code} · {formatINR(p.creditAmount)}{p.dueDate ? ` · ${prettyDate(day(p.dueDate))}` : ''}{p.overdue ? ' ▼' : ''}</option>)}
-            </select>
+            </Select>
           </div>
           <TextField id="par" label={t('referenceNo')} value={ref} onChange={(e) => setRef(e.target.value)} maxLength={40} />
           <ErrorBox error={error} />

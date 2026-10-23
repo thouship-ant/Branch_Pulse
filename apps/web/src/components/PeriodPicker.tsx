@@ -1,5 +1,6 @@
 'use client';
 
+import { DateInput } from '@/components/DateNav';
 import { useMemo, useState } from 'react';
 import { addDays, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
@@ -48,8 +49,8 @@ export function PeriodPicker({ period, label, presets: presetsOverride }: { peri
       </div>
       {preset === 'custom' && (
         <div className="flex items-end gap-2">
-          <div><label htmlFor="pf" className="label">{t('rangeFrom')}</label><input id="pf" type="date" className="field" value={custom.from} max={custom.to} onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value || c.from }))} /></div>
-          <div><label htmlFor="pt" className="label">{t('rangeTo')}</label><input id="pt" type="date" className="field" value={custom.to} min={custom.from} max={today} onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value || c.to }))} /></div>
+          <div><label htmlFor="pf" className="label">{t('rangeFrom')}</label><DateInput id="pf" value={custom.from} max={custom.to} onChange={(v) => setCustom((c) => ({ ...c, from: v || c.from }))} /></div>
+          <div><label htmlFor="pt" className="label">{t('rangeTo')}</label><DateInput id="pt" value={custom.to} min={custom.from} max={today} onChange={(v) => setCustom((c) => ({ ...c, to: v || c.to }))} /></div>
         </div>
       )}
     </div>

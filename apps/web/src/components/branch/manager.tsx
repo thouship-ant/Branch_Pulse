@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -86,12 +87,12 @@ export function ManagerChooser({
       {value.mode === 'existing' && (
         <div>
           <label htmlFor="mgr" className="label">{t('manager')}</label>
-          <select id="mgr" className="field" value={value.userId} onChange={(e) => set({ userId: e.target.value })}>
+          <Select id="mgr" className="field" value={value.userId} onChange={(e) => set({ userId: e.target.value })}>
             <option value="">—</option>
             {eligible.map((e) => (
               <option key={e.id} value={e.id}>{e.fullName} ({e.username}){e.branchName ? ` · ${e.branchName}` : ''}</option>
             ))}
-          </select>
+          </Select>
           {picked?.branchId && picked.branchId !== currentBranchId && (
             <p role="status" className="mt-2 rounded-card border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               ⚠ {picked.fullName} {t('moveWarning', { branch: picked.branchName ?? '' })}

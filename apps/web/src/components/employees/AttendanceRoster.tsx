@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/Select';
+import { DateInput } from '@/components/DateNav';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
@@ -69,15 +71,15 @@ export function AttendanceRoster({ locations, fixedLocationId }: { locations: Lo
         {!fixedLocationId && (
           <div className="min-w-[220px]">
             <label htmlFor="arl" className="label">{t('branch')}</label>
-            <select id="arl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+            <Select id="arl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
               <option value="">{t('chooseLocation')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div>
           <label htmlFor="ard" className="label">{t('rosterFor')}</label>
-          <input id="ard" type="date" className="field" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
+          <DateInput id="ard" value={date} max={today} onChange={(v) => setDate(v || today)} />
         </div>
       </div>
       <ErrorBox error={error} />

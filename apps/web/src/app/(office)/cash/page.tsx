@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { VarianceChip, varianceTone } from '@/components/cash/parts';
+import { varianceTone } from '@/components/cash/parts';
 import { VarianceReport } from '@/components/cash/VarianceReport';
 import { DateNav } from '@/components/DateNav';
-import { ErrorBox, Sheet, Skeleton, StatusPill } from '@/components/ui';
-import { api, ApiError } from '@/lib/api';
-import { todayIST } from '@/lib/dates';
+import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
+import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { useDateParam } from '@/lib/useDateParam';
 import { dec, formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
 
@@ -37,32 +37,14 @@ export default function CashPage() {
 
 function Daily() {
   const { t, pick } = useT();
-  const { can } = useSession();
-  const [date, setDate] = useState(todayIST());
+  const [date, setDate, ready] = useDateParam();
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rejecting, setRejecting] = useState<any | null>(null);
-  const [comment, setComment] = useState('');
-  const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try { setData(await api.get(`/cash/overview?date=${date}`)); setError(null); } catch (e: any) { setError(e.message); }
   }, [date]);
-  useEffect(() => { setData(null); void load(); }, [load]);
-
-  async function approve(id: string) {
-    setBusy(id);
-    try { await api.post(`/cash/reconciliation/${id}/approve`); await load(); }
-    catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
-    finally { setBusy(null); }
-  }
-  async function reject() {
-    if (!rejecting) return;
-    setBusy(rejecting.reconId);
-    try { await api.post(`/cash/reconciliation/${rejecting.reconId}/reject`, { comment }); setRejecting(null); setComment(''); await load(); }
-    catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
-    finally { setBusy(null); }
-  }
+  useEffect(() => { if (!ready) return; setData(null); void load(); }, [load, ready]);
 
   const tot = data?.totals;
   return (
@@ -117,14 +99,7 @@ function Daily() {
                       <td className="px-3 py-3">
                         {v && tone ? (
                           <div className="space-y-1">
-                            <span className={`chip ${tone.cls}`}><span aria-hidden>{tone.icon}</span>{t(tone.key)}{!v.isZero() && ` ${formatINR(v.abs(), { decimals: false })}`}</span>
-                            {r.varianceApproval && <div><VarianceChip status={r.varianceApproval} /></div>}
-                            {r.varianceApproval === 'SUBMITTED' && can('cash:approve') && (
-                              <div className="flex gap-2 pt-1">
-                                <button className="btn-primary min-h-[36px] px-3 text-sm" disabled={busy === r.reconId} onClick={() => approve(r.reconId)}>✓ {t('approve')}</button>
-                                <button className="btn-danger min-h-[36px] px-3 text-sm" disabled={busy === r.reconId} onClick={() => setRejecting(r)}>✕ {t('reject')}</button>
-                              </div>
-                            )}
+                            <span className={`chip ${tone.cls}`}><span aria-hidden>{tone.icon}</span><span className="sr-only">{t(tone.key)}</span>{!v.isZero() && ` ${formatINR(v.abs(), { decimals: false })}`}</span>
                           </div>
                         ) : '—'}
                       </td>
@@ -137,17 +112,6 @@ function Daily() {
           </section>
         </>
       )}
-
-      <Sheet open={!!rejecting} onClose={() => setRejecting(null)} title={rejecting ? `${t('reject')} · ${rejecting.name}` : ''}>
-        <div className="space-y-3">
-          <label htmlFor="rc" className="label">{t('comment')} *</label>
-          <textarea id="rc" className="field min-h-[96px] py-2" value={comment} onChange={(e) => setComment(e.target.value)} />
-          <div className="flex justify-end gap-2">
-            <button className="btn-secondary" onClick={() => setRejecting(null)}>{t('cancel')}</button>
-            <button className="btn-danger" disabled={!comment.trim() || busy !== null} onClick={reject}>{t('confirm')}</button>
-          </div>
-        </div>
-      </Sheet>
     </div>
   );
 }

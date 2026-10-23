@@ -53,7 +53,7 @@ export function SupplierManager({ payLocations, onChanged }: { payLocations: Loc
           </div>
           {showBalance && (
             <label className="flex min-h-touch items-center gap-2 rounded-card border border-slate-300 px-3 text-sm">
-              <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={owing} onChange={(e) => setOwing(e.target.checked)} /> {t('onlyOwing')}
+              <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={owing} onChange={(e) => setOwing(e.target.checked)} /> {t('onlyOwing')}
             </label>
           )}
         </div>

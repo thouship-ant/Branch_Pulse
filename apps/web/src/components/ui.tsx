@@ -40,9 +40,11 @@ export function ActiveChip({ active }: { active: boolean }) {
 
 // ------------------------------------------------------------------ inputs
 export function MoneyInput({
-  value, onChange, label, id, required, hint, disabled,
+  value, onChange, label, id, required, hint, disabled, onBlur, error,
 }: {
   value: string; onChange: (v: string) => void; label: string; id: string; required?: boolean; hint?: string; disabled?: boolean;
+  /** fired when the user leaves the field (auto-save) */ onBlur?: () => void;
+  /** inline message shown under the field */ error?: string;
 }) {
   return (
     <div>
@@ -53,7 +55,11 @@ export function MoneyInput({
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
         <input
           id={id}
-          className="field pl-8 text-lg tabular-nums"
+          className={`field pl-8 text-lg tabular-nums ${error ? 'border-red-400 focus:border-red-500 focus:ring-red-200' : ''}`}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-err` : undefined}
+          onBlur={onBlur}
+          onKeyDown={onBlur ? (e) => { if (e.key === 'Enter') e.currentTarget.blur(); } : undefined}
           inputMode="decimal"
           autoComplete="off"
           placeholder="0"
@@ -62,7 +68,7 @@ export function MoneyInput({
           onChange={(e) => onChange(cleanAmount(e.target.value))}
         />
       </div>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      {error ? <p id={`${id}-err`} role="alert" className="mt-1 text-sm text-red-700">{error}</p> : hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     </div>
   );
 }
@@ -115,7 +121,7 @@ export function Chips<T extends string>({
             key={o.value} type="button" role="radio" aria-checked={value === o.value}
             onClick={() => onChange(o.value)}
             className={`min-h-[44px] rounded-full border px-4 text-[15px] font-semibold transition duration-150 active:scale-[0.97] ${value === o.value ? 'border-transparent text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)]' : 'border-slate-300 bg-surface text-ink shadow-sm hover:border-slate-400 hover:bg-slate-50'}`}
-            style={value === o.value ? { backgroundImage: 'linear-gradient(180deg,#3574ee,#1f55d8)' } : undefined}
+            style={value === o.value ? { backgroundColor: '#1e2a8a' } : undefined}
           >
             {value === o.value && <span aria-hidden>✓ </span>}{o.label}
           </button>

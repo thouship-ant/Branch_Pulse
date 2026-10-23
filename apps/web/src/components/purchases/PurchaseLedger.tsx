@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -128,42 +129,42 @@ export function PurchaseLedger({ locations, fixedLocationId, fixedSupplierId, in
         {!fixedLocationId && (
           <div>
             <label htmlFor="ll" className="label">{t('atLocation')}</label>
-            <select id="ll" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="ll" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         {!fixedSupplierId && (
           <div>
             <label htmlFor="lsp" className="label">{t('supplier')}</label>
-            <select id="lsp" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+            <Select id="lsp" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
               <option value="">{t('allTypes')}</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div>
           <label htmlFor="lst" className="label">{t('approvalStatus')}</label>
-          <select id="lst" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select id="lst" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             {['SUBMITTED', 'APPROVED', 'REJECTED'].map((s) => <option key={s} value={s}>{t(STATUS_KEY[s])}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="lse" className="label">{t('settlement')}</label>
-          <select id="lse" className="field" value={settlement} onChange={(e) => setSettlement(e.target.value)}>
+          <Select id="lse" className="field" value={settlement} onChange={(e) => setSettlement(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             <option value="open">{t('settleOpen')}</option>
             <option value="settled">{t('settleDone')}</option>
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="lm2" className="label">{t('paymentMode')}</label>
-          <select id="lm2" className="field" value={mode} onChange={(e) => setMode(e.target.value)}>
+          <Select id="lm2" className="field" value={mode} onChange={(e) => setMode(e.target.value)}>
             <option value="">{t('allModes')}</option>
             {MODES.map((m) => <option key={m} value={m}>{MODE_KEY[m] ? t(MODE_KEY[m]) : m}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="lq2" className="label">{t('search')}</label>

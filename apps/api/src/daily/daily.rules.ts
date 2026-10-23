@@ -21,7 +21,7 @@ export interface CashComponents {
   withdrawals: Dec;
 }
 
-/** Expected = Opening + Cash sales + Other receipts - Cash expenses - Cash purchases - Other cash out - Withdrawals. */
+/** Expected = Opening + Cash sales + Other receipts - Cash expenses - Cash purchases - Other cash out - Withdrawals, rounded to a whole rupee (half up). */
 export function expectedCash(c: CashComponents): Dec {
   return c.opening
     .plus(c.cashSales)
@@ -29,7 +29,8 @@ export function expectedCash(c: CashComponents): Dec {
     .minus(c.cashExpenses)
     .minus(c.cashPurchases)
     .minus(c.otherCashOut)
-    .minus(c.withdrawals);
+    .minus(c.withdrawals)
+    .toDecimalPlaces(0);
 }
 
 /** Variance = Actual - Expected. < 0 shortage, > 0 surplus, 0 tallied. */

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { DateNav } from '@/components/DateNav';
 import { Icon, type IconName } from '@/components/Icon';
-import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
+import { ErrorBox, Sheet, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
@@ -13,6 +13,8 @@ import { EXCEPTION_KEY } from '@/lib/labels';
 import { dec, formatINR } from '@/lib/money';
 
 interface Exc { code: string; severity: 'CRITICAL' | 'WARNING' | 'INFO'; group: string; groupKey: string; groupParam?: number; title: string; locationId?: string; locationName?: string; locationNameTa?: string | null; businessDate?: string; metric?: string; link: { type: string; locationId?: string; date?: string } }
+interface PendingClosing { locationId: string; locationName: string; locationNameTa: string | null; businessDate: string; status: string }
+const PENDING_PAGE_SIZE = 10;
 type SortKey = 'name' | 'sales' | 'expenses' | 'net' | 'cash' | 'upi' | 'purchases' | 'wastage' | 'cashVariance';
 
 const SEV: Record<string, { icon: string; cls: string }> = {
@@ -29,12 +31,18 @@ export default function Dashboard() {
   const [allClosed, setAllClosed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'name', dir: 1 });
+  const [pendingClosings, setPendingClosings] = useState<PendingClosing[]>([]);
+  const [pendingOpen, setPendingOpen] = useState(false);
+  const [pendingPage, setPendingPage] = useState(1);
 
   const load = useCallback(async () => {
     try {
-      const [s, ex] = await Promise.all([api.get(`/dashboard/summary?date=${date}`), api.full.get<Exc[]>('/exceptions')]);
+      const [s, ex, pc] = await Promise.all([
+        api.get(`/dashboard/summary?date=${date}`), api.full.get<Exc[]>('/exceptions'), api.get<PendingClosing[]>('/pending-closings'),
+      ]);
       setSummary(s);
-      setExceptions(ex.data);
+      setPendingClosings(pc);
+      setExceptions(ex.data.filter((e) => e.code !== 'CLOSING_PENDING')); // closing details live in the banner + modal
       setAllClosed(!!ex.meta?.allClosed);
       setError(null);
     } catch (e: any) {
@@ -67,6 +75,7 @@ export default function Dashboard() {
   if (!summary) return error ? <ErrorBox error={error} /> : <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-40" /><Skeleton className="h-64" /></div>;
   const tl = summary.tiles;
   const change = summary.vsLastWeek.salesChangePct;
+  const pendingDates = [...new Set(pendingClosings.map((p) => p.businessDate))]; // already newest first
 
   // group by issue + date, keeping the server's order (critical first, newest date first)
   const groups: Array<{ key: string; heading: string; param?: number; date?: string | null; items: Exc[] }> = [];
@@ -81,8 +90,62 @@ export default function Dashboard() {
     e.link.type === 'EXPENSE_QUEUE' ? '/approvals' :
     e.link.type === 'CASH_RECONCILIATION' && e.link.locationId && e.link.date ? `/cash/${e.link.locationId}/${e.link.date}` : e.link.locationId && e.link.date ? `/closings/${e.link.locationId}/${e.link.date}` : '/closings';
 
+  // everything that needs attention, one heading per issue and date: pending closings first, then the other alerts (cash shortage ...)
+  type Chip = { key: string; label: string; href: string; cls: string; icon: string };
+  const alertGroups: Array<{ key: string; date: string; heading: string; chips: Chip[] }> = [
+    ...pendingDates.map((d) => ({
+      key: `pc|${d}`, date: d, heading: `${t('exClosingPending')} - ${prettyDate(d)}`,
+      chips: pendingClosings.filter((p) => p.businessDate === d).map((p) => ({
+        key: p.locationId, label: pick(p.locationName, p.locationNameTa), href: `/closings/${p.locationId}/${d}`, cls: SEV.CRITICAL.cls, icon: SEV.CRITICAL.icon,
+      })),
+    })),
+    ...groups.map((g) => ({
+      key: g.key, date: g.date ?? '',
+      heading: `${g.key.split('|')[0] in EXCEPTION_KEY ? t(EXCEPTION_KEY[g.key.split('|')[0]], { n: g.param ?? '' }) : g.heading}${g.date ? ` - ${prettyDate(g.date)}` : ''}`,
+      chips: g.items.map((e, i) => ({
+        key: `${e.locationId}-${i}`, href: linkFor(e), cls: SEV[e.severity].cls, icon: SEV[e.severity].icon,
+        label: `${e.locationName ? pick(e.locationName, e.locationNameTa) : e.title}${e.code.startsWith('CASH') && e.metric ? ` · ${formatINR(String(Math.abs(Number(e.metric))), { decimals: false })}` : ''}${e.code === 'APPROVAL_PENDING' && e.metric ? ` (${e.metric})` : ''}`,
+      })),
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date)); // newest date first (stable: on one day closings come before other alerts; undated alerts last)
+  const alertCount = alertGroups.reduce((n, g) => n + g.chips.length, 0);
+  const alertPageCount = Math.max(1, Math.ceil(alertGroups.length / PENDING_PAGE_SIZE));
+  const ticker = [
+    pendingDates.length ? `${t('exClosingPending')} - ${pendingDates.slice(0, 6).map(prettyDate).join(', ')}${pendingDates.length > 6 ? ', ...' : ''}` : '',
+    ...groups.slice(0, 4).map((g) => alertGroups.find((x) => x.key === g.key)!.heading),
+  ].filter(Boolean).join('   ·   ');
+
   return (
     <div className="space-y-5">
+      {alertCount > 0 && (
+        <button
+          type="button" onClick={() => { setPendingPage(1); setPendingOpen(true); }}
+          className="block w-full overflow-hidden rounded-card border border-red-300 bg-red-50 px-4 py-2 text-left text-sm font-semibold text-red-900"
+        >
+          <span className="anim-marquee">⛔ {ticker}</span>
+        </button>
+      )}
+      <Sheet open={pendingOpen} onClose={() => setPendingOpen(false)} title={`${t('exceptions')} (${alertCount})`}>
+        <div className="space-y-4">
+          {alertGroups.slice((pendingPage - 1) * PENDING_PAGE_SIZE, pendingPage * PENDING_PAGE_SIZE).map((g) => (
+            <div key={g.key}>
+              <h3 className="mb-1.5 text-sm font-semibold text-slate-700">{g.heading}</h3>
+              <div className="flex flex-wrap gap-2">
+                {g.chips.map((c) => (
+                  <Link key={c.key} href={c.href} className={`chip min-h-touch text-sm ${c.cls}`}><span aria-hidden>{c.icon}</span>{c.label}</Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {alertPageCount > 1 && (
+          <div className="mt-3 flex items-center justify-between">
+            <button className="btn-secondary" disabled={pendingPage <= 1} onClick={() => setPendingPage((p) => p - 1)}>{t('prevPage')}</button>
+            <span className="text-sm tabular-nums text-slate-600">{pendingPage} / {alertPageCount}</span>
+            <button className="btn-secondary" disabled={pendingPage >= alertPageCount} onClick={() => setPendingPage((p) => p + 1)}>{t('nextPage')}</button>
+          </div>
+        )}
+      </Sheet>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 className="text-2xl font-bold">{t('dashboard')}</h2>
         <DateNav id="date" date={date} onChange={setDate} />
@@ -94,28 +157,7 @@ export default function Dashboard() {
         {exceptions.length === 0 && allClosed && (
           <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-4 py-3 font-semibold text-emerald-900">✓ {t('allClosed')}</p>
         )}
-        {exceptions.length === 0 && !allClosed && <p className="text-sm text-slate-500">{t('noExceptions')}</p>}
-        {/* one heading per issue and date, with the affected branches listed under it */}
-        <div className="space-y-3">
-          {groups.map((g) => (
-            <div key={g.key}>
-              <h3 className="mb-1 text-sm font-semibold text-slate-700">
-                {g.key.split('|')[0] in EXCEPTION_KEY ? t(EXCEPTION_KEY[g.key.split('|')[0]], { n: g.param ?? '' }) : g.heading}
-                {g.date ? ` - ${prettyDate(g.date)}` : ''}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {g.items.map((e, i) => (
-                  <Link key={i} href={linkFor(e)} className={`chip min-h-touch text-sm ${SEV[e.severity].cls}`}>
-                    <span aria-hidden>{SEV[e.severity].icon}</span>
-                    {e.locationName ? pick(e.locationName, e.locationNameTa) : e.title}
-                    {e.code.startsWith('CASH') && e.metric ? ` · ${formatINR(String(Math.abs(Number(e.metric))), { decimals: false })}` : ''}
-                    {e.code === 'APPROVAL_PENDING' && e.metric ? ` (${e.metric})` : ''}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        {exceptions.length === 0 && !allClosed && pendingClosings.length === 0 && <p className="text-sm text-slate-500">{t('noExceptions')}</p>}
       </section>
 
       {/* Band 2: KPI tiles */}

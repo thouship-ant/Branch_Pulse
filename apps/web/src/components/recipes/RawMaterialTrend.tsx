@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { prettyDate, shortDate } from '@/lib/dates';
@@ -30,10 +31,10 @@ export function RawMaterialTrend() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[220px]">
           <label htmlFor="rmi" className="label">{t('chooseRawMaterial')}</label>
-          <select id="rmi" className="field" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+          <Select id="rmi" className="field" value={itemId} onChange={(e) => setItemId(e.target.value)}>
             <option value="">{t('chooseItem')}</option>
             {items.filter((i) => i.status === 'ACTIVE').map((i) => <option key={i.id} value={i.id}>{pick(i.nameEn, i.nameTa)}</option>)}
-          </select>
+          </Select>
         </div>
         <PeriodPicker period={period} label={t('rawMaterialTrendTitle')} />
       </div>

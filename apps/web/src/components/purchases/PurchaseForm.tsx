@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/Select';
+import { DateInput } from '@/components/DateNav';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, type Warning } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
@@ -144,22 +146,22 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
         {!fixedLocationId && (
           <div>
             <label htmlFor="pl" className="label">{t('atLocation')} *</label>
-            <select id="pl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+            <Select id="pl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
               <option value="">{t('chooseLocation')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div>
           <label htmlFor="pd" className="label">{t('purchaseDate')}</label>
-          <input id="pd" type="date" className="field" value={date} max={today} min={backdate > 0 ? addDays(today, -backdate) : undefined} onChange={(e) => setDate(e.target.value || today)} />
+          <DateInput id="pd" value={date} max={today} min={backdate > 0 ? addDays(today, -backdate) : undefined} onChange={(v) => setDate(v || today)} />
         </div>
         <div>
           <label htmlFor="ps" className="label">{t('supplier')} *</label>
-          <select id="ps" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+          <Select id="ps" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
             <option value="">{t('chooseSupplier')}</option>
             {boot.suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          </Select>
         </div>
         <TextField id="pr" label={t('invoiceNo')} value={refNo} onChange={(e) => setRefNo(e.target.value)} maxLength={40} />
       </div>
@@ -177,10 +179,10 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
               <div className="flex items-end gap-2">
                 <div className="min-w-0 flex-1">
                   <label htmlFor={`pi${l.key}`} className="label">{t('itemLabel')} *</label>
-                  <select id={`pi${l.key}`} className="field" value={l.itemId} onChange={(e) => chooseItem(l.key, e.target.value)}>
+                  <Select id={`pi${l.key}`} className="field" value={l.itemId} onChange={(e) => chooseItem(l.key, e.target.value)}>
                     <option value="">{t('chooseItem')}</option>
                     {items.map((x) => <option key={x.id} value={x.id}>{pick(x.nameEn, x.nameTa)}</option>)}
-                  </select>
+                  </Select>
                 </div>
                 {lines.length > 1 && (
                   <button type="button" className="btn-secondary min-h-touch px-3" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} aria-label={`${t('removeItem')} ${i + 1}`}>✕</button>
@@ -193,9 +195,9 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
                 </div>
                 <div>
                   <label htmlFor={`pu${l.key}`} className="label">{t('unitLabel')}</label>
-                  <select id={`pu${l.key}`} className="field" value={l.unitId} disabled={!l.itemId} onChange={(e) => setLine(l.key, { unitId: e.target.value })}>
+                  <Select id={`pu${l.key}`} className="field" value={l.unitId} disabled={!l.itemId} onChange={(e) => setLine(l.key, { unitId: e.target.value })}>
                     {opts.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor={`pt${l.key}`} className="label">{t('rate')}</label>
@@ -246,7 +248,7 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
       {calc.credit.greaterThan(0) && (
         <div>
           <label htmlFor="pdue" className="label">{t('dueDate')} *</label>
-          <input id="pdue" type="date" className="field" value={due} min={date} onChange={(e) => setDue(e.target.value)} />
+          <DateInput id="pdue" value={due} min={date} onChange={(v) => setDue(v)} />
           {supplier?.paymentTermsDays ? <p className="mt-1 text-xs text-slate-500">{supplier.name}: {supplier.paymentTermsDays} {t('creditDays')}</p> : null}
         </div>
       )}

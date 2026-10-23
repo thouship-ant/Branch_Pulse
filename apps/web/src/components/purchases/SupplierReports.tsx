@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
@@ -208,10 +209,10 @@ function BySupplier({ locations }: { locations: LocationOption[] }) {
           <PeriodPicker period={period} label={t('rBySupplier')} />
           <div className="min-w-[200px]">
             <label htmlFor="rbs" className="label">{t('atLocation')}</label>
-            <select id="rbs" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="rbs" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         </div>
         <button className="btn-secondary" disabled={!data} onClick={() => download(`supplier-wise-purchases-${range.from}_${range.to}.csv`, [

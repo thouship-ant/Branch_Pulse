@@ -36,7 +36,7 @@ export default function BranchDetail() {
 
   return (
     <div className="space-y-4">
-      <Link href="/branches" className="text-sm text-brand underline">← {t('branches')}</Link>
+      <Link href="/branches" className="btn-secondary min-h-[40px] px-4 text-sm">← {t('branches')}</Link>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-mono text-sm font-semibold text-slate-500">{branch.code}</p>

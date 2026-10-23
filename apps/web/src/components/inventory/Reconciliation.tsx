@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { todayIST } from '@/lib/dates';
@@ -154,9 +155,9 @@ export function Reconciliation({ locations, fixedLocationId }: { locations: Loca
           {!fixedLocationId && (
             <div className="min-w-[220px]">
               <label htmlFor="rl" className="label">{t('atLocation')}</label>
-              <select id="rl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+              <Select id="rl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
                 {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-              </select>
+              </Select>
             </div>
           )}
           <DateNav id="rdate" date={date} onChange={setDate} />
@@ -187,12 +188,15 @@ export function Reconciliation({ locations, fixedLocationId }: { locations: Loca
 
       {!data ? <Skeleton className="h-64" /> : (
         <>
-          <section className="grid grid-cols-3 gap-2 lg:grid-cols-5 lg:gap-3" aria-label="Summary">
-            <div className="card min-w-0 p-3 lg:p-4"><p className="truncate text-xs text-slate-600 lg:text-sm">{t('colExpected')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.expectedValue)}</p></div>
-            <div className="card min-w-0 p-3 lg:p-4"><p className="truncate text-xs text-slate-600 lg:text-sm">{t('colActual')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.physicalValue)}</p><p className="text-xs text-slate-500">{tot.itemsCounted} / {tot.itemsTotal}</p></div>
-            <div className={`card min-w-0 p-3 lg:p-4 ${dec(tot.shortageValue).greaterThan(0) ? 'border-red-300' : ''}`}><p className="truncate text-xs text-slate-600 lg:text-sm">▼ {t('shortage')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.shortageValue)}</p><p className="text-xs text-slate-500">{tot.shortages}</p></div>
-            <div className={`card min-w-0 p-3 lg:p-4 ${dec(tot.excessValue).greaterThan(0) ? 'border-amber-300' : ''}`}><p className="truncate text-xs text-slate-600 lg:text-sm">▲ {t('excess')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.excessValue)}</p><p className="text-xs text-slate-500">{tot.excesses}</p></div>
-            <div className="card min-w-0 p-3 lg:p-4"><p className="truncate text-xs text-slate-600 lg:text-sm">{t('colWastage')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.wastageValue)}</p></div>
+          {/* always 2 columns: this report also renders inside the manager's narrow (max-w-lg) shell, where
+              a `lg:` viewport breakpoint would still fire on a wide desktop window and cram 5 tiles into that
+              narrow column */}
+          <section className="grid grid-cols-2 gap-2 lg:gap-3" aria-label="Summary">
+            <div className="card min-w-0 p-3 lg:p-4"><p className="text-xs text-slate-600 lg:text-sm">{t('colExpected')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.expectedValue)}</p></div>
+            <div className="card min-w-0 p-3 lg:p-4"><p className="text-xs text-slate-600 lg:text-sm">{t('colActual')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.physicalValue)}</p><p className="text-xs text-slate-500">{tot.itemsCounted} / {tot.itemsTotal}</p></div>
+            <div className={`card min-w-0 p-3 lg:p-4 ${dec(tot.shortageValue).greaterThan(0) ? 'border-red-300' : ''}`}><p className="text-xs text-slate-600 lg:text-sm">▼ {t('shortage')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.shortageValue)}</p><p className="text-xs text-slate-500">{tot.shortages}</p></div>
+            <div className={`card min-w-0 p-3 lg:p-4 ${dec(tot.excessValue).greaterThan(0) ? 'border-amber-300' : ''}`}><p className="text-xs text-slate-600 lg:text-sm">▲ {t('excess')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.excessValue)}</p><p className="text-xs text-slate-500">{tot.excesses}</p></div>
+            <div className="card min-w-0 p-3 lg:p-4"><p className="text-xs text-slate-600 lg:text-sm">{t('colWastage')}</p><p className="break-words text-[15px] font-bold leading-tight tabular-nums lg:text-lg">{amt(tot.wastageValue)}</p></div>
           </section>
 
           {/* desktop: the formula as a table */}

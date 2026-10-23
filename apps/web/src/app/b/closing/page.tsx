@@ -85,7 +85,7 @@ export default function ClosingPage() {
             <Row label={`${t('expenses')} (${tot.expenseCount})`} value={tot.totalExpenses} />
             <Row label={`${t('purchases')} (${tot.purchaseCount})`} value={tot.totalPurchases} />
             <Row label={t('wastage')} value={tot.totalWastageValue} />
-            <Row label={t('expectedCash')} value={cash.expectedClosing} />
+            <Row label={t('expectedCash')} value={cash.expectedClosing} whole />
             <Row label={t('actualCash')} value={cash.actualClosing} />
             <Row label={`${t('variance')} · ${cash.varianceLabel ?? ''}`} value={cash.variance} bold />
           </section>
@@ -132,11 +132,11 @@ export default function ClosingPage() {
   );
 }
 
-function Row({ label, value, bold }: { label: string; value: string | null | undefined; bold?: boolean }) {
+function Row({ label, value, bold, whole }: { label: string; value: string | null | undefined; bold?: boolean; whole?: boolean }) {
   return (
     <div className={`flex justify-between ${bold ? 'font-bold' : ''}`}>
       <span className="text-slate-600">{label}</span>
-      <span className="tabular-nums">{formatINR(value)}</span>
+      <span className="tabular-nums">{formatINR(value, whole ? { decimals: false } : undefined)}</span>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
@@ -107,10 +108,10 @@ export function TransfersPanel({ locations, fixedLocationId }: { locations: Loca
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-[200px]">
           <label htmlFor="tst" className="label">{t('status')}</label>
-          <select id="tst" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select id="tst" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             {['PENDING_APPROVAL', 'APPROVED', 'DISPATCHED', 'RECEIVED', 'PARTIALLY_RECEIVED', 'CANCELLED'].map((s) => <option key={s} value={s}>{t(TRANSFER_STATUS_KEY[s])}</option>)}
-          </select>
+          </Select>
         </div>
         {can('transfer:create') && <button className="btn-primary" onClick={() => { setFormError(null); setCreating(true); }}>+ {t('newTransfer')}</button>}
       </div>
@@ -194,23 +195,23 @@ export function TransfersPanel({ locations, fixedLocationId }: { locations: Loca
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div><label htmlFor="tf" className="label">{t('fromLocation')} *</label>
-              <select id="tf" className="field" value={from} onChange={(e) => setFrom(e.target.value)}><option value="">{t('chooseLocation')}</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}</select></div>
+              <Select id="tf" className="field" value={from} onChange={(e) => setFrom(e.target.value)}><option value="">{t('chooseLocation')}</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}</Select></div>
             <div><label htmlFor="tt" className="label">{t('toLocation')} *</label>
-              <select id="tt" className="field" value={to} onChange={(e) => setTo(e.target.value)}><option value="">{t('chooseLocation')}</option>{locations.filter((l) => l.id !== from).map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}</select></div>
+              <Select id="tt" className="field" value={to} onChange={(e) => setTo(e.target.value)}><option value="">{t('chooseLocation')}</option>{locations.filter((l) => l.id !== from).map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}</Select></div>
           </div>
           {lines.map((l) => (
             <div key={l.key} className="space-y-2 rounded-card border border-slate-200 p-3">
               <div className="flex items-end gap-2">
                 <div className="min-w-0 flex-1"><label htmlFor={`ti${l.key}`} className="label">{t('itemLabel')}</label>
-                  <select id={`ti${l.key}`} className="field" value={l.itemId} onChange={(e) => { const it = items.find((x) => x.id === e.target.value); setLines((ls) => ls.map((x) => (x.key === l.key ? { ...x, itemId: e.target.value, unitId: it?.purchaseUnitId ?? it?.baseUnitId ?? '' } : x))); }}>
-                    <option value="">{t('chooseItem')}</option>{items.map((i) => <option key={i.id} value={i.id}>{pick(i.nameEn, i.nameTa)}</option>)}</select></div>
+                  <Select id={`ti${l.key}`} className="field" value={l.itemId} onChange={(e) => { const it = items.find((x) => x.id === e.target.value); setLines((ls) => ls.map((x) => (x.key === l.key ? { ...x, itemId: e.target.value, unitId: it?.purchaseUnitId ?? it?.baseUnitId ?? '' } : x))); }}>
+                    <option value="">{t('chooseItem')}</option>{items.map((i) => <option key={i.id} value={i.id}>{pick(i.nameEn, i.nameTa)}</option>)}</Select></div>
                 {lines.length > 1 && <button className="btn-secondary min-h-touch px-3" aria-label={t('removeItem')} onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}>✕</button>}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><label htmlFor={`tq${l.key}`} className="label">{t('quantity')}</label>
                   <input id={`tq${l.key}`} className="field tabular-nums" inputMode="decimal" placeholder="0" value={l.qty} onChange={(e) => setLines((ls) => ls.map((x) => (x.key === l.key ? { ...x, qty: cleanAmount(e.target.value, 3) } : x)))} /></div>
                 <div><label htmlFor={`tu${l.key}`} className="label">{t('unitLabel')}</label>
-                  <select id={`tu${l.key}`} className="field" value={l.unitId} disabled={!l.itemId} onChange={(e) => setLines((ls) => ls.map((x) => (x.key === l.key ? { ...x, unitId: e.target.value } : x)))}>{unitsFor(l.itemId).map((u: any) => <option key={u.id} value={u.id}>{u.code}</option>)}</select></div>
+                  <Select id={`tu${l.key}`} className="field" value={l.unitId} disabled={!l.itemId} onChange={(e) => setLines((ls) => ls.map((x) => (x.key === l.key ? { ...x, unitId: e.target.value } : x)))}>{unitsFor(l.itemId).map((u: any) => <option key={u.id} value={u.id}>{u.code}</option>)}</Select></div>
               </div>
             </div>
           ))}

@@ -18,6 +18,7 @@ export function ApprovalLimits() {
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -27,14 +28,33 @@ export function ApprovalLimits() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
+  const setEdit = (key: string, v: string) => {
+    setEdits((e) => ({ ...e, [key]: v }));
+    setErrors((e) => { if (!(key in e)) return e; const n = { ...e }; delete n[key]; return n; });
+  };
+  const clear = (key: string) => {
+    setEdits((e) => { const n = { ...e }; delete n[key]; return n; });
+    setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
+  };
+
+  /** Saves a limit as soon as the user leaves its field. A bad value stays in the field with its error beneath. */
   async function save(roleCode: string, entityType: string) {
     const key = `${roleCode}:${entityType}`;
     const value = edits[key];
-    if (!value) return;
-    setBusyKey(key); setError(null);
-    try { await api.put('/approval-limits', { roleCode, entityType, maxAmount: amt(value) }); setNotice(t('limitSaved')); setTimeout(() => setNotice(null), 2500); await load(); }
-    catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); }
-    finally { setBusyKey(null); }
+    if (value === undefined || busyKey === key) return;
+    const existing = limits?.find((l) => l.roleCode === roleCode && l.entityType === entityType)?.maxAmount;
+    if (value !== '' && existing != null && Number(value) === Number(existing)) { clear(key); return; } // unchanged
+    const maxAmount = value === '' ? undefined : amt(value);
+    if (maxAmount === undefined) { setErrors((e) => ({ ...e, [key]: value === '' ? t('settingRequired') : t('settingInvalidNumber') })); return; }
+    setBusyKey(key);
+    try {
+      await api.put('/approval-limits', { roleCode, entityType, maxAmount });
+      clear(key);
+      setNotice(t('limitSaved')); setTimeout(() => setNotice(null), 2500);
+      await load();
+    } catch (e) {
+      setErrors((x) => ({ ...x, [key]: e instanceof ApiError ? e.message : 'Could not save' }));
+    } finally { setBusyKey(null); }
   }
 
   if (!limits) return error ? <ErrorBox error={error} /> : <Skeleton className="h-64" />;
@@ -56,14 +76,10 @@ export function ApprovalLimits() {
                 const key = `${role.code}:${et}`;
                 const value = edits[key] ?? existing?.maxAmount ?? '';
                 return (
-                  <div key={et} className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <MoneyInput id={key} label={t(ET_KEY[et] as any)} value={value} onChange={(v) => setEdits((e) => ({ ...e, [key]: v }))} />
-                    </div>
-                    <button className="btn-secondary mb-0.5 min-h-[44px] px-3 text-sm" disabled={busyKey === key || !edits[key] || edits[key] === existing?.maxAmount} onClick={() => save(role.code, et)}>
-                      {busyKey === key ? '…' : t('save')}
-                    </button>
-                  </div>
+                  <MoneyInput
+                    key={et} id={key} label={t(ET_KEY[et] as any)} value={value} error={errors[key]}
+                    onChange={(v) => setEdit(key, v)} onBlur={() => void save(role.code, et)}
+                  />
                 );
               })}
             </div>

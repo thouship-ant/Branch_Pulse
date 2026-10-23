@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -15,7 +16,9 @@ import { VarianceBadge } from './Reconciliation';
 import { toDisplay } from './qty';
 
 const PAGE = 25;
-const money = (v: string | number) => formatINR(v, { decimals: false });
+// a zero-width space after the currency symbol gives long amounts exactly one graceful wrap point,
+// instead of the browser hard-breaking mid-digit when a tile is narrow
+const money = (v: string | number) => formatINR(v, { decimals: false }).replace('₹', '₹​');
 const day = (d: unknown) => String(d).slice(0, 10);
 const csvCell = (v: unknown) => {
   const s = v === null || v === undefined ? '' : String(v);
@@ -86,10 +89,10 @@ export function StockVarianceReport({ locations, fixedLocationId }: { locations:
         {!fixedLocationId && (
           <div className="min-w-[200px]">
             <label htmlFor="svb" className="label">{t('atLocation')}</label>
-            <select id="svb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="svb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <Chips label={t('showLabel')} value={type} onChange={setType} options={[{ value: 'all', label: t('allTypes') }, { value: 'shortage', label: t('shortage') }, { value: 'excess', label: t('excess') }]} />
@@ -99,7 +102,10 @@ export function StockVarianceReport({ locations, fixedLocationId }: { locations:
 
       {!data ? <Skeleton className="h-64" /> : (
         <div className={`space-y-4 transition-opacity ${loading ? 'opacity-50' : ''}`}>
-          <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Summary">
+          {/* always 2 columns: this report also renders inside the manager's narrow (max-w-lg) shell, where
+              a `lg:` viewport breakpoint would still fire on a wide desktop window and cram 4 tiles into that
+              narrow column */}
+          <section className="grid grid-cols-2 gap-3" aria-label="Summary">
             <Tile icon="alert" tone={s.shortageCount > 0 ? 'bad' : undefined} label={`▼ ${t('stkShortage')}`} value={money(s.shortageValue)} sub={`${s.shortageCount} ${t('entries')}`} />
             <Tile icon="trend" tone={s.excessCount > 0 ? 'warn' : undefined} label={`▲ ${t('stkExcess')}`} value={money(s.excessValue)} sub={`${s.excessCount} ${t('entries')}`} />
             <Tile icon="box" tone={dec(s.net).isNegative() ? 'bad' : undefined} label={t('stkNet')} value={`${dec(s.net).isNegative() ? '▼ ' : dec(s.net).isZero() ? '' : '▲ '}${money(dec(s.net).abs().toString())}`} />

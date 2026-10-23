@@ -25,6 +25,7 @@ export default function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -35,8 +36,7 @@ export default function LoginPage() {
           ? err.isNetwork ? 'No internet connection' : err.code === 'ACCOUNT_LOCKED' ? 'Too many attempts. Try again in 15 minutes.' : err.message
           : 'Could not sign in',
       );
-    } finally {
-      setBusy(false);
+      setBusy(false); // only a failure re-enables the button; after a success it stays disabled until the redirect leaves the page
     }
   }
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       {/* brand panel: full height on desktop, a compact banner on a phone */}
-      <section className="relative isolate flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1e3fbf] via-[#2f4fd6] to-[#5b3fe0] px-6 pb-16 pt-8 text-white lg:px-14 lg:py-14">
+      <section className="relative isolate flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-6 pb-16 pt-8 text-white lg:px-14 lg:py-14">
         <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-32 -right-16 h-96 w-96 rounded-full bg-indigo-300/20 blur-3xl" aria-hidden />
         <svg className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 w-full opacity-[0.16]" viewBox="0 0 800 160" preserveAspectRatio="none" aria-hidden>

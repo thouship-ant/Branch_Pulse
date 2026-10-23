@@ -62,7 +62,7 @@ export default function BranchHome() {
 
   return (
     <div className="space-y-4">
-      <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef4ff] to-[#f5f0ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
+      <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef1ff] to-[#f6f7ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
         <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-brand/10 blur-2xl" aria-hidden />
         <p className="text-sm font-medium text-slate-600">{t('today')} · {prettyDate(date)}</p>
         <div className="mt-0.5 flex items-end justify-between gap-3">
@@ -70,7 +70,7 @@ export default function BranchHome() {
           <p className="text-sm font-semibold tabular-nums text-brand-dark">{stepsDone}/{stepsTotal} <span className="font-medium text-slate-600">{t('stepsDone')}</span></p>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70 dark:bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={stepsTotal} aria-valuenow={stepsDone}>
-          <div className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-brand to-[#4a5bd8] transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
         </div>
         <p className="mt-2 text-xs font-medium text-slate-600">{stepsDone === stepsTotal ? `✓ ${t('allDoneToday')}` : t('keepGoing')}</p>
       </div>

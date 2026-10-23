@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -78,19 +79,19 @@ export function PaymentHistory({ fixedSupplierId, refreshKey = 0 }: { fixedSuppl
         {!fixedSupplierId && (
           <div className="min-w-[220px]">
             <label htmlFor="phs" className="label">{t('supplier')}</label>
-            <select id="phs" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+            <Select id="phs" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
               <option value="">{t('allSuppliers')}</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div className="min-w-[180px]">
           <label htmlFor="phst" className="label">{t('status')}</label>
-          <select id="phst" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select id="phst" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             <option value="ACTIVE">{t('active')}</option>
             <option value="REVERSED">{t('reversedLabel')}</option>
-          </select>
+          </Select>
         </div>
       </div>
       {!valid && <p role="alert" className="rounded-card border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">⚠ {t('invalidRange')}</p>}

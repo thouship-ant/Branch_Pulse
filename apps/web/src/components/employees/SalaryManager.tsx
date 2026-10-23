@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -75,10 +76,10 @@ export function SalaryManager({ locations }: { locations: LocationOption[] }) {
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[220px]">
             <label htmlFor="sml" className="label">{t('branch')}</label>
-            <select id="sml" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+            <Select id="sml" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
           <div><label htmlFor="smm" className="label">{t('monthLabel')}</label><input id="smm" type="month" className="field" value={month} max={thisMonth()} onChange={(e) => setMonth(e.target.value || thisMonth())} /></div>
         </div>
@@ -138,10 +139,10 @@ export function SalaryManager({ locations }: { locations: LocationOption[] }) {
         <div className="space-y-3">
           <div>
             <label htmlFor="smemp" className="label">{t('employeeNameLabel')} *</label>
-            <select id="smemp" className="field" value={computeEmployeeId} onChange={(e) => setComputeEmployeeId(e.target.value)}>
+            <Select id="smemp" className="field" value={computeEmployeeId} onChange={(e) => setComputeEmployeeId(e.target.value)}>
               <option value="">{t('chooseItem')}</option>
               {employees.map((e) => <option key={e.id} value={e.id}>{e.fullName} ({e.code})</option>)}
-            </select>
+            </Select>
           </div>
           <div className="flex justify-end gap-2">
             <button className="btn-secondary" onClick={() => setComputing(false)}>{t('cancel')}</button>
@@ -158,9 +159,9 @@ export function SalaryManager({ locations }: { locations: LocationOption[] }) {
           </div>
           <div>
             <label htmlFor="smpm" className="label">{t('paymentMethodLabel')}</label>
-            <select id="smpm" className="field" value={payMode} onChange={(e) => setPayMode(e.target.value as any)}>
+            <Select id="smpm" className="field" value={payMode} onChange={(e) => setPayMode(e.target.value as any)}>
               {MODES.map((m) => <option key={m} value={m}>{m.replace('_', ' ')}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="flex justify-end gap-2">
             <button className="btn-secondary" onClick={() => setPaying(null)}>{t('cancel')}</button>

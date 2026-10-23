@@ -52,7 +52,7 @@ export default function SupplierProfile() {
 
   return (
     <div className="space-y-4">
-      <Link href="/purchases" className="text-sm text-brand underline">← {t('backToPurchases')}</Link>
+      <Link href="/purchases" className="btn-secondary min-h-[40px] px-4 text-sm">← {t('backToPurchases')}</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-sm text-slate-500">{s.code}</p>

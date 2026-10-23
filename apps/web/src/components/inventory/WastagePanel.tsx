@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/Select';
+import { DateInput } from '@/components/DateNav';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError, type Warning } from '@/lib/api';
 import { addDays, monthLong, monthShort, prettyDate, shortDate, todayIST } from '@/lib/dates';
@@ -70,22 +72,22 @@ export function WastageForm({ locations, fixedLocationId, onSaved }: { locations
       {!fixedLocationId && (
         <div>
           <label htmlFor="wl" className="label">{t('atLocation')} *</label>
-          <select id="wl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+          <Select id="wl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
             <option value="">{t('chooseLocation')}</option>
             {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-          </select>
+          </Select>
         </div>
       )}
       <div>
         <label htmlFor="wd" className="label">{t('dateLabel')}</label>
-        <input id="wd" type="date" className="field" value={date} max={today} min={addDays(today, -3)} onChange={(e) => setDate(e.target.value || today)} />
+        <DateInput id="wd" value={date} max={today} min={addDays(today, -3)} onChange={(v) => setDate(v || today)} />
       </div>
       <div>
         <label htmlFor="wi" className="label">{t('itemLabel')} *</label>
-        <select id="wi" className="field" value={itemId} onChange={(e) => { const it = items.find((x) => x.id === e.target.value); setItemId(e.target.value); setUnitId(it?.purchaseUnitId ?? it?.baseUnitId ?? ''); }}>
+        <Select id="wi" className="field" value={itemId} onChange={(e) => { const it = items.find((x) => x.id === e.target.value); setItemId(e.target.value); setUnitId(it?.purchaseUnitId ?? it?.baseUnitId ?? ''); }}>
           <option value="">{t('chooseItem')}</option>
           {items.map((i) => <option key={i.id} value={i.id}>{pick(i.nameEn, i.nameTa)}</option>)}
-        </select>
+        </Select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -94,9 +96,9 @@ export function WastageForm({ locations, fixedLocationId, onSaved }: { locations
         </div>
         <div>
           <label htmlFor="wu" className="label">{t('unitLabel')}</label>
-          <select id="wu" className="field" value={unitId} disabled={!itemId} onChange={(e) => setUnitId(e.target.value)}>
+          <Select id="wu" className="field" value={unitId} disabled={!itemId} onChange={(e) => setUnitId(e.target.value)}>
             {units.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-          </select>
+          </Select>
         </div>
       </div>
       <Chips label={`${t('reason')} *`} value={reason} onChange={setReason} options={REASONS.map((k) => ({ value: k, label: t(WASTAGE_REASON_KEY[k]) }))} />
@@ -190,18 +192,18 @@ export function WastagePanel({ locations, fixedLocationId, analytics = true }: {
         {!fixedLocationId && (
           <div className="min-w-[200px]">
             <label htmlFor="wfl" className="label">{t('atLocation')}</label>
-            <select id="wfl" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="wfl" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div className="min-w-[180px]">
           <label htmlFor="wfs" className="label">{t('approvalStatus')}</label>
-          <select id="wfs" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select id="wfs" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             {['SUBMITTED', 'APPROVED', 'REJECTED'].map((s) => <option key={s} value={s}>{t(STATUS_KEY[s])}</option>)}
-          </select>
+          </Select>
         </div>
       </div>
       <ErrorBox error={error} />

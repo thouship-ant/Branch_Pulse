@@ -37,7 +37,7 @@ function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
 function Avatar({ name, className = '' }: { name: string; className?: string }) {
   const initials = name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
   return (
-    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-indigo-600 text-sm font-bold text-white shadow-sm ${className}`} aria-hidden>{initials}</span>
+    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-[#3a4bd0] text-sm font-bold text-white shadow-sm ${className}`} aria-hidden>{initials}</span>
   );
 }
 
@@ -100,7 +100,7 @@ export function BranchShell({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col">
       {/* branded header: the branch is the first thing you see */}
-      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-[#4f9fe8] via-[#9b7cc9] to-[#dd5586] px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(157,90,160,0.55)]">
+      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(30,42,138,0.55)]">
         <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold ring-2 ring-white/30" aria-hidden>
@@ -235,7 +235,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className={`min-w-0 flex-1 transition-[margin] duration-200 ${collapsed ? 'md:ml-[76px]' : 'md:ml-[264px]'}`}>
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 overflow-hidden bg-gradient-to-br from-[#4f9fe8] via-[#9b7cc9] to-[#dd5586] px-4 py-2 text-white shadow-[0_8px_24px_-12px_rgba(157,90,160,0.55)]">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-4 py-2 text-white shadow-[0_8px_24px_-12px_rgba(30,42,138,0.55)]">
           <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
           <div className="relative flex items-center gap-2">
             <button className="hidden h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15 md:flex" onClick={toggleSidebar} aria-label="Toggle sidebar" aria-expanded={!collapsed}>

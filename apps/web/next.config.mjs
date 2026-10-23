@@ -1,7 +1,20 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const API = process.env.API_URL || 'http://localhost:4000';
+const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '::1'];
+const PRODUCTION_API_URL = process.env.API_URL || 'http://127.0.0.1:4000';
+const LOCAL_API_URL = 'http://localhost:4000';
+
+export function getApiBaseUrl() {
+  if (typeof window === 'undefined') {
+    return PRODUCTION_API_URL;
+  }
+
+  return LOCAL_HOSTNAMES.includes(window.location.hostname)
+    ? LOCAL_API_URL
+    : PRODUCTION_API_URL;
+}
+const API = getApiBaseUrl();
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */

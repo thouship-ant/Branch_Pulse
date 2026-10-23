@@ -323,6 +323,38 @@ export class InsightsService {
     });
   }
 
+  /** Every branch-day still waiting for a closing (PENDING / REJECTED / REOPENED), from branch opening up to today. Newest first. */
+  async pendingClosings(ctx: ReqCtx) {
+    const today = toDate(todayIST());
+    const cutoff = String(await this.settings.get('closing.cutoff_time'));
+    const afterCutoff = timeIST() >= cutoff;
+
+    return this.prisma.runScoped(ctx.user, async (tx) => {
+      const branches = await tx.location.findMany({ where: { type: 'BRANCH', status: 'ACTIVE' } });
+      const ids = branches.map((b) => b.id);
+      const closings = await tx.dailyClosing.findMany({
+        where: { location_id: { in: ids }, business_date: { lte: today } },
+        select: { location_id: true, business_date: true, status: true },
+      });
+      const done = new Map<string, string>();
+      for (const c of closings) done.set(`${c.location_id}|${fmtDate(c.business_date)}`, c.status);
+
+      const items: Array<{ locationId: string; locationName: string; locationNameTa: string | null; businessDate: string; status: string }> = [];
+      for (const b of branches) {
+        const startsOn = toDate(fmtDate(b.opened_on ?? b.created_at));
+        for (let d = startsOn; d.getTime() <= today.getTime(); d = addDays(d, 1)) {
+          if (d.getTime() === today.getTime() && !afterCutoff) continue;
+          const date = fmtDate(d);
+          const status = done.get(`${b.id}|${date}`) ?? 'PENDING';
+          if (!OPEN.includes(status)) continue;
+          items.push({ locationId: b.id, locationName: b.name, locationNameTa: b.name_ta, businessDate: date, status });
+        }
+      }
+      items.sort((a, b) => b.businessDate.localeCompare(a.businessDate) || a.locationName.localeCompare(b.locationName));
+      return new Envelope(items, [], { count: items.length });
+    });
+  }
+
   /**
    * Live exception feed (LLD s13). Evaluated on read from source rows, sorted Critical -> Warning ->
    * Info, so it can never go stale. Persisted notifications with dedupe keys arrive with Phase 2 channels.

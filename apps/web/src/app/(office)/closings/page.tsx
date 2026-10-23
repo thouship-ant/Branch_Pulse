@@ -5,20 +5,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { DateNav } from '@/components/DateNav';
 import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
-import { addDays, prettyDate, prettyTime, todayIST } from '@/lib/dates';
+import { addDays, prettyDate, prettyTime } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
+import { useDateParam } from '@/lib/useDateParam';
 import { dec, formatINR } from '@/lib/money';
 
 export default function ClosingBoard() {
   const { t, pick } = useT();
-  const [date, setDate] = useState(todayIST());
+  const [date, setDate, ready] = useDateParam();
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try { setRows(await api.get(`/closings?date=${date}`)); setError(null); } catch (e: any) { setError(e.message); }
   }, [date]);
-  useEffect(() => { setRows(null); void load(); }, [load]);
+  useEffect(() => { if (!ready) return; setRows(null); void load(); }, [load, ready]);
 
   return (
     <div className="space-y-4">

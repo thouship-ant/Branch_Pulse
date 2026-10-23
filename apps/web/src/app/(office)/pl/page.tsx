@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { PLReport, type PLLines } from '@/components/pl/PLReport';
 import { PeriodPicker, usePeriod } from '@/components/PeriodPicker';
@@ -31,10 +32,10 @@ function BranchPL({ locations }: { locations: LocationOption[] }) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[220px]">
           <label htmlFor="plb" className="label">{t('branch')}</label>
-          <select id="plb" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+          <Select id="plb" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
             <option value="">{t('chooseLocation')}</option>
             {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-          </select>
+          </Select>
         </div>
         <PeriodPicker period={period} label={t('plTitle')} presets={PRESETS} />
       </div>

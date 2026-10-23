@@ -26,7 +26,7 @@ export function PLReport({ data, subtitle }: { data: PLLines; subtitle: string }
 
   return (
     <div className="space-y-4">
-      <div className="card space-y-1 border-0 bg-gradient-to-br from-[#eef4ff] to-[#f5f0ff] dark:from-[#1a2747] dark:to-[#24204a]">
+      <div className="card space-y-1 border-0 bg-gradient-to-br from-[#eef1ff] to-[#f6f7ff] dark:from-[#1a2747] dark:to-[#24204a]">
         <p className="text-xs font-bold uppercase tracking-[0.08em] text-brand-dark">{data.label}</p>
         <p className="text-sm text-slate-600">{subtitle} · {t('notASale')}</p>
       </div>

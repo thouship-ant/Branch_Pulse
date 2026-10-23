@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -136,41 +137,41 @@ export function ExpenseLedger({ fixedLocationId }: { fixedLocationId?: string })
         {!fixedLocationId && (
           <div>
             <label htmlFor="lb" className="label">{t('branch')}</label>
-            <select id="lb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="lb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.code} · {pick(b.name, b.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div>
           <label htmlFor="lc" className="label">{t('category')}</label>
-          <select id="lc" className="field" value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setSubId(''); }}>
+          <Select id="lc" className="field" value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setSubId(''); }}>
             <option value="">{t('allCategories')}</option>
             {top.map((c) => <option key={c.id} value={c.id}>{pick(c.nameEn, c.nameTa)}</option>)}
-          </select>
+          </Select>
         </div>
         {subs.length > 0 && (
           <div>
             <label htmlFor="ls" className="label">{t('subCategory')}</label>
-            <select id="ls" className="field" value={subId} onChange={(e) => setSubId(e.target.value)}>
+            <Select id="ls" className="field" value={subId} onChange={(e) => setSubId(e.target.value)}>
               <option value="">{t('allTypes')}</option>
               {subs.map((c) => <option key={c.id} value={c.id}>{pick(c.nameEn, c.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div>
           <label htmlFor="lm" className="label">{t('paymentMode')}</label>
-          <select id="lm" className="field" value={mode} onChange={(e) => setMode(e.target.value)}>
+          <Select id="lm" className="field" value={mode} onChange={(e) => setMode(e.target.value)}>
             <option value="">{t('allModes')}</option>
             {MODES.map((m) => <option key={m} value={m}>{MODE_KEY[m] ? t(MODE_KEY[m]) : m}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="lt" className="label">{t('approvalStatus')}</label>
-          <select id="lt" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select id="lt" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             {['SUBMITTED', 'APPROVED', 'REJECTED'].map((s) => <option key={s} value={s}>{t(STATUS_KEY[s])}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="lq" className="label">{t('search')}</label>

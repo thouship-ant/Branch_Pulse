@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/Select';
+import { DateInput } from '@/components/DateNav';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError, uploadAttachment, type Warning } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
@@ -138,27 +140,27 @@ function ExpenseForm({ branchId, categories, onSaved }: { branchId: string; cate
     <div className="space-y-4">
       <div>
         <label htmlFor="ecat" className="label">{t('category')} *</label>
-        <select id="ecat" className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+        <Select id="ecat" className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
           <option value="">—</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{pick(c.nameEn, c.nameTa)}</option>)}
-        </select>
+        </Select>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <MoneyInput id="eamt" label={t('amount')} value={amount} onChange={setAmount} required />
-        <div><label htmlFor="edate" className="label">{t('dateLabel')}</label><input id="edate" type="date" className="field" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} /></div>
+        <div><label htmlFor="edate" className="label">{t('dateLabel')}</label><DateInput id="edate" value={date} max={today} onChange={(v) => setDate(v || today)} /></div>
       </div>
       <Chips label={t('paymentMode')} value={mode} onChange={setMode} options={MODES.map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
       <TextField id="epayee" label={t('payee')} value={payee} onChange={(e) => setPayee(e.target.value)} />
       <TextField id="enote" label={t('note')} value={note} onChange={(e) => setNote(e.target.value)} />
 
-      <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-        <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={spread} onChange={(e) => setSpread(e.target.checked)} />
+      <label className="flex min-h-touch items-center gap-3 px-1">
+        <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={spread} onChange={(e) => setSpread(e.target.checked)} />
         <span>{t('spreadPeriod')}</span>
       </label>
       {spread && (
         <div className="grid gap-3 sm:grid-cols-2">
-          <div><label htmlFor="ef" className="label">{t('rangeFrom')}</label><input id="ef" type="date" className="field" value={from} max={to} onChange={(e) => setFrom(e.target.value || from)} /></div>
-          <div><label htmlFor="et" className="label">{t('rangeTo')}</label><input id="et" type="date" className="field" value={to} min={from} onChange={(e) => setTo(e.target.value || to)} /></div>
+          <div><label htmlFor="ef" className="label">{t('rangeFrom')}</label><DateInput id="ef" value={from} max={to} onChange={(v) => setFrom(v || from)} /></div>
+          <div><label htmlFor="et" className="label">{t('rangeTo')}</label><DateInput id="et" value={to} min={from} onChange={(v) => setTo(v || to)} /></div>
         </div>
       )}
 

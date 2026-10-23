@@ -56,7 +56,8 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
         api.get(`/cash/variance-report?locationId=${locationId}&from=${addDays(date, -29)}&to=${date}`),
       ]);
       setCash(c); setClosing(s.closing); setMoves(m); setHistory(h.rows);
-      if (c.denominations) setCounts(Object.fromEntries(Object.entries(c.denominations as Record<string, number>).map(([k, v]) => [k, String(v)])));
+      // a typed total is saved with an empty note count ({}), so only a non-empty note count means the notes were used
+      if (c.denominations && Object.keys(c.denominations).length) setCounts(Object.fromEntries(Object.entries(c.denominations as Record<string, number>).map(([k, v]) => [k, String(v)])));
       else if (c.actualClosing != null) setOverride(String(c.actualClosing));
       if (c.varianceReason) setReason(c.varianceReason);
       if (c.managerExplanation) setExplanation(c.managerExplanation);
@@ -83,23 +84,29 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
   const payload = (extra: Record<string, unknown> = {}) => ({
     locationId, businessDate: date, actualClosing: actual.toFixed(2),
     denominations: Object.fromEntries(Object.entries(counts).filter(([, v]) => v).map(([k, v]) => [k, Number(v)])),
-    varianceReason: tallied ? undefined : reason, managerExplanation: tallied ? undefined : explanation, ...extra,
+    varianceReason: tallied ? undefined : reason || undefined, managerExplanation: tallied ? undefined : explanation || undefined, ...extra,
   });
 
   /** Save as a draft. Works offline: the outbox uploads photos and applies the count exactly once. */
-  async function save() {
+  async function save(): Promise<boolean> {
     setBusy(true); setError(null); setNotice(null); setWarnings([]);
     try {
       const row = await submitOffline({
         entityType: 'CASH_RECONCILIATION', op: 'UPDATE', locationId, businessDate: date, baseVersion: cash?.version ?? undefined,
         payload: payload(), blobs: photos.length ? photos.map((p) => ({ blob: p.blob, name: p.name })) : undefined,
       });
-      if (row.state === 'REJECTED' || row.state === 'CONFLICT') { setError(row.lastError ?? 'Could not save'); return; }
+      if (row.state === 'REJECTED' || row.state === 'CONFLICT') { setError(row.lastError ?? 'Could not save'); return false; }
       setWarnings((row.warnings as Warning[]) ?? []);
       setPhotos([]);
       setNotice(row.state === 'DONE' ? (tallied ? t('synced') : t('savedDraft')) : t('offline'));
       await load();
+      return true;
     } finally { setBusy(false); }
+  }
+
+  /** The closing's next step reads the count from the server, so a typed count must be saved before moving on. */
+  async function saveAndContinue() {
+    if (locked || (await save())) onContinue?.();
   }
 
   /** Save then send for approval. Online only: the server checks the reason and explanation. */
@@ -151,7 +158,7 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
         {!dec(cash.otherCashOut).isZero() && <Row label={`− ${t('supplierAdvances')}`} value={cash.otherCashOut} />}
         {!dec(cash.withdrawals).isZero() && <Row label={`− ${t('withdrawals')}`} value={cash.withdrawals} />}
         <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold">
-          <span>{t('expectedCash')}</span><span className="tabular-nums">{formatINR(cash.expectedClosing)}</span>
+          <span>{t('expectedCash')}</span><span className="tabular-nums">{formatINR(cash.expectedClosing, { decimals: false })}</span>
         </div>
       </section>
 
@@ -243,7 +250,7 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
       {notice && <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">✓ {notice}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <button className="btn-secondary" disabled={busy || locked || !hasCount || !explained} onClick={save}>{busy ? t('loading') : t('save')}</button>
+        <button className="btn-secondary" disabled={busy || locked || !hasCount} onClick={save}>{busy ? t('loading') : t('save')}</button>
         {!tallied && hasCount && (
           <button
             className="btn-primary" onClick={send}
@@ -252,7 +259,9 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
         )}
       </div>
       {!online && !tallied && hasCount && <p className="text-center text-xs text-slate-500">{t('offline')}</p>}
-      {onContinue && <button className="btn-primary w-full" onClick={onContinue}>{t('submit')} →</button>}
+      {onContinue && (
+        <button className="btn-primary w-full" onClick={saveAndContinue} disabled={busy || (!locked && !hasCount)}>{busy ? t('loading') : `${t('submit')} →`}</button>
+      )}
 
       {/* 6. recent differences for this branch */}
       <section className="card space-y-2" aria-label={t('recentDiffs')}>

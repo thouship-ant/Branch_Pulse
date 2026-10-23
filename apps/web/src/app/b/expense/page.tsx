@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/Select';
+import { DateInput } from '@/components/DateNav';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Chips, ErrorBox, MoneyInput, Skeleton, TextField, Warnings } from '@/components/ui';
 import { api, type Warning } from '@/lib/api';
@@ -118,7 +120,7 @@ export default function ExpensePage() {
         {backdate > 0 && (
           <div>
             <label htmlFor="edate" className="label">{t('dateLabel')}</label>
-            <input id="edate" type="date" className="field" value={date} min={addDays(today, -backdate)} max={today} onChange={(e) => setDate(e.target.value || today)} />
+            <DateInput id="edate" value={date} min={addDays(today, -backdate)} max={today} onChange={(v) => setDate(v || today)} />
           </div>
         )}
         <span className="label">{t('category')}</span>
@@ -142,10 +144,10 @@ export default function ExpensePage() {
         {needsSupplier && (boot.suppliers?.length ?? 0) > 0 && (
           <div>
             <label htmlFor="supplier" className="label">{t('supplier')}<span className="text-red-600"> * {t('needSupplier')}</span></label>
-            <select id="supplier" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+            <Select id="supplier" className="field" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
               <option value="">{t('supplierNone')}</option>
               {boot.suppliers!.map((sp) => <option key={sp.id} value={sp.id}>{sp.name}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <TextField id="payee" label={t('payee')} value={payee} onChange={(e) => setPayee(e.target.value)} />

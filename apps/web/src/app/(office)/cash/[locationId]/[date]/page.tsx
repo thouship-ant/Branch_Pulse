@@ -56,7 +56,7 @@ export default function CashDetail() {
 
   return (
     <div className="space-y-4">
-      <Link href="/cash" className="text-sm text-brand underline">← {t('cashRecon')}</Link>
+      <Link href={`/cash?date=${date}`} className="btn-secondary min-h-[40px] px-4 text-sm">← {t('cashRecon')}</Link>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm text-slate-500">{prettyDate(date)}</p>
@@ -76,7 +76,7 @@ export default function CashDetail() {
           {!dec(cash.cashPurchases).isZero() && <Row l={`− ${t('purchases')}`} v={cash.cashPurchases} />}
           {!dec(cash.otherCashOut).isZero() && <Row l={`− ${t('supplierAdvances')}`} v={cash.otherCashOut} />}
           <Row l={`− ${t('withdrawals')}`} v={cash.withdrawals} />
-          <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold"><span>{t('expectedCash')}</span><span className="tabular-nums">{formatINR(cash.expectedClosing)}</span></div>
+          <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold"><span>{t('expectedCash')}</span><span className="tabular-nums">{formatINR(cash.expectedClosing, { decimals: false })}</span></div>
           <Row l={t('actualCash')} v={cash.actualClosing} bold />
           {v && tone && <div className={`mt-2 flex items-center justify-between rounded-card border px-3 py-2 font-semibold ${tone.cls}`}><span>{tone.icon} {t(tone.key)}</span><span className="tabular-nums">{formatINR(v.abs())}</span></div>}
         </section>

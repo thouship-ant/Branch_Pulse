@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/Select';
+import { DateInput } from '@/components/DateNav';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -127,23 +129,23 @@ export function EmployeeManager({ locations, fixedLocationId }: { locations: Loc
               {!fixedLocationId && (
                 <div>
                   <label htmlFor="eloc" className="label">{t('branch')} *</label>
-                  <select id="eloc" className="field" value={draft.locationId} onChange={(e) => setDraft({ ...draft, locationId: e.target.value })}>
+                  <Select id="eloc" className="field" value={draft.locationId} onChange={(e) => setDraft({ ...draft, locationId: e.target.value })}>
                     <option value="">{t('chooseLocation')}</option>
                     {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-                  </select>
+                  </Select>
                 </div>
               )}
               <TextField id="ephone" label={t('phone')} inputMode="tel" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value.replace(/[^\d+\s-]/g, '') })} maxLength={15} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {!draft.id && <div><label htmlFor="ejd" className="label">{t('joiningDateLabel')} *</label><input id="ejd" type="date" className="field" value={draft.joiningDate} onChange={(e) => setDraft({ ...draft, joiningDate: e.target.value })} /></div>}
-              {draft.id && <div><label htmlFor="exd" className="label">{t('exitDateLabel')}</label><input id="exd" type="date" className="field" value={draft.exitDate} onChange={(e) => setDraft({ ...draft, exitDate: e.target.value })} /></div>}
+              {!draft.id && <div><label htmlFor="ejd" className="label">{t('joiningDateLabel')} *</label><DateInput id="ejd" value={draft.joiningDate} onChange={(v) => setDraft({ ...draft, joiningDate: v })} /></div>}
+              {draft.id && <div><label htmlFor="exd" className="label">{t('exitDateLabel')}</label><DateInput id="exd" value={draft.exitDate} onChange={(v) => setDraft({ ...draft, exitDate: v })} /></div>}
               <div>
                 <label htmlFor="est" className="label">{t('salaryTypeLabel')}</label>
-                <select id="est" className="field" value={draft.salaryType} onChange={(e) => setDraft({ ...draft, salaryType: e.target.value as any })}>
+                <Select id="est" className="field" value={draft.salaryType} onChange={(e) => setDraft({ ...draft, salaryType: e.target.value as any })}>
                   <option value="MONTHLY">{t('salaryTypeMonthly')}</option>
                   <option value="DAILY">{t('salaryTypeDaily')}</option>
-                </select>
+                </Select>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -158,11 +160,11 @@ export function EmployeeManager({ locations, fixedLocationId }: { locations: Loc
             </div>
             <div>
               <label htmlFor="epm" className="label">{t('paymentMethodLabel')}</label>
-              <select id="epm" className="field" value={draft.paymentMethod} onChange={(e) => setDraft({ ...draft, paymentMethod: e.target.value as any })}>
+              <Select id="epm" className="field" value={draft.paymentMethod} onChange={(e) => setDraft({ ...draft, paymentMethod: e.target.value as any })}>
                 <option value="CASH">{t('payCash')}</option>
                 <option value="BANK">{t('payBank')}</option>
                 <option value="UPI">{t('payUpi')}</option>
-              </select>
+              </Select>
             </div>
             {(draft.paymentMethod === 'BANK' || draft.paymentMethod === 'UPI') && (
               <div className="space-y-2 rounded-card border border-slate-200 p-3">
@@ -181,8 +183,8 @@ export function EmployeeManager({ locations, fixedLocationId }: { locations: Loc
               </div>
             )}
             {draft.id && (
-              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-                <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />{t('active')}
+              <label className="flex min-h-touch items-center gap-3 px-1">
+                <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />{t('active')}
               </label>
             )}
             <ErrorBox error={formError} />

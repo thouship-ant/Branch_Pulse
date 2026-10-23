@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -46,9 +47,9 @@ export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { lo
         {!fixedLocationId && (
           <div className="min-w-[200px]">
             <label htmlFor="sl" className="label">{t('atLocation')}</label>
-            <select id="sl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+            <Select id="sl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div className="min-w-[180px] flex-1">
@@ -56,7 +57,7 @@ export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { lo
           <input id="sq" className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('itemLabel')} />
         </div>
         <label className="flex min-h-touch items-center gap-2 rounded-card border border-slate-300 px-3 text-sm">
-          <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={low} onChange={(e) => setLow(e.target.checked)} /> {t('onlyLow')}
+          <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={low} onChange={(e) => setLow(e.target.checked)} /> {t('onlyLow')}
         </label>
       </div>
       <ErrorBox error={error} />

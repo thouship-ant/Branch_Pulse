@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate, shortDate } from '@/lib/dates';
@@ -205,10 +206,10 @@ export function RecipeManager() {
                   <div key={l.key} className="flex items-end gap-2 rounded-card border border-slate-200 p-2.5">
                     <div className="min-w-0 flex-1">
                       <label htmlFor={`ri${l.key}`} className="label">{t('ingredientLabel')}</label>
-                      <select id={`ri${l.key}`} className="field" value={l.itemId} onChange={(e) => chooseItem(l.key, e.target.value)}>
+                      <Select id={`ri${l.key}`} className="field" value={l.itemId} onChange={(e) => chooseItem(l.key, e.target.value)}>
                         <option value="">{t('chooseItem')}</option>
                         {items.map((x) => <option key={x.id} value={x.id}>{pick(x.nameEn, x.nameTa)}</option>)}
-                      </select>
+                      </Select>
                     </div>
                     <div className="w-24">
                       <label htmlFor={`rq${l.key}`} className="label">{t('quantity')}</label>
@@ -216,9 +217,9 @@ export function RecipeManager() {
                     </div>
                     <div className="w-20">
                       <label htmlFor={`ru${l.key}`} className="label">{t('unitLabel')}</label>
-                      <select id={`ru${l.key}`} className="field" value={l.unitId} disabled={!l.itemId} onChange={(e) => setLine(l.key, { unitId: e.target.value })}>
+                      <Select id={`ru${l.key}`} className="field" value={l.unitId} disabled={!l.itemId} onChange={(e) => setLine(l.key, { unitId: e.target.value })}>
                         {opts.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-                      </select>
+                      </Select>
                     </div>
                     {draft.lines.length > 1 && (
                       <button type="button" className="btn-secondary min-h-touch px-3" onClick={() => setDraft({ ...draft, lines: draft.lines.filter((x) => x.key !== l.key) })} aria-label={`${t('removeIngredient')} ${i + 1}`}>✕</button>
@@ -229,8 +230,8 @@ export function RecipeManager() {
               <button type="button" className="btn-secondary min-h-touch" onClick={() => setDraft({ ...draft, lines: [...draft.lines, blankLine()] })}>+ {t('addIngredient')}</button>
             </section>
             {draft.id && (
-              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-                <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />{t('active')}
+              <label className="flex min-h-touch items-center gap-3 px-1">
+                <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />{t('active')}
               </label>
             )}
             <ErrorBox error={formError} />

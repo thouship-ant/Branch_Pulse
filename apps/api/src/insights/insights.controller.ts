@@ -16,6 +16,11 @@ export class InsightsController {
     return this.insights.chart(ctx, code, from, to);
   }
 
+  @Get('pending-closings') @RequirePermissions('alert:view')
+  pendingClosings(@Ctx() ctx: ReqCtx) {
+    return this.insights.pendingClosings(ctx);
+  }
+
   @Get('exceptions') @RequirePermissions('alert:view')
   exceptions(@Ctx() ctx: ReqCtx) {
     return this.insights.exceptions(ctx);

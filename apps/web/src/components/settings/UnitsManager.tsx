@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -77,10 +78,10 @@ export function UnitsManager() {
               {!draft.id && (
                 <div>
                   <label htmlFor="unb" className="label">{t('unitConvertsToLabel')}</label>
-                  <select id="unb" className="field" value={draft.baseUnitId} onChange={(e) => setDraft({ ...draft, baseUnitId: e.target.value })}>
+                  <Select id="unb" className="field" value={draft.baseUnitId} onChange={(e) => setDraft({ ...draft, baseUnitId: e.target.value })}>
                     <option value="">{t('isBaseUnitHint')}</option>
                     {baseUnits.map((b) => <option key={b.id} value={b.id}>{b.code} · {b.name}</option>)}
-                  </select>
+                  </Select>
                 </div>
               )}
               {draft.baseUnitId && (

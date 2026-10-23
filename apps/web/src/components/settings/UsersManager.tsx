@@ -145,8 +145,8 @@ export function UsersManager() {
                 </div>
               </div>
               {draft.id && (
-                <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-                  <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />
+                <label className="flex min-h-touch items-center gap-3 px-1">
+                  <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />
                   <span>{t('active')}</span>
                 </label>
               )}

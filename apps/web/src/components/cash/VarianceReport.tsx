@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
@@ -94,10 +95,10 @@ export function VarianceReport({ fixedLocationId, linkRows = false }: { fixedLoc
         {!fixedLocationId && (
           <div className="min-w-[200px]">
             <label htmlFor="vb" className="label">{t('branch')}</label>
-            <select id="vb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="vb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.code} · {pick(b.name, b.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <Chips
@@ -106,13 +107,13 @@ export function VarianceReport({ fixedLocationId, linkRows = false }: { fixedLoc
         />
         <div className="min-w-[180px]">
           <label htmlFor="vs" className="label">{t('status')}</label>
-          <select id="vs" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select id="vs" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('allTypes')}</option>
             <option value="DRAFT">{t('vsDraft')}</option>
             <option value="SUBMITTED">{t('vsSent')}</option>
             <option value="APPROVED">{t('approved')}</option>
             <option value="REJECTED">{t('rejected')}</option>
-          </select>
+          </Select>
         </div>
       </div>
       {!valid && <p role="alert" className="rounded-card border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">⚠ {t('invalidRange')}</p>}
@@ -163,7 +164,7 @@ export function VarianceReport({ fixedLocationId, linkRows = false }: { fixedLoc
                       <tr key={r.id}>
                         <td className="whitespace-nowrap px-3 py-2">{linkRows ? <Link className="hover:underline" href={`/cash/${r.locationId}/${d}`}>{prettyDate(d)}</Link> : prettyDate(d)}</td>
                         <td className="px-3 py-2">{pick(r.name, r.nameTa)}<p className="font-mono text-xs text-slate-500">{r.code}</p></td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.expectedClosing)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.expectedClosing, { decimals: false })}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.actualClosing)}</td>
                         <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold tabular-nums ${neg ? 'text-red-700' : ''}`}>{neg ? '▼' : '▲'} {formatINR(dec(r.variance).abs())}<p className="text-xs font-normal text-slate-500">{neg ? t('shortage') : t('surplus')}</p></td>
                         <td className="px-3 py-2">{r.reason && REASON_KEY[r.reason] ? t(REASON_KEY[r.reason]) : r.reason ?? '—'}</td>

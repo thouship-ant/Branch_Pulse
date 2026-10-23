@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: { sans: ['var(--font-inter)', 'var(--font-tamil)', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
       colors: {
-        brand: { DEFAULT: '#2563eb', dark: '#1d4ed8', light: '#dbeafe' }, // blue primary, AA contrast with white text
+        brand: { DEFAULT: '#1e2a8a', dark: '#18236f', light: '#eef1ff' }, // deep navy primary, pale lavender tint; AAA contrast with white text
         surface: 'rgb(var(--surface) / <alpha-value>)', // cards, sidebar, inputs
         ink: 'rgb(var(--ink) / <alpha-value>)',
         slate: v('slate', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]),
@@ -21,7 +21,7 @@ export default {
         violet: v('violet', [50, 300, 800, 900]),
         sky: v('sky', [50, 300, 900]),
       },
-      borderRadius: { card: '12px' },
+      borderRadius: { card: '16px' },
       minHeight: { touch: '48px' }, // >= 48 px touch targets
       minWidth: { touch: '48px' },
     },

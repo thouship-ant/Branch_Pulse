@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -113,15 +114,15 @@ export function ItemManager({ locations }: { locations: LocationOption[] }) {
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div><label htmlFor="ic" className="label">{t('category')}</label>
-                <select id="ic" className="field" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>{[...new Set([...CATEGORIES, draft.category])].map((c) => <option key={c} value={c}>{nice(c)}</option>)}</select></div>
+                <Select id="ic" className="field" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>{[...new Set([...CATEGORIES, draft.category])].map((c) => <option key={c} value={c}>{nice(c)}</option>)}</Select></div>
               <div><label htmlFor="ibu" className="label">{t('baseUnitLabel')}</label>
-                <select id="ibu" className="field" disabled={!!draft.id} value={draft.baseUnitId} onChange={(e) => setDraft({ ...draft, baseUnitId: e.target.value, purchaseUnitId: '' })}>{baseUnits.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}</select></div>
+                <Select id="ibu" className="field" disabled={!!draft.id} value={draft.baseUnitId} onChange={(e) => setDraft({ ...draft, baseUnitId: e.target.value, purchaseUnitId: '' })}>{baseUnits.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}</Select></div>
               <div><label htmlFor="ipu" className="label">{t('purchaseUnitLabel')}</label>
-                <select id="ipu" className="field" value={draft.purchaseUnitId} onChange={(e) => setDraft({ ...draft, purchaseUnitId: e.target.value })}><option value="">—</option>{purchaseOptions.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}</select></div>
+                <Select id="ipu" className="field" value={draft.purchaseUnitId} onChange={(e) => setDraft({ ...draft, purchaseUnitId: e.target.value })}><option value="">—</option>{purchaseOptions.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}</Select></div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3"><input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.daily} onChange={(e) => setDraft({ ...draft, daily: e.target.checked })} />{t('dailyCountLabel')}</label>
-              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3"><input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.perishable} onChange={(e) => setDraft({ ...draft, perishable: e.target.checked })} />{t('perishable')}</label>
+              <label className="flex min-h-touch items-center gap-3 px-1"><input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.daily} onChange={(e) => setDraft({ ...draft, daily: e.target.checked })} />{t('dailyCountLabel')}</label>
+              <label className="flex min-h-touch items-center gap-3 px-1"><input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.perishable} onChange={(e) => setDraft({ ...draft, perishable: e.target.checked })} />{t('perishable')}</label>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div><label htmlFor="ip" className="label">{t('allowedPct')}</label><input id="ip" className="field" inputMode="decimal" placeholder="5" value={draft.pct} onChange={(e) => setDraft({ ...draft, pct: cleanAmount(e.target.value, 3) })} /></div>
@@ -140,7 +141,7 @@ export function ItemManager({ locations }: { locations: LocationOption[] }) {
                 </ul>
               </div>
             )}
-            {draft.id && <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3"><input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />{t('active')}</label>}
+            {draft.id && <label className="flex min-h-touch items-center gap-3 px-1"><input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />{t('active')}</label>}
             <ErrorBox error={formError} />
             <div className="flex justify-end gap-2">
               <button className="btn-secondary" onClick={() => setDraft(null)}>{t('cancel')}</button>

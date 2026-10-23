@@ -137,7 +137,7 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
         <MoneyInput id="boc" label={t('openingCash')} value={v.openingCash} onChange={(x) => set('openingCash', x)} hint={t('openingCashHint')} />
         <MoneyInput id="brent" label={t('monthlyRent')} value={v.monthlyRent} onChange={(x) => set('monthlyRent', x)} />
         <label className="flex min-h-touch items-center gap-3 self-start rounded-card border border-slate-300 px-3 sm:mt-6">
-          <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={v.cardEnabled} onChange={(e) => set('cardEnabled', e.target.checked)} />
+          <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={v.cardEnabled} onChange={(e) => set('cardEnabled', e.target.checked)} />
           <span>{t('cardEnabled')}</span>
         </label>
       </div>

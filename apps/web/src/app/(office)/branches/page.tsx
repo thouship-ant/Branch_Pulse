@@ -64,7 +64,7 @@ export default function BranchesPage() {
           options={[{ value: 'ALL', label: t('allTypes') }, { value: 'BRANCH', label: t('typeBranch') }, { value: 'GODOWN', label: t('typeGodown') }, { value: 'CENTRAL_OFFICE', label: t('typeOffice') }]}
         />
         <label className="flex min-h-touch items-center gap-2 text-sm">
-          <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+          <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
           {t('showInactive')}
         </label>
       </div>

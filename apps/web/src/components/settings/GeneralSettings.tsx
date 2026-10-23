@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT, type MessageKey } from '@/lib/i18n';
@@ -64,6 +65,7 @@ export function GeneralSettings() {
   const [values, setValues] = useState<Record<string, unknown> | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -72,22 +74,34 @@ export function GeneralSettings() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  async function save(f: Field) {
-    if (!values) return;
-    const raw = edits[f.key];
-    if (raw === undefined) return;
-    let value: unknown = raw;
+  const setEdit = (key: string, v: string) => {
+    setEdits((s) => ({ ...s, [key]: v }));
+    setErrors((e) => { if (!(key in e)) return e; const n = { ...e }; delete n[key]; return n; });
+  };
+
+  /** Saves one field as soon as the user leaves it (or ticks / picks it). A bad value stays in the field with its error beneath. */
+  async function save(f: Field, raw: string | undefined = edits[f.key]) {
+    if (!values || raw === undefined || busyKey === f.key) return;
+    const current = values[responseKey(f.key)];
+    if (raw === String(typeof current === 'boolean' ? current : current ?? '')) { // nothing changed
+      setEdits((e) => { const n = { ...e }; delete n[f.key]; return n; });
+      return;
+    }
+    if (f.kind !== 'boolean' && raw.trim() === '') { setErrors((e) => ({ ...e, [f.key]: t('settingRequired') })); return; }
+    if (f.kind === 'number' && Number.isNaN(Number(raw))) { setErrors((e) => ({ ...e, [f.key]: t('settingInvalidNumber') })); return; }
+    let value: unknown = f.kind === 'string' ? raw.trim() : raw;
     if (f.kind === 'number') value = Number(raw);
     if (f.kind === 'boolean') value = raw === 'true';
-    setBusyKey(f.key); setError(null);
+    setBusyKey(f.key);
     try {
       await api.put(`/settings/${f.key}`, { value });
       setEdits((e) => { const n = { ...e }; delete n[f.key]; return n; });
+      setErrors((e) => { const n = { ...e }; delete n[f.key]; return n; });
       setNotice(t('settingSaved'));
       setTimeout(() => setNotice(null), 2500);
       await load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not save');
+      setErrors((x) => ({ ...x, [f.key]: e instanceof ApiError ? e.message : 'Could not save' }));
     } finally { setBusyKey(null); }
   }
 
@@ -105,34 +119,38 @@ export function GeneralSettings() {
               const current = values[responseKey(f.key)];
               const edited = edits[f.key];
               const display = edited ?? (typeof current === 'boolean' ? String(current) : String(current ?? ''));
-              const dirty = edited !== undefined && edited !== String(typeof current === 'boolean' ? current : current ?? '');
+              const err = errors[f.key];
+              const errId = `${f.key}-err`;
               return (
-                <div key={f.key} className="flex items-end gap-2">
-                  <div className="flex-1">
-                    {f.kind === 'boolean' ? (
-                      <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-                        <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={display === 'true'} onChange={(e) => setEdits((s) => ({ ...s, [f.key]: String(e.target.checked) }))} />
-                        <span className="text-sm">{t(f.labelKey)}</span>
-                      </label>
-                    ) : f.kind === 'business_type' ? (
-                      <div>
-                        <label htmlFor={f.key} className="label">{t(f.labelKey)}</label>
-                        <select id={f.key} className="field" value={display} onChange={(e) => setEdits((s) => ({ ...s, [f.key]: e.target.value }))}>
-                          {BIZ_TYPES.map(([v, k]) => <option key={v} value={v}>{t(k)}</option>)}
-                        </select>
-                      </div>
-                    ) : (
-                      <TextField
-                        id={f.key} label={t(f.labelKey)} value={display}
-                        type={f.kind === 'time' ? 'time' : f.kind === 'number' ? 'text' : 'text'}
-                        inputMode={f.kind === 'number' ? 'decimal' : undefined}
-                        onChange={(e) => setEdits((s) => ({ ...s, [f.key]: f.kind === 'number' ? e.target.value.replace(/[^0-9.]/g, '') : e.target.value }))}
+                <div key={f.key} className={f.kind === 'boolean' ? 'flex flex-col justify-end' : undefined}>
+                  {f.kind === 'boolean' ? (
+                    <label className="flex min-h-touch items-center gap-3 px-1">
+                      <input
+                        type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={display === 'true'} disabled={busyKey === f.key}
+                        onChange={(e) => { setEdit(f.key, String(e.target.checked)); void save(f, String(e.target.checked)); }}
                       />
-                    )}
-                  </div>
-                  <button className="btn-secondary mb-0.5 min-h-[44px] px-3 text-sm" disabled={busyKey === f.key || !dirty} onClick={() => save(f)}>
-                    {busyKey === f.key ? '…' : t('save')}
-                  </button>
+                      <span className="text-sm">{t(f.labelKey)}</span>
+                    </label>
+                  ) : f.kind === 'business_type' ? (
+                    <div>
+                      <label htmlFor={f.key} className="label">{t(f.labelKey)}</label>
+                      <Select id={f.key} className="field" value={display} onChange={(e) => { setEdit(f.key, e.target.value); void save(f, e.target.value); }}>
+                        {BIZ_TYPES.map(([v, k]) => <option key={v} value={v}>{t(k)}</option>)}
+                      </Select>
+                    </div>
+                  ) : (
+                    <TextField
+                      id={f.key} label={t(f.labelKey)} value={display}
+                      type={f.kind === 'time' ? 'time' : 'text'}
+                      inputMode={f.kind === 'number' ? 'decimal' : undefined}
+                      aria-invalid={err ? true : undefined} aria-describedby={err ? errId : undefined}
+                      className={err ? 'border-red-400 focus:border-red-500 focus:ring-red-200' : ''}
+                      onChange={(e) => setEdit(f.key, f.kind === 'number' ? e.target.value.replace(/[^0-9.]/g, '') : e.target.value)}
+                      onBlur={() => void save(f)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    />
+                  )}
+                  {err && <p id={errId} role="alert" className="mt-1 text-sm text-red-700">{err}</p>}
                 </div>
               );
             })}

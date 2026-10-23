@@ -56,7 +56,7 @@ export default function ClosingDetail() {
 
   return (
     <div className="space-y-4">
-      <Link href="/closings" className="text-sm text-brand underline">← {t('closings')}</Link>
+      <Link href={`/closings?date=${date}`} className="btn-secondary min-h-[40px] px-4 text-sm">← {t('closings')}</Link>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm text-slate-500">{prettyDate(date)}</p>
@@ -80,7 +80,7 @@ export default function ClosingDetail() {
         <section className="card space-y-1 text-sm" aria-label={t('cash')}>
           <h3 className="mb-1 font-semibold">{t('cash')}</h3>
           <Row l={t('openingCash')} v={cash?.openingCash} />
-          <Row l={t('expectedCash')} v={cash?.expectedClosing} />
+          <Row l={t('expectedCash')} v={cash?.expectedClosing} whole />
           <Row l={t('actualCash')} v={cash?.actualClosing} />
           <Row l={`${t('variance')} · ${cash?.varianceLabel ?? ''}`} v={cash?.variance} bold />
           {cash?.varianceReason && <p className="pt-2 text-slate-600">{t('reason')}: {REASON_KEY[cash.varianceReason] ? t(REASON_KEY[cash.varianceReason]) : cash.varianceReason}</p>}
@@ -142,10 +142,10 @@ export default function ClosingDetail() {
   );
 }
 
-function Row({ l, v, bold }: { l: string; v: string | null | undefined; bold?: boolean }) {
+function Row({ l, v, bold, whole }: { l: string; v: string | null | undefined; bold?: boolean; whole?: boolean }) {
   return (
     <div className={`flex justify-between ${bold ? 'font-bold' : ''}`}>
-      <span className="text-slate-600">{l}</span><span className="tabular-nums">{formatINR(v)}</span>
+      <span className="text-slate-600">{l}</span><span className="tabular-nums">{formatINR(v, whole ? { decimals: false } : undefined)}</span>
     </div>
   );
 }

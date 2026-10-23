@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { monthLong, monthShort, prettyDate, shortDate } from '@/lib/dates';
@@ -68,10 +69,10 @@ export function PurchaseOverview({ locations, fixedLocationId, refreshKey = 0, o
         {!fixedLocationId && (
           <div className="min-w-[200px]">
             <label htmlFor="pob" className="label">{t('atLocation')}</label>
-            <select id="pob" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="pob" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
       </div>

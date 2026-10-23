@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -70,10 +71,10 @@ export function AdvanceManager({ locations, fixedLocationId }: { locations: Loca
         {!fixedLocationId && (
           <div className="min-w-[220px]">
             <label htmlFor="advl" className="label">{t('branch')}</label>
-            <select id="advl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+            <Select id="advl" className="field" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {locations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         {can('advance:request') && locationId && <button className="btn-primary" onClick={() => { setFormError(null); setRequesting(true); }}>+ {t('requestAdvance')}</button>}
@@ -126,10 +127,10 @@ export function AdvanceManager({ locations, fixedLocationId }: { locations: Loca
         <div className="space-y-3">
           <div>
             <label htmlFor="advemp" className="label">{t('employeeNameLabel')} *</label>
-            <select id="advemp" className="field" value={reqForm.employeeId} onChange={(e) => setReqForm({ ...reqForm, employeeId: e.target.value })}>
+            <Select id="advemp" className="field" value={reqForm.employeeId} onChange={(e) => setReqForm({ ...reqForm, employeeId: e.target.value })}>
               <option value="">{t('chooseItem')}</option>
               {employees.map((e) => <option key={e.id} value={e.id}>{e.fullName} ({e.code})</option>)}
-            </select>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label htmlFor="advamt" className="label">{t('advanceAmountLabel')} *</label><input id="advamt" className="field text-lg tabular-nums" inputMode="decimal" value={reqForm.amount} onChange={(e) => setReqForm({ ...reqForm, amount: e.target.value.replace(/[^\d.]/g, '') })} /></div>
@@ -160,9 +161,9 @@ export function AdvanceManager({ locations, fixedLocationId }: { locations: Loca
           <p className="text-sm text-slate-600">{formatINR(paying?.amount)}</p>
           <div>
             <label htmlFor="advpm" className="label">{t('paymentMethodLabel')}</label>
-            <select id="advpm" className="field" value={payMode} onChange={(e) => setPayMode(e.target.value as any)}>
+            <Select id="advpm" className="field" value={payMode} onChange={(e) => setPayMode(e.target.value as any)}>
               {MODES.map((m) => <option key={m} value={m}>{m.replace('_', ' ')}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="flex justify-end gap-2">
             <button className="btn-secondary" onClick={() => setPaying(null)}>{t('cancel')}</button>

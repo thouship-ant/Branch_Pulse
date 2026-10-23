@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { monthLong, monthShort, prettyDate, shortDate } from '@/lib/dates';
@@ -74,18 +75,18 @@ export function ExpenseOverview({ fixedLocationId }: { fixedLocationId?: string 
         {!fixedLocationId && (
           <div className="min-w-[180px]">
             <label htmlFor="eb" className="label">{t('branch')}</label>
-            <select id="eb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select id="eb" className="field" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">{t('allBranches')}</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.code} · {pick(b.name, b.nameTa)}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div className="min-w-[180px]">
           <label htmlFor="ec" className="label">{t('category')}</label>
-          <select id="ec" className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+          <Select id="ec" className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">{t('allCategories')}</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{pick(c.nameEn, c.nameTa)}</option>)}
-          </select>
+          </Select>
         </div>
       </div>
       {!valid && <p role="alert" className="rounded-card border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">⚠ {t('invalidRange')}</p>}

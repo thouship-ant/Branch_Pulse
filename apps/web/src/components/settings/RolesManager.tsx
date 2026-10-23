@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -143,10 +144,10 @@ export function RolesManager() {
               <TextField id="rn" label={t('roleNameLabel')} value={newRole.name} onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} maxLength={60} />
               <div>
                 <label htmlFor="rs" className="label">{t('scopeModeLabel')}</label>
-                <select id="rs" className="field" value={newRole.scopeMode} onChange={(e) => setNewRole({ ...newRole, scopeMode: e.target.value as 'ALL' | 'ASSIGNED' })}>
+                <Select id="rs" className="field" value={newRole.scopeMode} onChange={(e) => setNewRole({ ...newRole, scopeMode: e.target.value as 'ALL' | 'ASSIGNED' })}>
                   <option value="ASSIGNED">{t('scopeAssigned')}</option>
                   <option value="ALL">{t('scopeAll')}</option>
-                </select>
+                </Select>
               </div>
               <ErrorBox error={formError} />
               <div className="flex justify-end gap-2">

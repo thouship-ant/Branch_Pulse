@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -121,9 +122,9 @@ export function CategoryManager() {
             <TextField id="cnt" label={t('catNameTa')} value={draft.nameTa} onChange={(e) => setDraft({ ...draft, nameTa: e.target.value })} maxLength={60} />
             <div>
               <label htmlFor="cb" className="label">{t('plBucket')}</label>
-              <select id="cb" className="field" value={draft.plBucket} onChange={(e) => setDraft({ ...draft, plBucket: e.target.value })}>
+              <Select id="cb" className="field" value={draft.plBucket} onChange={(e) => setDraft({ ...draft, plBucket: e.target.value })}>
                 {BUCKETS.map((b) => <option key={b} value={b}>{bucketName(b)}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <MoneyInput id="cr" label={t('receiptAboveLabel')} value={draft.receipt} onChange={(v) => setDraft({ ...draft, receipt: v })} hint={t('useDefault')} />
@@ -131,14 +132,14 @@ export function CategoryManager() {
             </div>
             <TextField id="co" label="#" value={draft.sortOrder} inputMode="numeric" onChange={(e) => setDraft({ ...draft, sortOrder: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
             {!draft.parentId && (
-              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-                <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.requiresSupplier} onChange={(e) => setDraft({ ...draft, requiresSupplier: e.target.checked })} />
+              <label className="flex min-h-touch items-center gap-3 px-1">
+                <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.requiresSupplier} onChange={(e) => setDraft({ ...draft, requiresSupplier: e.target.checked })} />
                 <span>{t('requiresSupplierLabel')}</span>
               </label>
             )}
             {draft.id && (
-              <label className="flex min-h-touch items-center gap-3 rounded-card border border-slate-300 px-3">
-                <input type="checkbox" className="h-5 w-5 accent-[#2563eb]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />
+              <label className="flex min-h-touch items-center gap-3 px-1">
+                <input type="checkbox" className="h-5 w-5 accent-[#1e2a8a]" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />
                 <span>{t('active')}</span>
               </label>
             )}
