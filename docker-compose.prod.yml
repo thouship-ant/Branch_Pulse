@@ -56,6 +56,7 @@ services:
       PORT: "4000"
       <<: *dburls
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env.prod}
+      BANK_DETAILS_KEY: ${BANK_DETAILS_KEY:?set BANK_DETAILS_KEY in .env.prod}
       CORS_ORIGINS: https://${DOMAIN:?set DOMAIN in .env.prod}
       COOKIE_SECURE: "true"
       UPLOAD_DIR: /data/uploads

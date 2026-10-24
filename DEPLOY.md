@@ -65,6 +65,7 @@ Fill in `DOMAIN` and generate the four secrets (hex only, so nothing needs URL-e
 
 ```bash
 openssl rand -hex 24     # run once per secret: POSTGRES_PASSWORD, APP_RW_PASSWORD, JWT_ACCESS_SECRET, SEED_PASSWORD
+openssl rand -hex 32     # BANK_DETAILS_KEY: must be exactly 64 hex characters (the API will not start without it)
 chmod 600 .env.prod
 ```
 
