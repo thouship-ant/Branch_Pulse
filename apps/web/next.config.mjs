@@ -1,18 +1,13 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '::1'];
-const PRODUCTION_API_URL = process.env.API_URL || 'https://api-branchpulse.antstockpulse.pro';
+const PRODUCTION_API_URL = 'https://api-branchpulse.antstockpulse.pro';
 const LOCAL_API_URL = 'http://localhost:4000';
 
+// rewrites() runs on the Next server (there is no `window` here), so the target is picked from the environment:
+// API_URL wins when set; otherwise `next dev` talks to the local API and a production build to the production API.
 export function getApiBaseUrl() {
-  if (typeof window === 'undefined') {
-    return PRODUCTION_API_URL;
-  }
-
-  return LOCAL_HOSTNAMES.includes(window.location.hostname)
-    ? LOCAL_API_URL
-    : PRODUCTION_API_URL;
+  return process.env.API_URL || (process.env.NODE_ENV === 'production' ? PRODUCTION_API_URL : LOCAL_API_URL);
 }
 const API = getApiBaseUrl();
 const here = path.dirname(fileURLToPath(import.meta.url));
