@@ -51,6 +51,8 @@ services:
   api:
     build: { context: ., dockerfile: apps/api/Dockerfile, target: runtime }
     restart: unless-stopped
+    ports:
+      - "4000:4000"
     environment:
       NODE_ENV: production
       PORT: "4000"
@@ -68,6 +70,8 @@ services:
   web:
     build: { context: ., dockerfile: apps/web/Dockerfile, target: runtime }
     restart: unless-stopped
+    ports:
+      - "3300:3300"
     depends_on:
       - api
 
@@ -75,7 +79,7 @@ services:
     image: caddy:2
     restart: unless-stopped
     ports:
-      - "4000:80"
+      - "81:80"
     environment:
       DOMAIN: ${DOMAIN}
     volumes:
