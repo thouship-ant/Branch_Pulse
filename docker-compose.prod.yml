@@ -74,8 +74,7 @@ services:
     image: caddy:2
     restart: unless-stopped
     ports:
-      - "127.0.0.1:81:80"
-      - "127.0.0.1:445:443"
+      - "127.0.0.1:4000:80"
     environment:
       DOMAIN: ${DOMAIN}
     volumes:
