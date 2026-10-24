@@ -91,6 +91,11 @@ body {
 ::-webkit-scrollbar { height: 8px; width: 8px; }
 ::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); border-radius: 8px; }
 :focus-visible { outline: 2px solid rgb(30 42 138 / 0.65); outline-offset: 2px; border-radius: 8px; }
+/* a scrollbar that only shows while the pointer is over the area (sidebar nav) */
+.scroll-hover { scrollbar-color: transparent transparent; }
+.scroll-hover:hover, .scroll-hover:focus-within { scrollbar-color: rgb(var(--slate-300)) transparent; }
+.scroll-hover::-webkit-scrollbar-thumb { background: transparent; }
+.scroll-hover:hover::-webkit-scrollbar-thumb, .scroll-hover:focus-within::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
 
 /* brand blue is too dark for text on dark surfaces; a few single-shade text colours need a lift too */

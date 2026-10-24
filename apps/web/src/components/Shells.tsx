@@ -198,7 +198,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
       {/* sidebar: fixed to the viewport so it never scrolls with the page; only its own menu area scrolls if the window is very short */}
       <aside className={`fixed inset-y-0 left-0 z-20 hidden h-dvh flex-col border-r border-slate-200/80 bg-surface transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px] p-3' : 'w-[264px] p-4'}`}>
         <div className={`mb-5 flex h-11 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-1'}`}><Logo compact={collapsed} /></div>
-        <nav className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5" aria-label="Main">
+        <nav className="scroll-hover min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5" aria-label="Main">
           {GROUPS.map((g) => {
             const items = links.filter((l) => l.group === g.id);
             if (!items.length) return null;
@@ -218,8 +218,9 @@ export function OfficeShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className={`mt-3 shrink-0 rounded-card border border-slate-200/80 bg-slate-50 p-2.5 ${collapsed ? 'flex flex-col items-center gap-2' : ''}`}>
-          <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+        <div className={`mt-3 shrink-0 rounded-card border border-slate-200/80 bg-slate-50 ${collapsed ? 'p-1.5' : 'p-2.5'}`}>
+          {/* collapsed rail is only ~52px wide: stack the avatar over the logout button, both centred */}
+          <div className={`flex items-center ${collapsed ? 'flex-col gap-1.5' : 'gap-3'}`}>
             <Avatar name={me.fullName} />
             {!collapsed && (
               <div className="min-w-0 flex-1 text-sm">
