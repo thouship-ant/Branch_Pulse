@@ -5,6 +5,7 @@ import { env } from '../config/env';
 import { AuthController, MeController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { SmsService } from './sms.service';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { JwtStrategy } from './jwt.strategy';
     JwtModule.register({ secret: env.jwtSecret, signOptions: { expiresIn: env.accessTtl as any } }),
   ],
   controllers: [AuthController, MeController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, SmsService],
   exports: [AuthService],
 })
 export class AuthModule {}

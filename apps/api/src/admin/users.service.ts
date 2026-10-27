@@ -1,16 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { ArrayMinSize, IsArray, IsEmail, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { randomBytes } from 'node:crypto';
+import { ArrayMinSize, IsArray, IsEmail, IsIn, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { ReqCtx } from '../common/auth-user';
-import { PrismaService } from '../common/prisma.service';
+import { PrismaService, Tx } from '../common/prisma.service';
 
 export class CreateUserDto {
-  @IsString() @MaxLength(50) username: string;
-  @IsString() @MaxLength(200) password: string;
+  /** the 10-digit mobile number is the sign-in name (OTP is sent to it) */
+  @Matches(/^\d{10}$/, { message: 'Mobile must be 10 digits' }) mobile: string;
+  /** only Admin users sign in with a password (plus OTP); everyone else uses OTP alone */
+  @IsOptional() @IsString() @MaxLength(200) password?: string;
   @IsString() @MaxLength(100) fullName: string;
-  @IsOptional() @IsString() mobile?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsArray() @ArrayMinSize(1) @IsString({ each: true }) roleCodes: string[];
   @IsOptional() @IsArray() @IsUUID('all', { each: true }) locationIds?: string[];
@@ -64,31 +66,34 @@ export class UsersService {
   }
 
   async list() {
-    const users = await this.prisma.user.findMany({
+    const users = await this.prisma.runCurrent((tx) => tx.user.findMany({
       include: { roles: { include: { role: true } }, locations: true },
       orderBy: { username: 'asc' },
-    });
+    }));
     return users.map((u) => this.view(u));
   }
 
   async create(ctx: ReqCtx, dto: CreateUserDto) {
-    assertStrongPassword(dto.password);
-    if (dto.mobile && !/^\d{10}$/.test(dto.mobile)) throw validation('INVALID_MOBILE', 'Mobile must be 10 digits', 'mobile');
     const roles = await this.resolveRoles(dto.roleCodes);
     this.assertScopeRules(roles, dto.locationIds ?? []);
+    const isAdmin = roles.some((r) => r.code === 'ADMIN');
+    if (isAdmin && !dto.password) throw validation('PASSWORD_REQUIRED', 'Admin users need a password', 'password');
+    if (dto.password) assertStrongPassword(dto.password);
 
-    return this.prisma.$transaction(async (tx) => {
-      const taken = await tx.user.findFirst({
-        where: { OR: [{ username: dto.username }, ...(dto.mobile ? [{ mobile: dto.mobile }] : [])] },
-      });
-      if (taken) throw new AppException(409, 'DUPLICATE', 'Username or mobile already in use');
+    return this.prisma.runCurrent(async (tx) => {
+      // one mobile = one user across all companies (sign-in needs no company picker), so check outside this company too
+      const taken = await tx.user.findFirst({ where: { OR: [{ username: dto.mobile }, { mobile: dto.mobile }] } })
+        ?? (await this.prisma.runAuth((a) => a.user.findFirst({ where: { OR: [{ username: dto.mobile }, { mobile: dto.mobile }] }, select: { id: true } })));
+      if (taken) throw new AppException(409, 'DUPLICATE', 'This mobile number is already registered');
       const user = await tx.user.create({
         data: {
-          username: dto.username,
+          company_id: ctx.user.companyId,
+          username: dto.mobile,
           full_name: dto.fullName,
           mobile: dto.mobile,
           email: dto.email,
-          password_hash: await argon2.hash(dto.password),
+          // non-admins never use it (OTP only); a random hash keeps the column filled without a guessable password
+          password_hash: await argon2.hash(dto.password ?? randomBytes(24).toString('hex')),
           preferred_language: dto.preferredLanguage ?? 'en',
           created_by: ctx.user.id,
           updated_by: ctx.user.id,
@@ -109,16 +114,22 @@ export class UsersService {
     if (dto.password) assertStrongPassword(dto.password);
     if (dto.mobile && !/^\d{10}$/.test(dto.mobile)) throw validation('INVALID_MOBILE', 'Mobile must be 10 digits', 'mobile');
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       const before = await tx.user.findUnique({
         where: { id },
         include: { roles: { include: { role: true } }, locations: true },
       });
       if (!before) throw notFound('User');
+      const mobileChanged = !!dto.mobile && dto.mobile !== before.mobile;
+      if (mobileChanged) {
+        // the mobile number is the sign-in name and is unique across all companies
+        const taken = await this.prisma.runAuth((a) => a.user.findFirst({ where: { id: { not: id }, OR: [{ mobile: dto.mobile }, { username: dto.mobile }] }, select: { id: true } }));
+        if (taken) throw new AppException(409, 'DUPLICATE', 'This mobile number is already registered');
+      }
 
       const roleCodes = dto.roleCodes ?? before.roles.map((r) => r.role.code);
       const locationIds = dto.locationIds ?? before.locations.map((l) => l.location_id);
-      const roles = await this.resolveRoles(roleCodes);
+      const roles = await this.resolveRoles(roleCodes, tx);
       this.assertScopeRules(roles, locationIds);
 
       const access = dto.roleCodes || dto.locationIds;
@@ -135,6 +146,7 @@ export class UsersService {
         data: {
           full_name: dto.fullName,
           mobile: dto.mobile,
+          username: mobileChanged ? dto.mobile : undefined,
           email: dto.email,
           preferred_language: dto.preferredLanguage,
           status: dto.status,
@@ -161,8 +173,9 @@ export class UsersService {
     });
   }
 
-  private async resolveRoles(codes: string[]) {
-    const roles = await this.prisma.role.findMany({ where: { code: { in: codes }, status: 'ACTIVE' } });
+  private async resolveRoles(codes: string[], tx?: Tx) {
+    const find = (t: Tx) => t.role.findMany({ where: { code: { in: codes }, status: 'ACTIVE' } });
+    const roles = await (tx ? find(tx) : this.prisma.runCurrent(find));
     if (roles.length !== new Set(codes).size) throw validation('INVALID_ROLE', 'Unknown or inactive role', 'roleCodes');
     return roles;
   }

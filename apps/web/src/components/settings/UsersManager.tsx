@@ -56,11 +56,13 @@ export function UsersManager() {
     if (!draft) return;
     setBusy(true); setFormError(null);
     try {
-      const common = { fullName: draft.fullName.trim(), mobile: draft.mobile.trim() || undefined, email: draft.email.trim() || undefined, roleCodes: draft.roleCodes, locationIds: draft.locationIds };
+      const common = { fullName: draft.fullName.trim(), mobile: draft.mobile.trim(), email: draft.email.trim() || undefined, roleCodes: draft.roleCodes, locationIds: draft.locationIds };
+      // only an Admin has a password (and signs in with it plus an OTP); everyone else signs in with the OTP alone
+      const password = draft.roleCodes.includes('ADMIN') ? draft.password || undefined : undefined;
       if (draft.id) {
-        await api.patch(`/users/${draft.id}`, { ...common, active: undefined, status: draft.active ? 'ACTIVE' : 'INACTIVE', password: draft.password || undefined });
+        await api.patch(`/users/${draft.id}`, { ...common, active: undefined, status: draft.active ? 'ACTIVE' : 'INACTIVE', password });
       } else {
-        await api.post('/users', { ...common, username: draft.username.trim(), password: draft.password });
+        await api.post('/users', { ...common, password });
       }
       setDraft(null);
       await load();
@@ -93,9 +95,9 @@ export function UsersManager() {
             <li key={u.id} className={`card space-y-2 ${u.status !== 'ACTIVE' ? 'opacity-70' : ''}`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold">{u.fullName} <span className="font-normal text-slate-500">· {u.username}</span></p>
+                  <p className="font-semibold">{u.fullName} <span className="font-normal tabular-nums text-slate-500">· {u.mobile ?? u.username}</span></p>
                   <p className="text-xs text-slate-500">
-                    {u.roles.join(', ')}
+                    {u.roles.map((c) => roles.find((r) => r.code === c)?.name ?? c).join(', ')}
                     {u.locationIds.length > 0 && ` · ${u.locationIds.map((id) => { const l = locs.find((x) => x.id === id); return l ? pick(l.name, l.nameTa) : id; }).join(', ')}`}
                   </p>
                 </div>
@@ -117,9 +119,13 @@ export function UsersManager() {
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField id="ufn" label={t('fullName')} value={draft.fullName} onChange={(e) => setDraft({ ...draft, fullName: e.target.value })} maxLength={100} />
-                <TextField id="uun" label={t('loginName')} autoCapitalize="none" autoComplete="off" value={draft.username} disabled={!!draft.id} onChange={(e) => setDraft({ ...draft, username: e.target.value })} maxLength={50} />
-                <TextField id="upw" label={draft.id ? `${t('passwordNew')} (${t('useDefault')})` : t('passwordNew')} type="password" autoComplete="new-password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
-                <TextField id="umo" label={t('mobile')} inputMode="numeric" value={draft.mobile} onChange={(e) => setDraft({ ...draft, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
+                <div>
+                  <TextField id="umo" label={`${t('mobile')} *`} inputMode="numeric" value={draft.mobile} placeholder="10 digits" onChange={(e) => setDraft({ ...draft, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
+                  <p className="mt-1 text-xs text-slate-500">This is the sign-in name; the OTP is sent to it.</p>
+                </div>
+                {draft.roleCodes.includes('ADMIN') && (
+                  <TextField id="upw" label={draft.id ? `${t('passwordNew')} (${t('useDefault')})` : `${t('passwordNew')} *`} type="password" autoComplete="new-password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
+                )}
                 <TextField id="uem" label="Email" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
               </div>
               <div>
@@ -153,7 +159,7 @@ export function UsersManager() {
               <ErrorBox error={formError} />
               <div className="flex justify-end gap-2">
                 <button className="btn-secondary" onClick={() => setDraft(null)}>{t('cancel')}</button>
-                <button className="btn-primary" disabled={busy || !draft.fullName.trim() || !draft.username.trim() || (!draft.id && draft.password.length < 8) || draft.roleCodes.length === 0} onClick={save}>
+                <button className="btn-primary" disabled={busy || !draft.fullName.trim() || !/^\d{10}$/.test(draft.mobile) || (!draft.id && draft.roleCodes.includes('ADMIN') && draft.password.length < 8) || draft.roleCodes.length === 0} onClick={save}>
                   {busy ? t('loading') : t('save')}
                 </button>
               </div>

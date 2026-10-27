@@ -69,7 +69,7 @@ openssl rand -hex 32     # BANK_DETAILS_KEY: must be exactly 64 hex characters (
 chmod 600 .env.prod
 ```
 
-`SEED_PASSWORD` becomes the first `owner` password. Keep `.env.prod` out of git (already in `.gitignore`).
+`SEED_PASSWORD` becomes the **Super Admin** password (username `superadmin`). Keep `.env.prod` out of git (already in `.gitignore`). OTP sign-in needs the `SMS_FORTIUS_*` settings in the `api` service environment (and never `OTP_FIXED_CODE`).
 
 ## 4. First deploy
 
@@ -79,34 +79,22 @@ C="docker compose -f docker-compose.prod.yml --env-file .env.prod"
 $C build                     # 5-10 minutes the first time
 $C up -d db                  # creates the database and the restricted app role
 $C run --rm migrate          # applies all migrations
-$C run --rm seed             # roles, permissions, approval limits, units, expense categories, ONE owner user
+$C run --rm seed             # permissions, units and ONE Super Admin user (no company yet)
 $C up -d                     # api, web and caddy
 $C ps                        # all services should become "healthy"
 ```
 
-Open `https://YOUR_DOMAIN`, sign in as **owner** with `SEED_PASSWORD`. Caddy fetches the certificate on the first request (give it a minute).
+Open `https://YOUR_DOMAIN`, enter `superadmin`, then `SEED_PASSWORD`. Caddy fetches the certificate on the first request (give it a minute).
 
-## 5. Create your branches and staff
+## 5. Create companies, branches and staff
 
-The seed creates no demo data. Sign in as **owner** and use the **Branches** menu: **Add branch** suggests the next free branch ID (prefix configurable via the `branch.code_prefix` setting, default `BR`), and you can create the branch manager's login in the same form. Each branch page has Settings (opening cash, rent, manager, activate/deactivate), Expenses, History and Reports tabs.
+The seed creates no demo data. Sign in as **superadmin** and open **Companies → New company**: company name, the Admin's full name, mobile, email, main shop / head office address, GSTIN and FSSAI (both optional) and the Admin's password. Each company starts with its own roles (`ADMIN`, `ACCOUNTANT`, `STOCK_MANAGER`, `BRANCH_MANAGER`, `STAFF`), approval limits and expense categories.
 
-There is no screen for other staff logins (accountant, stock manager) yet; create those through the API once. Replace the domain and IDs (the same calls can also create branches and managers if you prefer scripting):
+The company's **Admin** then signs in with the mobile number, the password and an OTP, and uses the **Branches** menu: **Add branch** suggests the next free branch ID (prefix configurable via the `branch.code_prefix` setting, default `BR`), and the branch manager's login can be created in the same form. The **Users** screen adds the other staff (Accountant, Stock Manager, ...): each needs a 10-digit mobile number, which is their sign-in name; only Admins have a password, everyone else signs in with an OTP.
 
-```bash
-D=https://YOUR_DOMAIN
-T=$(curl -s $D/api/v1/auth/login -H 'Content-Type: application/json' \
-     -d '{"username":"owner","password":"YOUR_SEED_PASSWORD"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+To load an existing ledger, the Super Admin opens **Company - Data Upload**, picks the company and a branch (or **New Branch** and its manager's details) and uploads the Excel; **Download sample Excel** shows the layout. **Check file** previews the rows, **Import** saves them as pending records for the company's Admin to approve.
 
-# a branch (Tamil name optional)
-curl -s $D/api/v1/locations -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
-  -d '{"code":"BR001","name":"Anna Nagar","nameTa":"அண்ணா நகர்","type":"BRANCH","defaultOpeningCash":"2000.00"}'
-
-# its manager (use the "id" returned above as locationIds)
-curl -s $D/api/v1/users -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
-  -d '{"username":"manager1","password":"A-Strong-Pass-1","fullName":"Anna Nagar Manager","roleCodes":["BRANCH_MANAGER"],"locationIds":["BRANCH_ID"]}'
-```
-
-Roles: `OWNER`, `ACCOUNTANT`, `STOCK_MANAGER`, `BRANCH_MANAGER`, `STAFF`. To change the owner password: `PATCH /api/v1/users/<owner id>` with `{"password":"..."}`.
+Changing a password later: the Super Admin's from the database seed (`SEED_PASSWORD`), an Admin's from **Users** (an Admin can reset another Admin's password).
 
 ## 6. Updating later
 

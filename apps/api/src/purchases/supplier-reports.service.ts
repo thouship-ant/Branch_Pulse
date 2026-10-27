@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { notFound, validation } from '../common/app-exception';
-import { can, isOwner, ReqCtx } from '../common/auth-user';
+import { can, isAdmin, ReqCtx } from '../common/auth-user';
 import { toDate, todayIST } from '../common/dates';
 import { D, Dec, sum, ZERO } from '../common/money';
 import { PrismaService, Tx } from '../common/prisma.service';
@@ -71,7 +71,7 @@ export class SupplierReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private seesBalance(ctx: ReqCtx) {
-    return isOwner(ctx.user) || can(ctx.user, 'supplier:pay') || can(ctx.user, 'supplier:manage');
+    return isAdmin(ctx.user) || can(ctx.user, 'supplier:pay') || can(ctx.user, 'supplier:manage');
   }
 
   // ------------------------------------------------------------ profile

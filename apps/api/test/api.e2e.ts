@@ -1,7 +1,7 @@
 ﻿import 'reflect-metadata';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { addDaysStr, todayIST } from '../src/common/dates';
@@ -10,6 +10,11 @@ import { RecipesService } from '../src/recipes/recipes.service';
 import { configureApp } from '../src/setup';
 
 const PASSWORD = 'ChangeMe@123'; // seed password
+const OTP = '123456'; // OTP_FIXED_CODE (see test/setup-env.js)
+/** The seeded demo users, by the short names these tests use. Their sign-in name is the mobile number. */
+const SEEDED: Record<string, string> = { owner: '9000000001', accountant: '9000000002', stockmgr: '9000000003' };
+/** A stable 10-digit mobile number for a test user name, so a user can be created and signed in by the same name. */
+const mobileOf = (name: string) => `9${String(parseInt(createHash('sha1').update(name).digest('hex').slice(0, 8), 16) % 1e9).padStart(9, '0')}`;
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64',
@@ -33,8 +38,20 @@ describe('Branch Pulse API (e2e)', () => {
   let bigExpenseId: string;
 
   const as = (token: string) => ({ Authorization: `Bearer ${token}` });
-  const login = async (username: string, password = PASSWORD) =>
-    http().post('/api/v1/auth/login').send({ username, password });
+  /**
+   * Signs in the way the app does: Admin = mobile + password then OTP, everyone else = mobile + OTP.
+   * `name` is a seeded alias (owner, accountant, stockmgr) or the name a test user was created with (see mobileOf).
+   * Returns the final /auth/otp/verify response, or the failing step's response.
+   */
+  const login = async (name: string, password = PASSWORD) => {
+    const mobile = SEEDED[name] ?? mobileOf(name);
+    const { method } = (await http().post('/api/v1/auth/identify').send({ identifier: mobile })).body.data;
+    if (method === 'PASSWORD_OTP') {
+      const step = await http().post('/api/v1/auth/login').send({ username: mobile, password });
+      if (!step.body.data?.otpRequired) return step; // wrong password, locked ...
+    } else await http().post('/api/v1/auth/otp/request').send({ mobile });
+    return http().post('/api/v1/auth/otp/verify').send({ mobile, otp: OTP });
+  };
 
   beforeAll(async () => {
     const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -59,7 +76,7 @@ describe('Branch Pulse API (e2e)', () => {
     const user = await http()
       .post('/api/v1/users')
       .set(as(owner))
-      .send({ username: `mgr${rnd}`, password: 'Test@12345', fullName: 'Test Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [ownLoc] });
+      .send({ mobile: mobileOf(`mgr${rnd}`), fullName: 'Test Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [ownLoc] });
     expect(user.status).toBe(201);
     manager = (await login(`mgr${rnd}`, 'Test@12345')).body.data.accessToken;
   });
@@ -89,10 +106,11 @@ describe('Branch Pulse API (e2e)', () => {
       expect(res.body.data.permissions).not.toContain('closing:approve');
     });
 
-    it('locks the account after 5 failed attempts (even with the right password afterwards)', async () => {
+    it('locks an Admin account after 5 failed password attempts (even with the right password afterwards)', async () => {
+      // only Admins have a password; everyone else signs in with the OTP alone
       await http().post('/api/v1/users').set(as(owner)).send({
-        username: `lock${rnd}`, password: 'Test@12345', fullName: 'Lock Test', roleCodes: ['BRANCH_MANAGER'], locationIds: [ownLoc],
-      });
+        mobile: mobileOf(`lock${rnd}`), password: 'Test@12345', fullName: 'Lock Test', roleCodes: ['ADMIN'],
+      }).expect(201);
       for (let i = 0; i < 5; i++) {
         const bad = await login(`lock${rnd}`, 'wrong-password');
         expect(bad.status).toBe(401);
@@ -488,7 +506,7 @@ describe('Branch Pulse API (e2e)', () => {
       expect(audit.map((a) => a.action)).toEqual(expect.arrayContaining(['STATUS_CHANGE', 'APPROVE', 'REOPEN', 'REJECT']));
       const reopenRow = audit.find((a) => a.action === 'REOPEN')!;
       expect(reopenRow.reason).toBe('Wrong UPI figure');
-      expect(reopenRow.actor_role).toBe('OWNER');
+      expect(reopenRow.actor_role).toBe('ADMIN');
     });
 
     it('never stores or returns password hashes, and masks secrets in the audit log', async () => {
@@ -734,7 +752,7 @@ describe('Branch Pulse API (e2e)', () => {
     beforeAll(async () => {
       const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `CR${rnd}`, name: `Cash Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '2000.00' });
       br = loc.body.data.id;
-      const u = await http().post('/api/v1/users').set(as(owner)).send({ username: `crm${rnd}`, password: 'Test@12345', fullName: 'Cash Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] });
+      const u = await http().post('/api/v1/users').set(as(owner)).send({ mobile: mobileOf(`crm${rnd}`), fullName: 'Cash Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] });
       expect(u.status).toBe(201);
       mgr = (await login(`crm${rnd}`, 'Test@12345')).body.data.accessToken;
       // a second branch's manager, to prove branches cannot touch each other's cash
@@ -1025,7 +1043,7 @@ describe('Branch Pulse API (e2e)', () => {
 
     it('assigns a manager, moves them between branches, and takes access away from the previous manager', async () => {
       for (const [name, loc] of [['m1', branchA], ['m2', branchB]] as const) {
-        const u = await post('/users', { username: `${name}${rnd}`, password: 'Test@12345', fullName: `Manager ${name}`, roleCodes: ['BRANCH_MANAGER'], locationIds: [loc] });
+        const u = await post('/users', { mobile: mobileOf(`${name}${rnd}`), fullName: `Manager ${name}`, roleCodes: ['BRANCH_MANAGER'], locationIds: [loc] });
         expect(u.status).toBe(201);
         if (name === 'm1') m1 = u.body.data.id; else m2 = u.body.data.id;
       }
@@ -1053,8 +1071,8 @@ describe('Branch Pulse API (e2e)', () => {
     });
 
     it('only an active Branch Manager can be assigned', async () => {
-      const list = (await http().get('/api/v1/users').set(as(owner))).body.data as Array<{ id: string; username: string }>;
-      const accountant = list.find((u) => u.username === 'accountant')!;
+      const list = (await http().get('/api/v1/users').set(as(owner))).body.data as Array<{ id: string; mobile: string }>;
+      const accountant = list.find((u) => u.mobile === SEEDED.accountant)!;
       const res = await post(`/locations/${branchA}/manager`, { userId: accountant.id });
       expect(res.status).toBe(422);
       expect(res.body.error.code).toBe('INVALID_MANAGER');
@@ -1131,7 +1149,7 @@ describe('Branch Pulse API (e2e)', () => {
     beforeAll(async () => {
       const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `EX${rnd}`, name: `Expense Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '1000.00' });
       br = loc.body.data.id;
-      await http().post('/api/v1/users').set(as(owner)).send({ username: `exm${rnd}`, password: 'Test@12345', fullName: 'Expense Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
+      await http().post('/api/v1/users').set(as(owner)).send({ mobile: mobileOf(`exm${rnd}`), fullName: 'Expense Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
       mgr = (await login(`exm${rnd}`, 'Test@12345')).body.data.accessToken;
     });
 
@@ -1317,7 +1335,7 @@ describe('Branch Pulse API (e2e)', () => {
     beforeAll(async () => {
       const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `PU${rnd}`, name: `Purchase Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '5000.00' });
       br = loc.body.data.id;
-      await http().post('/api/v1/users').set(as(owner)).send({ username: `pum${rnd}`, password: 'Test@12345', fullName: 'Purchase Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
+      await http().post('/api/v1/users').set(as(owner)).send({ mobile: mobileOf(`pum${rnd}`), fullName: 'Purchase Manager', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
       mgr = (await login(`pum${rnd}`, 'Test@12345')).body.data.accessToken;
       stockMgr = (await login('stockmgr')).body.data.accessToken;
       const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
@@ -1568,7 +1586,7 @@ describe('Branch Pulse API (e2e)', () => {
     beforeAll(async () => {
       const loc = await http().post('/api/v1/locations').set(as(owner)).send({ code: `SM${rnd}`, name: `Supplier Branch ${rnd}`, type: 'BRANCH', defaultOpeningCash: '1000.00' });
       br = loc.body.data.id;
-      await http().post('/api/v1/users').set(as(owner)).send({ username: `smm${rnd}`, password: 'Test@12345', fullName: 'Supplier Mgr', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
+      await http().post('/api/v1/users').set(as(owner)).send({ mobile: mobileOf(`smm${rnd}`), fullName: 'Supplier Mgr', roleCodes: ['BRANCH_MANAGER'], locationIds: [br] }).expect(201);
       mgr = (await login(`smm${rnd}`, 'Test@12345')).body.data.accessToken;
       const boot = (await http().get('/api/v1/sync/bootstrap').set(as(owner))).body.data;
       const item = (code: string) => boot.items.find((i: any) => i.code === code).id;
@@ -1715,7 +1733,7 @@ describe('Branch Pulse API (e2e)', () => {
       const mk = async (code: string, type: string) => (await http().post('/api/v1/locations').set(as(owner)).send({ code, name: `Inv ${code}`, type, defaultOpeningCash: '1000.00' })).body.data.id as string;
       a = await mk(`IA${rnd}`, 'BRANCH'); b = await mk(`IB${rnd}`, 'BRANCH'); gw = await mk(`IG${rnd}`, 'GODOWN');
       const user = async (u: string, loc: string) => {
-        await http().post('/api/v1/users').set(as(owner)).send({ username: u, password: 'Test@12345', fullName: `Mgr ${u}`, roleCodes: ['BRANCH_MANAGER'], locationIds: [loc] }).expect(201);
+        await http().post('/api/v1/users').set(as(owner)).send({ mobile: mobileOf(u), fullName: `Mgr ${u}`, roleCodes: ['BRANCH_MANAGER'], locationIds: [loc] }).expect(201);
         return (await login(u, 'Test@12345')).body.data.accessToken as string;
       };
       mgrA = await user(`ima${rnd}`, a); mgrB = await user(`imb${rnd}`, b);
@@ -2064,7 +2082,7 @@ describe('Branch Pulse API (e2e)', () => {
 
     beforeAll(async () => {
       eloc = (await http().post('/api/v1/locations').set(as(owner)).send({ code: `EL${rnd}`, name: `Emp Test ${rnd}`, type: 'BRANCH', defaultOpeningCash: '500.00' })).body.data.id;
-      await http().post('/api/v1/users').set(as(owner)).send({ username: `eme${rnd}`, password: 'Test@12345', fullName: 'Emp Mgr', roleCodes: ['BRANCH_MANAGER'], locationIds: [eloc] }).expect(201);
+      await http().post('/api/v1/users').set(as(owner)).send({ mobile: mobileOf(`eme${rnd}`), fullName: 'Emp Mgr', roleCodes: ['BRANCH_MANAGER'], locationIds: [eloc] }).expect(201);
       mgrE = (await login(`eme${rnd}`, 'Test@12345')).body.data.accessToken;
       accountant = (await login('accountant')).body.data.accessToken;
     });
@@ -2299,7 +2317,7 @@ describe('Branch Pulse API (e2e)', () => {
     it('roles: create a custom role, assign permissions, and refuse to leave zero active roles holding role:manage', async () => {
       const list = await http().get('/api/v1/roles').set(as(owner));
       expect(list.status).toBe(200);
-      const owner_role = list.body.data.find((r: any) => r.code === 'OWNER');
+      const owner_role = list.body.data.find((r: any) => r.code === 'ADMIN');
       expect(owner_role.permissions).toContain('role:manage');
       expect((await http().get('/api/v1/roles').set(as(manager))).status).toBe(403);
 
@@ -2316,7 +2334,7 @@ describe('Branch Pulse API (e2e)', () => {
       expect(putPerms.status).toBe(200);
       expect(putPerms.body.data.permissions.sort()).toEqual(['stock:view', 'wastage:create']);
 
-      // only OWNER holds role:manage in this deployment; stripping it would lock everyone out of this screen
+      // only ADMIN holds role:manage in this company; stripping it would lock everyone out of this screen
       const strip = await http().put(`/api/v1/roles/${owner_role.id}/permissions`).set(as(owner)).send({ permissionCodes: owner_role.permissions.filter((p: string) => p !== 'role:manage') });
       expect(strip.status).toBe(422);
 

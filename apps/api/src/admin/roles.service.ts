@@ -21,7 +21,7 @@ export class RolePermissionsDto {
   @IsArray() @IsString({ each: true }) permissionCodes: string[];
 }
 
-/** RBAC admin (LLD s12). Built-in roles (OWNER, ACCOUNTANT, ...) can be renamed and re-permissioned like any
+/** RBAC admin (LLD s12). Built-in roles (ADMIN, ACCOUNTANT, ...) can be renamed and re-permissioned like any
  * other role, but a permission update may never leave zero active roles holding role:manage - that would lock
  * every user out of this screen with no way back in short of a database edit. */
 @Injectable()
@@ -39,24 +39,25 @@ export class RolesService {
   }
 
   async listRoles() {
-    const roles = await this.prisma.role.findMany({
+    const roles = await this.prisma.runCurrent((tx) => tx.role.findMany({
       include: { permissions: { include: { permission: true } }, _count: { select: { users: true } } },
       orderBy: { code: 'asc' },
-    });
+    }));
     return roles.map((r) => this.view(r));
   }
 
   listPermissions() {
-    return this.prisma.permission.findMany({ orderBy: [{ module: 'asc' }, { code: 'asc' }] });
+    // the company module is the Super Admin's alone, so it is never offered to a company's roles
+    return this.prisma.permission.findMany({ where: { module: { not: 'company' } }, orderBy: [{ module: 'asc' }, { code: 'asc' }] });
   }
 
   async createRole(ctx: ReqCtx, dto: CreateRoleDto) {
-    return this.prisma.$transaction(async (tx) => {
-      if (await tx.role.findUnique({ where: { code: dto.code } })) throw new AppException(409, 'DUPLICATE_ROLE', 'A role with this code already exists');
-      const perms = dto.permissionCodes?.length ? await tx.permission.findMany({ where: { code: { in: dto.permissionCodes } } }) : [];
+    return this.prisma.runCurrent(async (tx) => {
+      if (await tx.role.findFirst({ where: { code: dto.code, company_id: ctx.user.companyId } })) throw new AppException(409, 'DUPLICATE_ROLE', 'A role with this code already exists');
+      const perms = dto.permissionCodes?.length ? await tx.permission.findMany({ where: { code: { in: dto.permissionCodes }, module: { not: 'company' } } }) : [];
       const role = await tx.role.create({
         data: {
-          code: dto.code, name: dto.name.trim(), scope_mode: dto.scopeMode, is_system: false,
+          company_id: ctx.user.companyId!, code: dto.code, name: dto.name.trim(), scope_mode: dto.scopeMode, is_system: false,
           created_by: ctx.user.id, updated_by: ctx.user.id,
           permissions: { create: perms.map((p) => ({ permission_id: p.id })) },
         },
@@ -68,7 +69,7 @@ export class RolesService {
   }
 
   async updateRole(ctx: ReqCtx, id: string, dto: UpdateRoleDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       const before = await tx.role.findUnique({ where: { id }, include: { permissions: { include: { permission: true } }, _count: { select: { users: true } } } });
       if (!before) throw notFound('Role');
       if (dto.status === 'INACTIVE' && before._count.users > 0) {
@@ -85,11 +86,11 @@ export class RolesService {
   }
 
   async putRolePermissions(ctx: ReqCtx, id: string, dto: RolePermissionsDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       const role = await tx.role.findUnique({ where: { id } });
       if (!role) throw notFound('Role');
       const codes = [...new Set(dto.permissionCodes)];
-      const perms = await tx.permission.findMany({ where: { code: { in: codes } } });
+      const perms = await tx.permission.findMany({ where: { code: { in: codes }, module: { not: 'company' } } });
       if (perms.length !== codes.length) throw validation('INVALID_PERMISSION', 'Unknown permission code', 'permissionCodes');
 
       if (role.status === 'ACTIVE' && !codes.includes('role:manage')) {

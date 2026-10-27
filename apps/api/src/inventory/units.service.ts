@@ -38,7 +38,7 @@ export class UnitsService {
     const code = dto.code.trim().toUpperCase();
     const name = dto.name.trim();
     if (!code || !name) throw validation('NAME_REQUIRED', 'Enter a code and name', 'code');
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       if (await tx.unit.findUnique({ where: { code } })) throw new AppException(409, 'DUPLICATE_UNIT', 'A unit with this code already exists');
       let baseUnitId: string | null = null;
       if (dto.baseUnitId) {
@@ -55,7 +55,7 @@ export class UnitsService {
   }
 
   async update(ctx: ReqCtx, id: string, dto: UpdateUnitDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       const before = await tx.unit.findUnique({ where: { id } });
       if (!before) throw notFound('Unit');
       if (dto.factorToBase !== undefined && !before.base_unit_id) throw validation('INVALID_UNIT', 'A base unit always has a factor of 1', 'factorToBase');

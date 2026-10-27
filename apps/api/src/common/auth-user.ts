@@ -12,6 +12,8 @@ export interface AuthUser {
   permissions: string[]; // permission codes (module:action)
   allLocations: boolean; // scope_mode ALL on any role
   locationIds: string[]; // explicit assignments (used when !allLocations)
+  companyId: string | null; // the company this user belongs to (null only for the Super Admin)
+  isSuper: boolean; // Super Admin: manages companies, sees no branch data
 }
 
 export type EntrySourceValue = 'WEB' | 'PWA_OFFLINE' | 'SYSTEM';
@@ -26,7 +28,7 @@ export interface ReqCtx {
   source: EntrySourceValue;
 }
 
-export const isOwner = (u: AuthUser) => u.roles.includes('OWNER');
+export const isAdmin = (u: AuthUser) => u.roles.includes('ADMIN');
 export const can = (u: AuthUser, perm: string) => u.permissions.includes(perm);
 export const canAccessLocation = (u: AuthUser, locationId: string) =>
   u.allLocations || u.locationIds.includes(locationId);

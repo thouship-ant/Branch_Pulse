@@ -19,7 +19,7 @@ export const emptyManager = (mode: ManagerChoice['mode'] = 'none'): ManagerChoic
 
 export type ManagerRole = 'BRANCH_MANAGER' | 'STOCK_MANAGER';
 
-export interface EligibleManager { id: string; fullName: string; username: string; branchId: string | null; branchName: string | null }
+export interface EligibleManager { id: string; fullName: string; username: string; mobile: string | null; branchId: string | null; branchName: string | null }
 
 /** Active users holding the given role, with the location each one currently runs. */
 export function useEligibleManagers(pick: (en?: string | null, ta?: string | null) => string, roleCode: ManagerRole = 'BRANCH_MANAGER'): EligibleManager[] {
@@ -34,7 +34,7 @@ export function useEligibleManagers(pick: (en?: string | null, ta?: string | nul
             .filter((u) => u.status === 'ACTIVE' && u.roles.includes(roleCode))
             .map((u) => {
               const loc = (locs as any[]).find((l) => u.locationIds.includes(l.id));
-              return { id: u.id, fullName: u.fullName, username: u.username, branchId: loc?.id ?? null, branchName: loc ? pick(loc.name, loc.nameTa) : null };
+              return { id: u.id, fullName: u.fullName, username: u.username, mobile: u.mobile ?? null, branchId: loc?.id ?? null, branchName: loc ? pick(loc.name, loc.nameTa) : null };
             }),
         );
       })
@@ -48,8 +48,8 @@ export function useEligibleManagers(pick: (en?: string | null, ta?: string | nul
 export function managerProblem(m: ManagerChoice, t: (k: any) => string): string | null {
   if (m.mode === 'existing' && !m.userId) return t('existingManager');
   if (m.mode === 'new') {
-    if (!m.fullName.trim() || !m.username.trim()) return `${t('fullName')} / ${t('loginName')}`;
-    if (m.password.length < 8) return t('passwordNew');
+    if (!m.fullName.trim()) return t('fullName');
+    if (!/^\d{10}$/.test(m.mobile)) return `${t('mobile')} (10 digits)`; // the mobile number is the sign-in name
   }
   return null;
 }
@@ -59,10 +59,8 @@ export async function applyManager(branchId: string, m: ManagerChoice, roleCode:
   if (m.mode === 'none') return;
   let userId = m.userId;
   if (m.mode === 'new') {
-    const user = await api.post('/users', {
-      username: m.username.trim(), password: m.password, fullName: m.fullName.trim(),
-      mobile: m.mobile.trim() || undefined, roleCodes: [roleCode], locationIds: [branchId],
-    });
+    // managers sign in with their mobile number and an OTP: no username or password to set
+    const user = await api.post('/users', { fullName: m.fullName.trim(), mobile: m.mobile.trim(), roleCodes: [roleCode], locationIds: [branchId] });
     userId = user.id;
   }
   await api.post(`/locations/${branchId}/manager`, { userId });
@@ -90,7 +88,7 @@ export function ManagerChooser({
           <Select id="mgr" className="field" value={value.userId} onChange={(e) => set({ userId: e.target.value })}>
             <option value="">—</option>
             {eligible.map((e) => (
-              <option key={e.id} value={e.id}>{e.fullName} ({e.username}){e.branchName ? ` · ${e.branchName}` : ''}</option>
+              <option key={e.id} value={e.id}>{e.fullName} ({e.mobile ?? e.username}){e.branchName ? ` · ${e.branchName}` : ''}</option>
             ))}
           </Select>
           {picked?.branchId && picked.branchId !== currentBranchId && (
@@ -103,9 +101,10 @@ export function ManagerChooser({
       {value.mode === 'new' && (
         <div className="grid gap-3 sm:grid-cols-2">
           <TextField id="mfn" label={t('fullName')} value={value.fullName} onChange={(e) => set({ fullName: e.target.value })} />
-          <TextField id="mun" label={t('loginName')} autoCapitalize="none" autoComplete="off" value={value.username} onChange={(e) => set({ username: e.target.value })} />
-          <TextField id="mpw" label={t('passwordNew')} type="password" autoComplete="new-password" value={value.password} onChange={(e) => set({ password: e.target.value })} />
-          <TextField id="mmo" label={t('mobile')} inputMode="numeric" value={value.mobile} onChange={(e) => set({ mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
+          <div>
+            <TextField id="mmo" label={`${t('mobile')} *`} inputMode="numeric" placeholder="10 digits" value={value.mobile} onChange={(e) => set({ mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
+            <p className="mt-1 text-xs text-slate-500">Signs in with this number and an OTP.</p>
+          </div>
         </div>
       )}
     </div>

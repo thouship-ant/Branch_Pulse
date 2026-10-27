@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
-import { can, isOwner, ReqCtx } from '../common/auth-user';
+import { can, isAdmin, ReqCtx } from '../common/auth-user';
 import { CodesService } from '../common/codes.service';
 import { toDate, todayIST } from '../common/dates';
 import { parseMoney } from '../common/money';
@@ -113,7 +113,7 @@ export class AdvanceService {
   async cancel(ctx: ReqCtx, id: string, dto: AdvanceActionDto) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const before = await this.loadFor(tx, id, ['REQUESTED'], 'cancel');
-      if (before.requested_by !== ctx.user.id && !isOwner(ctx.user)) throw new AppException(403, 'FORBIDDEN', 'Only the person who requested it, or the owner, can cancel this');
+      if (before.requested_by !== ctx.user.id && !isAdmin(ctx.user)) throw new AppException(403, 'FORBIDDEN', 'Only the person who requested it, or the owner, can cancel this');
       const after = await tx.employeeAdvance.update({ where: { id }, data: { status: 'CANCELLED', updated_by: ctx.user.id, version: { increment: 1 } } });
       await this.audit.log(tx, ctx, { action: 'CANCEL', entityType: 'EMPLOYEE_ADVANCE', entityId: id, entityCode: before.code, locationId: before.location_id, before, after, reason: dto.reason });
       return after;

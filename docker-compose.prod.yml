@@ -59,6 +59,12 @@ services:
       <<: *dburls
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env.prod}
       BANK_DETAILS_KEY: ${BANK_DETAILS_KEY:?set BANK_DETAILS_KEY in .env.prod}
+      # OTP sign-in by SMS (SMS Fortius). Without these the OTP is only written to the API log, so nobody can receive it.
+      SMS_FORTIUS_API_KEY: ${SMS_FORTIUS_API_KEY:-}
+      SMS_FORTIUS_SENDER_ID: ${SMS_FORTIUS_SENDER_ID:-}
+      SMS_FORTIUS_TEMPLATE_ID: ${SMS_FORTIUS_TEMPLATE_ID:-}
+      SMS_FORTIUS_BASE_URL: ${SMS_FORTIUS_BASE_URL:-}
+      SMS_OTP_TEMPLATE: ${SMS_OTP_TEMPLATE:-Your Branch Pulse OTP is {otp}. Valid for 10 minutes. Do not share it.}
       CORS_ORIGINS: https://${DOMAIN:?set DOMAIN in .env.prod}
       COOKIE_SECURE: "true"
       UPLOAD_DIR: /data/uploads

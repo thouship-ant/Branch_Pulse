@@ -93,7 +93,8 @@ async function request<T>(method: string, path: string, opts: Options = {}, retr
   try {
     const headers: Record<string, string> = { 'X-Device-Id': deviceId(), ...(opts.headers as Record<string, string>) };
     if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
+    const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData; // the browser sets the multipart boundary itself
+    if (opts.body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
     if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
 
     let res: Response;
@@ -102,7 +103,7 @@ async function request<T>(method: string, path: string, opts: Options = {}, retr
         method,
         headers,
         credentials: 'same-origin',
-        body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+        body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body),
         signal: opts.signal,
       });
     } catch {
@@ -140,6 +141,8 @@ export const api = {
   post: <T = any>(path: string, body?: unknown, o?: Options): Promise<T> => request('POST', path, { ...o, body: body ?? {} }),
   put: <T = any>(path: string, body?: unknown, o?: Options): Promise<T> => request('PUT', path, { ...o, body }),
   patch: <T = any>(path: string, body?: unknown, o?: Options): Promise<T> => request('PATCH', path, { ...o, body }),
+  /** multipart/form-data upload (files + fields) */
+  postForm: <T = any>(path: string, form: FormData): Promise<T> => request('POST', path, { body: form }),
   /** Same as the verbs above but returns { data, warnings, meta }. */
   full: {
     get: <T = any>(path: string): Promise<Envelope<T>> => request('GET', path, { raw: true }),
@@ -147,6 +150,22 @@ export const api = {
     post: <T = any>(path: string, body: unknown): Promise<Envelope<T>> => request('POST', path, { body, raw: true }),
   },
 };
+
+/** Download a file the API serves behind the bearer token (a plain link could not send it) and save it under `fileName`. */
+export async function downloadFile(path: string, fileName: string): Promise<void> {
+  const send = () => fetch(`/api/v1${path}`, { credentials: 'same-origin', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} });
+  let res = await send().catch(() => { throw new ApiError(0, 'NETWORK', 'No internet connection'); });
+  if (res.status === 401 && (await refreshSession())) res = await send();
+  if (!res.ok) throw new ApiError(res.status, 'DOWNLOAD_FAILED', 'Could not download the file');
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 /** Upload a blob to a presigned URL and return the storage key to attach to a record. */
 export async function uploadAttachment(blob: Blob, fileName: string, locationId: string): Promise<string> {

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import type { Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
@@ -8,9 +8,25 @@ import { Ctx, CurrentUser, AuthUser, Public, ReqCtx } from '../common/auth-user'
 import { env } from '../config/env';
 import { AuthService } from './auth.service';
 
+class IdentifyDto {
+  @IsString() @MaxLength(50) identifier: string;
+}
+
 class LoginDto {
+  /** Super Admin username, or an Admin's 10-digit mobile number */
   @IsString() @MaxLength(50) username: string;
   @IsString() @MaxLength(200) password: string;
+  @IsOptional() @IsIn(['mobile', 'desktop']) client?: 'mobile' | 'desktop';
+  @IsOptional() @IsString() @MaxLength(80) deviceLabel?: string;
+}
+
+class OtpRequestDto {
+  @Matches(/^\d{10}$/, { message: 'Enter a 10-digit mobile number' }) mobile: string;
+}
+
+class OtpVerifyDto {
+  @Matches(/^\d{10}$/, { message: 'Enter a 10-digit mobile number' }) mobile: string;
+  @Matches(/^\d{6}$/, { message: 'The OTP is 6 digits' }) otp: string;
   @IsOptional() @IsIn(['mobile', 'desktop']) client?: 'mobile' | 'desktop';
   @IsOptional() @IsString() @MaxLength(80) deviceLabel?: string;
 }
@@ -32,19 +48,54 @@ export class AuthController {
     });
   }
 
+  private meta(req: Request & { requestId?: string }) {
+    const rawIp = req.ip?.replace(/^::ffff:/, '');
+    return {
+      ip: rawIp && isIP(rawIp) ? rawIp : undefined,
+      userAgent: req.headers['user-agent'],
+      deviceId: typeof req.headers['x-device-id'] === 'string' ? req.headers['x-device-id'].slice(0, 64) : undefined,
+      requestId: req.requestId ?? randomUUID(),
+    };
+  }
+
+  /** Which steps the sign-in screen should show for this mobile number / username. */
+  @Public()
+  @Throttle({ default: { limit: env.loginRateLimit, ttl: 60_000 } })
+  @Post('identify')
+  @HttpCode(200)
+  identify(@Body() dto: IdentifyDto) {
+    return this.auth.identify(dto.identifier);
+  }
+
   // login: 10 attempts / minute / IP (HLD s8); account lockout after 5 failures is in the service
+  // Super Admin -> signed in. Admin -> { otpRequired: true } and an OTP is sent; verify it at /auth/otp/verify.
   @Public()
   @Throttle({ default: { limit: env.loginRateLimit, ttl: 60_000 } })
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto, @Req() req: Request & { requestId?: string }, @Res({ passthrough: true }) res: Response) {
-    const rawIp = req.ip?.replace(/^::ffff:/, '');
-    const { tokens, user } = await this.auth.login(dto, {
-      ip: rawIp && isIP(rawIp) ? rawIp : undefined,
-      userAgent: req.headers['user-agent'],
-      deviceId: typeof req.headers['x-device-id'] === 'string' ? req.headers['x-device-id'].slice(0, 64) : undefined,
-      requestId: req.requestId ?? randomUUID(),
-    });
+    const result = await this.auth.login(dto, this.meta(req));
+    if ('otpRequired' in result) return { otpRequired: true, mobile: result.mobile, resendInSeconds: env.otpResendSeconds };
+    this.setCookie(res, result.tokens.refreshCookie);
+    return { accessToken: result.tokens.accessToken, expiresIn: result.tokens.expiresIn, user: await this.auth.me(result.user) };
+  }
+
+  /** OTP-only users: send the code to their mobile. */
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('otp/request')
+  @HttpCode(200)
+  requestOtp(@Body() dto: OtpRequestDto, @Req() req: Request & { requestId?: string }) {
+    return this.auth.requestOtp(dto.mobile, this.meta(req));
+  }
+
+  /** Last step for everyone who uses an OTP (Admin after the password, other users directly). */
+  @Public()
+  @Throttle({ default: { limit: env.loginRateLimit, ttl: 60_000 } })
+  @Post('otp/verify')
+  @HttpCode(200)
+  async verifyOtp(@Body() dto: OtpVerifyDto, @Req() req: Request & { requestId?: string }, @Res({ passthrough: true }) res: Response) {
+    const { tokens, user } = await this.auth.verifyOtp(dto.mobile, dto.otp, dto, this.meta(req));
     this.setCookie(res, tokens.refreshCookie);
     return { accessToken: tokens.accessToken, expiresIn: tokens.expiresIn, user: await this.auth.me(user) };
   }

@@ -3,7 +3,7 @@ import { IsArray, IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, Max
 import { Type } from 'class-transformer';
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
-import { can, isOwner, ReqCtx } from '../common/auth-user';
+import { can, isAdmin, ReqCtx } from '../common/auth-user';
 import { CodesService } from '../common/codes.service';
 import { addDays, fmtDate, toDate, todayIST } from '../common/dates';
 import { D, Dec, MONEY_PATTERN, parseMoney, parseMoneyOr0, sum, ZERO } from '../common/money';
@@ -70,7 +70,7 @@ export class SuppliersService {
   ) {}
 
   private seesBalance(ctx: ReqCtx) {
-    return isOwner(ctx.user) || can(ctx.user, 'supplier:pay') || can(ctx.user, 'supplier:manage');
+    return isAdmin(ctx.user) || can(ctx.user, 'supplier:pay') || can(ctx.user, 'supplier:manage');
   }
 
   // ------------------------------------------------------------ master data

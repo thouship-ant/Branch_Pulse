@@ -6,3 +6,5 @@ process.env.DIRECT_URL = process.env.TEST_DIRECT_URL || base.replace('%USER%', '
 process.env.NODE_ENV = 'test';
 process.env.LOGIN_RATE_LIMIT = '1000'; // the suite logs in far more than 10x/min; production keeps 10/min/IP
 process.env.JWT_ACCESS_SECRET = 'test-secret-test-secret-test-secret-1234';
+process.env.OTP_FIXED_CODE = '123456'; // every OTP is this code; no SMS is sent
+process.env.OTP_RESEND_SECONDS = '0'; // the suite asks for OTPs back to back

@@ -54,7 +54,7 @@ export class LocationsService {
   private async withManagers<T extends { manager_user_id: string | null }>(rows: T[]) {
     const ids = [...new Set(rows.map((r) => r.manager_user_id).filter((x): x is string => !!x))];
     const users = ids.length
-      ? await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, full_name: true, username: true, mobile: true, status: true } })
+      ? await this.prisma.runCurrent((tx) => tx.user.findMany({ where: { id: { in: ids } }, select: { id: true, full_name: true, username: true, mobile: true, status: true } }))
       : [];
     return rows.map((r) => ({ ...r, manager: users.find((u) => u.id === r.manager_user_id) ?? null }));
   }
@@ -142,7 +142,7 @@ export class LocationsService {
     // scripted callers may omit the Tamil name: fill it in the same way the form does (outside the transaction: it can call out)
     const nameTa = dto.nameTa?.trim() ? dto.nameTa.trim() : (await this.translit.toTamil(dto.name)).tamil || undefined;
     return this.prisma.runScoped(ctx.user, async (tx) => {
-      const exists = await tx.location.findUnique({ where: { code: dto.code } });
+      const exists = await tx.location.findFirst({ where: { code: dto.code } }); // RLS limits this to the caller's company
       if (exists) throw new AppException(409, 'DUPLICATE', `Location code ${dto.code} already exists`);
       const loc = await tx.location.create({
         data: {
@@ -235,7 +235,7 @@ export class LocationsService {
     const page = rows.slice(0, limit);
     const actorIds = [...new Set(page.map((r) => r.actor_id).filter((x): x is string => !!x))];
     const users = actorIds.length
-      ? await this.prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, full_name: true } })
+      ? await this.prisma.runCurrent((tx) => tx.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, full_name: true } }))
       : [];
     const data = page.map((r) => ({ ...r, actor_name: users.find((u) => u.id === r.actor_id)?.full_name ?? null }));
     return new Envelope(data, [], { hasMore: rows.length > limit, next: page.length ? String(page[page.length - 1].id) : null });

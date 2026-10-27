@@ -46,7 +46,7 @@ export class VarianceReportService {
           ? tx.attachment.groupBy({ by: ['entity_id'], where: { entity_type: 'CASH_RECONCILIATION', entity_id: { in: recons.map((r) => r.id) }, status: 'ACTIVE' }, _count: true })
           : [],
         tx.dailyClosing.findMany({ where: { location_id: { in: ids }, business_date: { gte: from, lte: to } }, select: { location_id: true, business_date: true, status: true } }),
-        this.prisma.user.findMany({ where: { id: { in: [...new Set(recons.map((r) => r.approved_by).filter((x): x is string => !!x))] } }, select: { id: true, full_name: true } }),
+        tx.user.findMany({ where: { id: { in: [...new Set(recons.map((r) => r.approved_by).filter((x): x is string => !!x))] } }, select: { id: true, full_name: true } }),
       ]);
       const branch = (id: string) => branches.find((b) => b.id === id)!;
 

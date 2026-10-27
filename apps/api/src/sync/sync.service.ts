@@ -191,12 +191,12 @@ export class SyncService {
   // ------------------------------------------------------------ bootstrap
   /** Cheap change marker for master data: newest updated_at across the offline masters. */
   private async bootstrapVersion(): Promise<number> {
-    const [c, l, i, s] = await Promise.all([
-      this.prisma.expenseCategory.aggregate({ _max: { updated_at: true } }),
-      this.prisma.location.aggregate({ _max: { updated_at: true } }),
-      this.prisma.inventoryItem.aggregate({ _max: { updated_at: true } }),
-      this.prisma.setting.aggregate({ _max: { updated_at: true } }),
-    ]);
+    const [c, l, i, s] = await this.prisma.runCurrent((tx) => Promise.all([
+      tx.expenseCategory.aggregate({ _max: { updated_at: true } }),
+      tx.location.aggregate({ _max: { updated_at: true } }),
+      tx.inventoryItem.aggregate({ _max: { updated_at: true } }),
+      tx.setting.aggregate({ _max: { updated_at: true } }),
+    ]));
     const t = Math.max(...[c, l, i, s].map((x) => x._max.updated_at?.getTime() ?? 0));
     return Math.floor(t / 1000);
   }
@@ -204,16 +204,14 @@ export class SyncService {
   /** Master-data snapshot the PWA caches for offline entry (categories, items, units, suppliers, thresholds). */
   async bootstrap(ctx: ReqCtx, locationId?: string) {
     if (locationId && !canAccessLocation(ctx.user, locationId)) throw forbiddenLocation();
-    const [categories, units, items, suppliers, location, version] = await Promise.all([
-      this.prisma.expenseCategory.findMany({ where: { status: 'ACTIVE' }, orderBy: [{ sort_order: 'asc' }, { name_en: 'asc' }] }),
-      this.prisma.unit.findMany(),
-      this.prisma.inventoryItem.findMany({ where: { status: 'ACTIVE' }, orderBy: { code: 'asc' } }),
-      this.prisma.supplier.findMany({ where: { status: 'ACTIVE' }, select: { id: true, code: true, name: true, phone: true, payment_terms_days: true } }),
-      locationId
-        ? this.prisma.runScoped(ctx.user, (tx) => tx.location.findUnique({ where: { id: locationId } }))
-        : null,
+    const [categories, units, items, suppliers, location, version] = await this.prisma.runScoped(ctx.user, (tx) => Promise.all([
+      tx.expenseCategory.findMany({ where: { status: 'ACTIVE' }, orderBy: [{ sort_order: 'asc' }, { name_en: 'asc' }] }),
+      tx.unit.findMany(),
+      tx.inventoryItem.findMany({ where: { status: 'ACTIVE' }, orderBy: { code: 'asc' } }),
+      tx.supplier.findMany({ where: { status: 'ACTIVE' }, select: { id: true, code: true, name: true, phone: true, payment_terms_days: true } }),
+      locationId ? tx.location.findUnique({ where: { id: locationId } }) : null,
       this.bootstrapVersion(),
-    ]);
+    ]));
     const s = this.settings;
     return {
       bootstrapVersion: version,

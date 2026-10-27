@@ -5,7 +5,7 @@ import { ArrayMaxSize, ArrayMinSize, IsArray, IsEnum, IsOptional, IsString, IsUU
 import { AttachmentsService } from '../attachments/attachments.service';
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
-import { isOwner, ReqCtx } from '../common/auth-user';
+import { isAdmin, ReqCtx } from '../common/auth-user';
 import { CodesService } from '../common/codes.service';
 import { addDays, fmtDate, toDate, todayIST } from '../common/dates';
 import { D, Dec, MONEY_PATTERN, parseMoney, parseMoneyOr0, parseQty, round2, sum, ZERO } from '../common/money';
@@ -313,7 +313,7 @@ export class PurchasesService {
   async cancel(ctx: ReqCtx, id: string, dto: PurchaseActionDto) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const p = await this.loadFor(tx, id, ['SUBMITTED', 'REJECTED'], 'cancel');
-      if (p.entered_by !== ctx.user.id && !isOwner(ctx.user)) {
+      if (p.entered_by !== ctx.user.id && !isAdmin(ctx.user)) {
         throw new AppException(403, 'FORBIDDEN', 'Only the person who entered it, or the owner, can cancel this purchase');
       }
       const after = await tx.purchase.update({

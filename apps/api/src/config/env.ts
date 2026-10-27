@@ -17,6 +17,25 @@ export const env = {
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT ?? 10), // per IP per minute (HLD s8)
   cookieSecure: (process.env.COOKIE_SECURE ?? String(isProd)) === 'true',
   uploadDir: process.env.UPLOAD_DIR ?? './uploads',
+  // ---- OTP sign-in (company users). OTP_FIXED_CODE is for development only: every OTP is that code and no SMS is sent.
+  otpFixedCode: process.env.OTP_FIXED_CODE || undefined,
+  otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES ?? 10),
+  otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS ?? 5),
+  otpResendSeconds: Number(process.env.OTP_RESEND_SECONDS ?? 30),
+  // ---- SMS Fortius (DLT-registered OTP SMS). Without these the OTP is only written to the server log.
+  sms: {
+    apiKey: process.env.SMS_FORTIUS_API_KEY,
+    senderId: process.env.SMS_FORTIUS_SENDER_ID,
+    templateId: process.env.SMS_FORTIUS_TEMPLATE_ID,
+    baseUrl: process.env.SMS_FORTIUS_BASE_URL,
+    // must match the DLT-approved template text exactly; {otp} is replaced with the code
+    otpTemplate: process.env.SMS_OTP_TEMPLATE ?? 'Your Branch Pulse OTP is {otp}. Valid for 10 minutes. Do not share it.',
+  },
   // AES-256-GCM key for encrypting employee bank details at rest: 64 hex characters (32 bytes).
   bankDetailsKey: required('BANK_DETAILS_KEY', '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
 };
+
+// A fixed OTP would let anyone sign in as anyone: refuse to run with it in production.
+if (env.isProd && env.otpFixedCode && process.env.ALLOW_FIXED_OTP !== 'true') {
+  throw new Error('OTP_FIXED_CODE must not be set in production (set ALLOW_FIXED_OTP=true only for a throwaway demo)');
+}

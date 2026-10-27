@@ -18,7 +18,17 @@ npm run dev:api                                 # http://localhost:4000/api/v1
 npm run dev:web                                 # http://localhost:3300
 ```
 
-Seed users (password `ChangeMe@123`, dev only): `owner`, `accountant`, `stockmgr`, `manager1`..`manager6` (one per branch).
+The app is multi-company: every company has its own branches, staff, items, suppliers, categories, roles and settings, kept apart by a `company_id` on each table and PostgreSQL row-level security. A **Super Admin** creates companies (Companies menu) and can load a ledger Excel into a company's branch (Company - Data Upload menu, with a downloadable sample).
+
+Sign-in (dev seed, password `ChangeMe@123`; the OTP is `123456` for everyone while `OTP_FIXED_CODE=123456` is in `apps/api/.env`):
+
+| Who | Sign in with | Example |
+|---|---|---|
+| Super Admin | username + password (no OTP) | `superadmin` |
+| Admin | mobile + password, then OTP | `9000000001` |
+| Accountant, Stock Manager, Branch Managers, Staff | mobile + OTP | `9000000002` Accountant, `9000000003` Stock Manager, `9000000011`..`9000000016` branch managers |
+
+OTPs are sent by SMS Fortius (see `SMS_FORTIUS_*` in `apps/api/.env.example`). Without those settings the OTP is only printed in the API log. Never set `OTP_FIXED_CODE` in production: the API refuses to start with it.
 
 ## Deploy
 

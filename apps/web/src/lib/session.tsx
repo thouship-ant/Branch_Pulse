@@ -4,14 +4,20 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { api, ApiError, refreshSession, setAccessToken, setAuthLostHandler } from './api';
 import { clearLocalData } from './outbox';
 
+export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
+
 export interface Me {
   id: string;
   username: string;
   fullName: string;
+  mobile?: string | null;
   language: string;
   roles: string[];
   permissions: string[];
   allLocations: boolean;
+  /** Super Admin: manages companies, has no company of its own */
+  isSuper?: boolean;
+  company?: { id: string; code: string; name: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 
@@ -21,7 +27,13 @@ interface SessionCtx {
   can: (perm: string) => boolean;
   /** Branch users work on one branch from their phone; everyone else uses the back-office layout. */
   isBranchUser: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  /** Which steps to show for this mobile number / username: PASSWORD (Super Admin), PASSWORD_OTP (Admin) or OTP (everyone else). */
+  identify: (identifier: string) => Promise<SignInMethod>;
+  /** Super Admin signs in; an Admin gets an OTP sent and 'OTP_SENT' comes back. */
+  loginWithPassword: (username: string, password: string) => Promise<'SIGNED_IN' | 'OTP_SENT'>;
+  /** OTP-only users ask for their code. */
+  requestOtp: (mobile: string) => Promise<void>;
+  verifyOtp: (mobile: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -42,11 +54,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => setAuthLostHandler(null);
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const clientInfo = () => {
     const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
-    const res = await api.post('/auth/login', { username, password, client: isMobile ? 'mobile' : 'desktop', deviceLabel: navigator.userAgent.slice(0, 60) });
-    setAccessToken(res.accessToken);
-    setMe(res.user);
+    return { client: isMobile ? 'mobile' : 'desktop', deviceLabel: navigator.userAgent.slice(0, 60) };
+  };
+  const start = (res: any) => { setAccessToken(res.accessToken); setMe(res.user); };
+
+  const identify = useCallback(async (identifier: string) => (await api.post('/auth/identify', { identifier })).method as SignInMethod, []);
+
+  const loginWithPassword = useCallback(async (username: string, password: string) => {
+    const res = await api.post('/auth/login', { username, password, ...clientInfo() });
+    if (res.otpRequired) return 'OTP_SENT' as const;
+    start(res);
+    return 'SIGNED_IN' as const;
+  }, []);
+
+  const requestOtp = useCallback(async (mobile: string) => { await api.post('/auth/otp/request', { mobile }); }, []);
+
+  const verifyOtp = useCallback(async (mobile: string, otp: string) => {
+    start(await api.post('/auth/otp/verify', { mobile, otp, ...clientInfo() }));
   }, []);
 
   const logout = useCallback(async () => {
@@ -64,10 +90,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       loading,
       can: (p) => perms.has(p),
       isBranchUser: perms.has('closing:submit') && !perms.has('closing:approve'),
-      login,
+      identify,
+      loginWithPassword,
+      requestOtp,
+      verifyOtp,
       logout,
     };
-  }, [me, loading, login, logout]);
+  }, [me, loading, identify, loginWithPassword, requestOtp, verifyOtp, logout]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

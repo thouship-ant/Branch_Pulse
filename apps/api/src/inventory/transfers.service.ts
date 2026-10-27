@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 import { AppException, forbiddenLocation, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
-import { can, canAccessLocation, isOwner, ReqCtx } from '../common/auth-user';
+import { can, canAccessLocation, isAdmin, ReqCtx } from '../common/auth-user';
 import { CodesService } from '../common/codes.service';
 import { toDate } from '../common/dates';
 import { D, Dec, parseQty, round2, sum, ZERO } from '../common/money';
@@ -177,7 +177,7 @@ export class TransfersService {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const t = await this.load(tx, id);
       this.assertStatus(t, ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'], 'cancel');
-      if (t.requested_by !== ctx.user.id && !can(ctx.user, 'transfer:approve') && !isOwner(ctx.user)) throw new AppException(403, 'FORBIDDEN', 'Only the requester or an approver can cancel this transfer');
+      if (t.requested_by !== ctx.user.id && !can(ctx.user, 'transfer:approve') && !isAdmin(ctx.user)) throw new AppException(403, 'FORBIDDEN', 'Only the requester or an approver can cancel this transfer');
       const after = await tx.stockTransfer.update({ where: { id }, data: { status: 'CANCELLED', remarks: dto.reason ? `${t.remarks ? `${t.remarks} · ` : ''}Cancelled: ${dto.reason}` : t.remarks, updated_by: ctx.user.id, version: { increment: 1 } } });
       await this.audit.log(tx, ctx, { action: 'CANCEL', entityType: 'STOCK_TRANSFER', entityId: id, entityCode: t.code, locationId: t.from_location_id, before: { status: t.status }, after: { status: after.status }, reason: dto.reason });
       return after;

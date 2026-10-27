@@ -54,14 +54,14 @@ export class MasterService {
 
   // ---- expense categories (LLD s2)
   listCategories(includeInactive = false) {
-    return this.prisma.expenseCategory.findMany({
+    return this.prisma.runCurrent((tx) => tx.expenseCategory.findMany({
       where: includeInactive ? {} : { status: 'ACTIVE' },
       orderBy: [{ sort_order: 'asc' }, { name_en: 'asc' }],
-    });
+    }));
   }
 
   createCategory(ctx: ReqCtx, dto: CategoryDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       if (dto.parentId) {
         const parent = await tx.expenseCategory.findUnique({ where: { id: dto.parentId } });
         if (!parent || parent.parent_id) throw validation('INVALID_CATEGORY', 'Parent must be a top-level category', 'parentId');
@@ -86,7 +86,7 @@ export class MasterService {
   }
 
   updateCategory(ctx: ReqCtx, id: string, dto: UpdateCategoryDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.runCurrent(async (tx) => {
       const before = await tx.expenseCategory.findUnique({ where: { id } });
       if (!before) throw notFound('Category');
       const after = await tx.expenseCategory.update({
@@ -124,14 +124,14 @@ export class MasterService {
     if (key === 'business.type' && !['TEA_SHOP', 'HOTEL', 'BAKERY', 'OTHER'].includes(String(value))) {
       throw validation('INVALID_SETTING', 'business.type must be TEA_SHOP, HOTEL, BAKERY or OTHER', 'value');
     }
-    return this.prisma.$transaction(async (tx) => {
-      const before = await tx.setting.findUnique({ where: { key } });
+    return this.prisma.runCurrent(async (tx) => {
+      const before = await tx.setting.findUnique({ where: { company_id_key: { company_id: ctx.user.companyId!, key } } });
       const after = await tx.setting.upsert({
-        where: { key },
-        create: { key, value: value as Prisma.InputJsonValue, updated_by: ctx.user.id },
+        where: { company_id_key: { company_id: ctx.user.companyId!, key } },
+        create: { company_id: ctx.user.companyId!, key, value: value as Prisma.InputJsonValue, updated_by: ctx.user.id },
         update: { value: value as Prisma.InputJsonValue, updated_by: ctx.user.id },
       });
-      this.settings.invalidate(key);
+      this.settings.invalidate(key, ctx.user.companyId);
       await this.audit.log(tx, ctx, {
         action: 'SETTINGS_CHANGE', entityType: 'SETTING', entityCode: key,
         before: before ? { value: before.value } : { value: SETTING_DEFAULTS[key] },
@@ -143,24 +143,24 @@ export class MasterService {
 
   // ---- approval limits (LLD s2, s12)
   async listLimits() {
-    const [limits, roles] = await Promise.all([
-      this.prisma.approvalLimit.findMany({ orderBy: [{ role_id: 'asc' }, { entity_type: 'asc' }] }),
-      this.prisma.role.findMany({ select: { id: true, code: true, name: true } }),
-    ]);
+    const [limits, roles] = await this.prisma.runCurrent((tx) => Promise.all([
+      tx.approvalLimit.findMany({ orderBy: [{ role_id: 'asc' }, { entity_type: 'asc' }] }),
+      tx.role.findMany({ select: { id: true, code: true, name: true } }),
+    ]));
     return limits.map((l) => ({ ...l, role_code: roles.find((r) => r.id === l.role_id)?.code, role_name: roles.find((r) => r.id === l.role_id)?.name }));
   }
 
   putLimit(ctx: ReqCtx, dto: ApprovalLimitDto) {
-    return this.prisma.$transaction(async (tx) => {
-      const role = await tx.role.findUnique({ where: { code: dto.roleCode } });
+    return this.prisma.runCurrent(async (tx) => {
+      const role = await tx.role.findFirst({ where: { code: dto.roleCode, OR: [{ company_id: ctx.user.companyId }, { company_id: null }] } });
       if (!role) throw notFound('Role');
       const max = parseMoney(dto.maxAmount, 'maxAmount');
       const before = await tx.approvalLimit.findUnique({
-        where: { role_id_entity_type: { role_id: role.id, entity_type: dto.entityType } },
+        where: { company_id_role_id_entity_type: { company_id: ctx.user.companyId!, role_id: role.id, entity_type: dto.entityType } },
       });
       const after = await tx.approvalLimit.upsert({
-        where: { role_id_entity_type: { role_id: role.id, entity_type: dto.entityType } },
-        create: { role_id: role.id, entity_type: dto.entityType, max_amount: max, created_by: ctx.user.id, updated_by: ctx.user.id },
+        where: { company_id_role_id_entity_type: { company_id: ctx.user.companyId!, role_id: role.id, entity_type: dto.entityType } },
+        create: { company_id: ctx.user.companyId!, role_id: role.id, entity_type: dto.entityType, max_amount: max, created_by: ctx.user.id, updated_by: ctx.user.id },
         update: { max_amount: max, updated_by: ctx.user.id, version: { increment: 1 } },
       });
       await this.audit.log(tx, ctx, {

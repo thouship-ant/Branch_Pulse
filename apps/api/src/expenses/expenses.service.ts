@@ -5,7 +5,7 @@ import { IsArray, IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, Max
 import { AppException, notFound, staleVersion, validation } from '../common/app-exception';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { AuditService } from '../common/audit.service';
-import { can, isOwner, ReqCtx } from '../common/auth-user';
+import { can, isAdmin, ReqCtx } from '../common/auth-user';
 import { addDays, toDate, todayIST } from '../common/dates';
 import { CodesService } from '../common/codes.service';
 import { D, MONEY_PATTERN, parseMoney } from '../common/money';
@@ -372,7 +372,7 @@ export class ExpensesService {
   async cancel(ctx: ReqCtx, id: string, dto: ExpenseActionDto) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const e = await this.loadFor(tx, id, ['SUBMITTED', 'REJECTED'], 'cancel');
-      if (e.entered_by !== ctx.user.id && !isOwner(ctx.user)) {
+      if (e.entered_by !== ctx.user.id && !isAdmin(ctx.user)) {
         throw new AppException(403, 'FORBIDDEN', 'Only the person who entered it, or the owner, can cancel this expense');
       }
       const after = await tx.expense.update({

@@ -13,6 +13,8 @@ export interface AuditEntry {
   entityId?: string;
   entityCode?: string;
   locationId?: string | null;
+  /** the company the entry belongs to, when it differs from the actor's (e.g. the Super Admin acting for a company) */
+  companyId?: string | null;
   before?: Record<string, unknown> | null;
   after?: Record<string, unknown> | null;
   reason?: string;
@@ -72,6 +74,7 @@ export class AuditService {
     await tx.auditLog.create({
       data: {
         actor_id: ctx?.user.id ?? null,
+        company_id: e.companyId ?? ctx?.user.companyId ?? undefined, // undefined: the column default (session company) applies
         actor_role: ctx?.user.roles[0] ?? (ctx ? null : 'SYSTEM'),
         location_id: e.locationId ?? null,
         action: e.action,

@@ -219,7 +219,7 @@ export class CashService {
         })
       : [];
     const approver = row?.approved_by
-      ? await this.prisma.user.findUnique({ where: { id: row.approved_by }, select: { full_name: true } })
+      ? await tx.user.findUnique({ where: { id: row.approved_by }, select: { full_name: true } })
       : null;
     return { locationId, row, c, expected, actual, variance, photos, approverName: approver?.full_name ?? null };
   }

@@ -1,13 +1,20 @@
 /**
  * Seed (LLD s19). Runs as the database owner (DIRECT_URL) so it is not subject to RLS.
  *
- *   npm run db:seed                 masters, roles, permissions, users
+ *   npm run db:seed                 Super Admin + units + one demo company (Admin, Accountant, Stock Manager, branch managers)
  *   npm run db:seed -- --demo       + 30 days of consistent branch history for dashboards/tests
- *   SEED_MINIMAL=1 (or --minimal)   production bootstrap: roles, permissions, limits, units, categories, one owner
- *   SEED_PASSWORD=...               password for every seeded user (required in production)
+ *   SEED_MINIMAL=1 (or --minimal)   production bootstrap: units and ONE Super Admin (no company: the Super Admin creates them)
+ *   SEED_PASSWORD=...               password for the Super Admin and the demo Admin (required in production)
+ *
+ * Demo sign-ins (OTP is whatever OTP_FIXED_CODE says, 123456 in .env.example):
+ *   Super Admin  username superadmin + password
+ *   Admin        mobile 9000000001 + password, then OTP
+ *   others       mobile + OTP (Accountant 9000000002, Stock Manager 9000000003, branch managers 9000000011..)
  */
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { randomBytes } from 'node:crypto';
+import { ensureSuperAdminRole, provisionCompanyDefaults } from '../src/admin/company-defaults';
 import { addDays, fmtDate, toDate, todayIST } from '../src/common/dates';
 
 try {
@@ -20,70 +27,6 @@ const prisma = new PrismaClient({ datasourceUrl: process.env.DIRECT_URL ?? proce
 const D = (v: Prisma.Decimal.Value) => new Prisma.Decimal(v);
 const DEMO = process.argv.includes('--demo');
 const MINIMAL = process.env.SEED_MINIMAL === '1' || process.argv.includes('--minimal');
-
-// ---------------------------------------------------------------- permissions & roles (LLD s12)
-const PERMISSIONS: Record<string, string[]> = {
-  user: ['manage'], role: ['manage'], location: ['view', 'manage'], settings: ['manage'],
-  sales: ['view', 'enter'], cash: ['view', 'enter', 'approve'],
-  closing: ['view', 'submit', 'approve', 'reopen'],
-  expense: ['view', 'create', 'edit', 'approve', 'reverse'],
-  purchase: ['view', 'create', 'approve'], supplier: ['view', 'manage', 'pay'],
-  item: ['manage'], stock: ['view'],
-  transfer: ['view', 'create', 'dispatch', 'approve', 'receive'],
-  count: ['view', 'enter', 'submit', 'approve'], wastage: ['view', 'create', 'approve'],
-  recipe: ['view', 'manage'], staff: ['view', 'manage'], attendance: ['view', 'mark'],
-  salary: ['manage', 'approve', 'pay'], advance: ['view', 'request', 'manager_approve', 'approve', 'pay'],
-  dashboard: ['view'], alert: ['view', 'manage'], pl: ['view'], report: ['view', 'export'], audit: ['view'],
-};
-const ALL_PERMS = Object.entries(PERMISSIONS).flatMap(([m, acts]) => acts.map((a) => `${m}:${a}`));
-
-const ROLES: Array<{ code: string; name: string; scope: 'ALL' | 'ASSIGNED'; perms: string[] }> = [
-  { code: 'OWNER', name: 'Owner', scope: 'ALL', perms: ALL_PERMS },
-  {
-    code: 'ACCOUNTANT', name: 'Accountant', scope: 'ALL',
-    perms: [
-      'location:view', 'sales:view', 'cash:view', 'cash:approve', 'closing:view',
-      'expense:view', 'expense:approve', 'expense:reverse', 'purchase:view', 'purchase:approve',
-      'supplier:view', 'supplier:pay', 'stock:view', 'transfer:view', 'count:view', 'wastage:view',
-      'recipe:view', 'staff:view', 'attendance:view', 'salary:manage', 'salary:approve', 'salary:pay',
-      'advance:view', 'advance:approve', 'advance:pay', 'dashboard:view', 'alert:view', 'pl:view',
-      'report:view', 'report:export', 'audit:view',
-    ],
-  },
-  {
-    code: 'STOCK_MANAGER', name: 'Stock / Purchase Manager', scope: 'ASSIGNED',
-    perms: [
-      'location:view', 'dashboard:view', 'purchase:view', 'purchase:create', 'purchase:approve',
-      'supplier:view', 'supplier:manage', 'item:manage', 'stock:view',
-      'transfer:view', 'transfer:create', 'transfer:dispatch', 'transfer:approve',
-      'count:view', 'count:enter', 'count:approve', 'wastage:view', 'wastage:approve',
-      'recipe:view', 'alert:view', 'report:view', 'report:export', 'audit:view',
-    ],
-  },
-  {
-    code: 'BRANCH_MANAGER', name: 'Branch Manager', scope: 'ASSIGNED',
-    perms: [
-      'location:view', 'dashboard:view', 'sales:view', 'sales:enter', 'cash:view', 'cash:enter',
-      'closing:view', 'closing:submit', 'expense:view', 'expense:create', 'expense:edit',
-      'purchase:view', 'purchase:create', 'supplier:view', 'stock:view', 'transfer:view', 'transfer:receive',
-      'count:view', 'count:enter', 'count:submit', 'wastage:view', 'wastage:create',
-      'staff:view', 'attendance:view', 'attendance:mark', 'advance:view', 'advance:request', 'advance:manager_approve',
-      'alert:view', 'report:view', 'report:export',
-    ],
-  },
-  {
-    code: 'STAFF', name: 'Staff', scope: 'ASSIGNED',
-    perms: ['stock:view', 'count:enter', 'wastage:create', 'attendance:mark', 'advance:view', 'advance:request'],
-  },
-];
-
-// LLD s12 default approval limits
-const LIMITS: Array<[string, string, string]> = [
-  ['BRANCH_MANAGER', 'EXPENSE', '500'], ['BRANCH_MANAGER', 'WASTAGE', '200'],
-  ['ACCOUNTANT', 'EXPENSE', '25000'], ['ACCOUNTANT', 'PURCHASE', '25000'],
-  ['ACCOUNTANT', 'ADVANCE', '5000'], ['ACCOUNTANT', 'CASH_VARIANCE', '5000'],
-  ['STOCK_MANAGER', 'PURCHASE', '25000'], ['STOCK_MANAGER', 'WASTAGE', '2000'],
-];
 
 // ---------------------------------------------------------------- masters (tea shop template)
 // Tamil display names (keep in step with migration 20260926000400_tamil_names). Have a native speaker review.
@@ -111,31 +54,6 @@ const UNITS: Array<[string, string, string | null, string]> = [
   ['PCS', 'Piece', null, '1'], ['PKT', 'Packet (50 pcs)', 'PCS', '50'],
 ];
 
-// [name, P&L bucket, receipt-required-above override]
-const CATEGORIES: Array<[string, string]> = [
-  ['Milk', 'RAW_MATERIAL'], ['Tea powder', 'RAW_MATERIAL'], ['Coffee', 'RAW_MATERIAL'], ['Sugar', 'RAW_MATERIAL'],
-  ['Snacks / raw materials', 'RAW_MATERIAL'], ['Salary', 'SALARY'], ['Staff advance', 'NON_PL'],
-  ['Rent', 'RENT'], ['Electricity', 'ELECTRICITY'], ['Gas', 'OTHER'], ['Transport', 'TRANSPORT'],
-  ['Maintenance', 'MAINTENANCE'], ['Repairs', 'MAINTENANCE'], ['Cleaning', 'MAINTENANCE'],
-  ['Cooking oil', 'RAW_MATERIAL'], ['Packaging', 'RAW_MATERIAL'], ['Miscellaneous', 'OTHER'],
-];
-
-// these are bought from a supplier, so the expense entry screen asks for one; every other category hides the field
-const REQUIRES_SUPPLIER = new Set(['Milk', 'Tea powder', 'Coffee', 'Sugar', 'Snacks / raw materials', 'Cooking oil', 'Gas', 'Packaging']);
-
-// category -> [sub-category, Tamil name]
-const SUB_CATEGORIES: Record<string, Array<[string, string]>> = {
-  Milk: [['Cow milk', 'பசும்பால்'], ['Buffalo milk', 'எருமைப்பால்']],
-  Salary: [['Monthly salary', 'மாதச் சம்பளம்'], ['Daily wages', 'தினக்கூலி'], ['Overtime', 'கூடுதல் நேரம்']],
-  Gas: [['Commercial cylinder', 'வணிக சிலிண்டர்'], ['Cylinder delivery', 'சிலிண்டர் விநியோகம்']],
-  Electricity: [['Shop meter bill', 'கடை மின் கட்டணம்'], ['Generator fuel', 'ஜெனரேட்டர் எரிபொருள்']],
-  Transport: [['Fuel', 'எரிபொருள்'], ['Delivery charges', 'விநியோகக் கட்டணம்'], ['Vehicle hire', 'வாகன வாடகை']],
-  Maintenance: [['Electrical work', 'மின் பணி'], ['Plumbing', 'குழாய் பணி'], ['Equipment service', 'கருவி சேவை']],
-  Cleaning: [['Housekeeping supplies', 'சுத்தம் செய்யும் பொருட்கள்'], ['Pest control', 'பூச்சிக் கட்டுப்பாடு']],
-  Packaging: [['Paper cups', 'காகிதக் குவளைகள்'], ['Carry bags', 'கைப்பைகள்'], ['Parcel boxes', 'பார்சல் பெட்டிகள்']],
-  Repairs: [['Furniture', 'மரச்சாமான்'], ['Appliances', 'மின்சாதனங்கள்']],
-};
-
 // code, name, base unit, purchase unit, last rate per base unit, daily count, min stock per branch
 const ITEMS: Array<[string, string, string, string, string, string, boolean, string]> = [
   ['ITM001', 'Milk', 'DAIRY', 'ML', '0.056', 'L', true, '20000'],
@@ -158,28 +76,13 @@ const SUPPLIERS: Array<[string, string, number]> = [
   ['SUP0003', 'Packaging supplier', 30], ['SUP0004', 'Snacks vendor', 7],
 ];
 
-async function seedUnitsAndCategories() {
+async function seedUnits() {
   for (const [code, name, base, factor] of UNITS) {
     const baseUnit = base ? await prisma.unit.findUnique({ where: { code: base } }) : null;
     await prisma.unit.upsert({
       where: { code }, update: {},
       create: { code, name, base_unit_id: baseUnit?.id ?? null, factor_to_base: D(factor) },
     });
-  }
-  for (const [i, [name, bucket]] of CATEGORIES.entries()) {
-    const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: null } });
-    if (!exists) {
-      await prisma.expenseCategory.create({ data: { name_en: name, name_ta: TA[name], pl_bucket: bucket, sort_order: i, requires_supplier: REQUIRES_SUPPLIER.has(name) } });
-    }
-  }
-  // starter sub-categories: the owner can add, rename or switch these off under Expenses > Categories
-  for (const [parentName, subs] of Object.entries(SUB_CATEGORIES)) {
-    const parent = await prisma.expenseCategory.findFirst({ where: { name_en: parentName, parent_id: null } });
-    if (!parent) continue;
-    for (const [i, [name, nameTa]] of subs.entries()) {
-      const exists = await prisma.expenseCategory.findFirst({ where: { name_en: name, parent_id: parent.id } });
-      if (!exists) await prisma.expenseCategory.create({ data: { parent_id: parent.id, name_en: name, name_ta: nameTa, pl_bucket: parent.pl_bucket, sort_order: i } });
-    }
   }
   return new Map((await prisma.unit.findMany()).map((u) => [u.code, u.id]));
 }
@@ -190,73 +93,56 @@ async function main() {
   if (MINIMAL && password === 'ChangeMe@123') throw new Error('Set a real SEED_PASSWORD for a production seed');
   const passwordHash = await argon2.hash(password);
 
-  // ---- permissions, roles
-  for (const [module, acts] of Object.entries(PERMISSIONS)) {
-    for (const a of acts) {
-      await prisma.permission.upsert({
-        where: { code: `${module}:${a}` }, update: {}, create: { code: `${module}:${a}`, module },
-      });
-    }
-  }
-  const perms = new Map((await prisma.permission.findMany()).map((p) => [p.code, p.id]));
-  for (const r of ROLES) {
-    const role = await prisma.role.upsert({
-      where: { code: r.code },
-      update: { scope_mode: r.scope },
-      create: { code: r.code, name: r.name, scope_mode: r.scope, is_system: true },
-    });
-    await prisma.rolePermission.deleteMany({ where: { role_id: role.id } });
-    await prisma.rolePermission.createMany({ data: r.perms.map((p) => ({ role_id: role.id, permission_id: perms.get(p)! })) });
-  }
-  const roleId = new Map((await prisma.role.findMany()).map((r) => [r.code, r.id]));
-  for (const [role, entity, max] of LIMITS) {
-    await prisma.approvalLimit.upsert({
-      where: { role_id_entity_type: { role_id: roleId.get(role)!, entity_type: entity } },
-      update: { max_amount: D(max) },
-      create: { role_id: roleId.get(role)!, entity_type: entity, max_amount: D(max) },
+  // ---- the Super Admin: signs in with username + password only; creates companies
+  const superRoleId = await ensureSuperAdminRole(prisma);
+  if (!(await prisma.user.findUnique({ where: { username: 'superadmin' } }))) {
+    await prisma.user.create({
+      data: { username: 'superadmin', full_name: 'Super Admin', password_hash: passwordHash, company_id: null, roles: { create: [{ role_id: superRoleId }] } },
     });
   }
+  const unitId = await seedUnits();
 
-  // Production bootstrap: roles, permissions, limits, units, categories and ONE owner. No demo branches,
-  // items or users - the owner creates their own locations and staff in the app.
+  // Production bootstrap: no demo company. The Super Admin signs in and creates each company (with its Admin).
   if (MINIMAL) {
-    await seedUnitsAndCategories();
-    if (!(await prisma.user.findUnique({ where: { username: 'owner' } }))) {
-      await prisma.user.create({
-        data: {
-          username: 'owner', full_name: 'Owner', password_hash: passwordHash,
-          roles: { create: [{ role_id: roleId.get('OWNER')! }] },
-        },
-      });
-    }
-    console.log(`Minimal seed done: ${ALL_PERMS.length} permissions, ${ROLES.length} roles, owner user 'owner'.`);
-    console.log('Sign in as owner with SEED_PASSWORD and change it straight away (Settings -> Users).');
+    console.log("Minimal seed done: units and Super Admin 'superadmin'.");
+    console.log('Sign in as superadmin with SEED_PASSWORD, change it straight away, then create your first company.');
     return;
   }
+
+  // ---- one demo company (the company created by the multi-company migration when it moved existing data, else a new one)
+  let company = await prisma.company.findFirst({ orderBy: { code: 'asc' } });
+  if (!company) {
+    const [{ n }] = await prisma.$queryRawUnsafe<Array<{ n: bigint }>>(`SELECT nextval('seq_code_company') AS n`);
+    company = await prisma.company.create({ data: { code: `CMP${String(n).padStart(3, '0')}`, name: 'Demo Tea Shop', address: 'Anna Nagar, Chennai' } });
+  }
+  const companyId = company.id;
+  const roleId = await provisionCompanyDefaults(prisma, companyId, company.name);
 
   // ---- locations
   const openedOn = DEMO ? toDate(fmtDate(addDays(toDate(todayIST()), -45))) : null;
   for (const [code, name, type] of LOCATIONS) {
-    await prisma.location.upsert({
-      where: { code }, update: {},
-      create: { code, name, name_ta: TA[name], type, default_opening_cash: type === 'BRANCH' ? D(2000) : D(0), opened_on: type === 'BRANCH' ? openedOn : null },
-    });
+    const found = await prisma.location.findFirst({ where: { company_id: companyId, code } });
+    if (!found) {
+      await prisma.location.create({
+        data: { company_id: companyId, code, name, name_ta: TA[name], type, default_opening_cash: type === 'BRANCH' ? D(2000) : D(0), opened_on: type === 'BRANCH' ? openedOn : null },
+      });
+    }
   }
-  const locs = await prisma.location.findMany();
+  const locs = await prisma.location.findMany({ where: { company_id: companyId } });
   const locId = new Map(locs.map((l) => [l.code, l.id]));
   const branches = locs.filter((l) => l.type === 'BRANCH').sort((a, b) => a.code.localeCompare(b.code));
 
-  // ---- units, categories, items, suppliers
-  const unitId = await seedUnitsAndCategories();
-
+  // ---- items, suppliers
   for (const [code, name, category, base, rate, purchaseUnit, daily, min] of ITEMS) {
-    const item = await prisma.inventoryItem.upsert({
-      where: { code }, update: {},
-      create: {
-        code, name_en: name, name_ta: TA[name], category, base_unit_id: unitId.get(base)!, purchase_unit_id: unitId.get(purchaseUnit)!,
-        is_perishable: code === 'ITM001', daily_count_required: daily, last_purchase_rate: D(rate), avg_cost: D(rate),
-      },
-    });
+    let item = await prisma.inventoryItem.findFirst({ where: { company_id: companyId, code } });
+    if (!item) {
+      item = await prisma.inventoryItem.create({
+        data: {
+          company_id: companyId, code, name_en: name, name_ta: TA[name], category, base_unit_id: unitId.get(base)!, purchase_unit_id: unitId.get(purchaseUnit)!,
+          is_perishable: code === 'ITM001', daily_count_required: daily, last_purchase_rate: D(rate), avg_cost: D(rate),
+        },
+      });
+    }
     for (const b of [...branches, locs.find((l) => l.code === 'GDN01')!]) {
       await prisma.itemLocationSetting.upsert({
         where: { item_id_location_id: { item_id: item.id, location_id: b.id } },
@@ -265,61 +151,57 @@ async function main() {
     }
   }
   for (const [code, name, terms] of SUPPLIERS) {
-    await prisma.supplier.upsert({ where: { code }, update: {}, create: { code, name, payment_terms_days: terms } });
+    if (!(await prisma.supplier.findFirst({ where: { company_id: companyId, code } }))) {
+      await prisma.supplier.create({ data: { company_id: companyId, code, name, payment_terms_days: terms } });
+    }
   }
 
   // ---- recipes (tea shop: Tea = 8.60, LLD 9.5)
-  const itemId = new Map((await prisma.inventoryItem.findMany()).map((i) => [i.code, i.id]));
+  const itemId = new Map((await prisma.inventoryItem.findMany({ where: { company_id: companyId } })).map((i) => [i.code, i.id]));
   const RECIPES: Array<[string, string, string, Array<[string, string, string]>]> = [
     ['RCP001', 'Tea', '15', [['ITM001', '90', 'ML'], ['ITM002', '4', 'G'], ['ITM004', '8', 'G'], ['ITM008', '1', 'PCS']]],
     ['RCP002', 'Coffee', '20', [['ITM001', '90', 'ML'], ['ITM003', '5', 'G'], ['ITM004', '10', 'G'], ['ITM008', '1', 'PCS']]],
   ];
   for (const [code, name, price, lines] of RECIPES) {
-    if (await prisma.recipe.findUnique({ where: { code } })) continue;
+    if (await prisma.recipe.findFirst({ where: { company_id: companyId, code } })) continue;
     await prisma.recipe.create({
       data: {
-        code, name_en: name, selling_price: D(price), effective_from: toDate(todayIST()),
+        company_id: companyId, code, name_en: name, selling_price: D(price), effective_from: toDate(todayIST()),
         items: { create: lines.map(([ic, q, u]) => ({ item_id: itemId.get(ic)!, quantity: D(q), unit_id: unitId.get(u)!, base_quantity: D(q) })) },
       },
     });
   }
 
-  // ---- default settings that differ from code defaults are not needed; business.type is explicit
-  await prisma.setting.upsert({
-    where: { key: 'business.type' }, update: {}, create: { key: 'business.type', value: 'TEA_SHOP' },
-  });
-
-  // ---- users
-  const users: Array<{ username: string; name: string; role: string; locations: string[] }> = [
-    { username: 'owner', name: 'Owner', role: 'OWNER', locations: [] },
-    { username: 'accountant', name: 'Accountant', role: 'ACCOUNTANT', locations: [] },
-    { username: 'stockmgr', name: 'Stock Manager', role: 'STOCK_MANAGER', locations: ['GDN01', ...branches.map((b) => b.code)] },
-    ...branches.map((b, i) => ({
-      username: `manager${i + 1}`, name: `${b.name} Manager`, role: 'BRANCH_MANAGER', locations: [b.code],
-    })),
+  // ---- users: the mobile number is the sign-in name. Admin also has a password (then OTP); the others use OTP only.
+  const users: Array<{ mobile: string; name: string; role: string; locations: string[]; password: boolean }> = [
+    { mobile: '9000000001', name: 'Admin', role: 'ADMIN', locations: [], password: true },
+    { mobile: '9000000002', name: 'Accountant', role: 'ACCOUNTANT', locations: [], password: false },
+    { mobile: '9000000003', name: 'Stock Manager', role: 'STOCK_MANAGER', locations: ['GDN01', ...branches.map((b) => b.code)], password: false },
+    ...branches.map((b, i) => ({ mobile: `90000000${String(11 + i).padStart(2, '0')}`, name: `${b.name} Manager`, role: 'BRANCH_MANAGER', locations: [b.code], password: false })),
   ];
+  const otpOnlyHash = await argon2.hash(randomBytes(24).toString('hex'));
   for (const u of users) {
-    const existing = await prisma.user.findUnique({ where: { username: u.username } });
+    const existing = await prisma.user.findFirst({ where: { OR: [{ mobile: u.mobile }, { username: u.mobile }] } });
     if (existing) continue;
     await prisma.user.create({
       data: {
-        username: u.username, full_name: u.name, password_hash: passwordHash,
+        company_id: companyId, username: u.mobile, mobile: u.mobile, full_name: u.name, password_hash: u.password ? passwordHash : otpOnlyHash,
         roles: { create: [{ role_id: roleId.get(u.role)! }] },
         locations: { create: u.locations.map((c) => ({ location_id: locId.get(c)! })) },
       },
     });
   }
   for (const [i, b] of branches.entries()) {
-    const m = await prisma.user.findUnique({ where: { username: `manager${i + 1}` } });
-    if (m) await prisma.location.update({ where: { id: b.id }, data: { manager_user_id: m.id } });
+    const m = await prisma.user.findFirst({ where: { mobile: `90000000${String(11 + i).padStart(2, '0')}` } });
+    if (m && !b.manager_user_id) await prisma.location.update({ where: { id: b.id }, data: { manager_user_id: m.id } });
   }
 
-  console.log(`Seeded masters, ${ALL_PERMS.length} permissions, ${ROLES.length} roles, ${users.length} users.`);
-  if (!process.env.SEED_PASSWORD) console.log('Seed password for every user (dev only): ChangeMe@123');
+  console.log(`Seeded ${company.name} (${company.code}): ${users.length} users. Super Admin 'superadmin', Admin mobile 9000000001.`);
+  if (!process.env.SEED_PASSWORD) console.log('Password for superadmin and the Admin (dev only): ChangeMe@123. OTP: see OTP_FIXED_CODE in .env (123456 in .env.example).');
 
   if (DEMO) {
-    await seedDemoHistory(branches, locId.get('HO01')!);
-    await seedDemoStockExtras(branches);
+    await seedDemoHistory(companyId, branches);
+    await seedDemoStockExtras(companyId, branches);
   }
 }
 
@@ -335,17 +217,17 @@ async function nextCode(prefix: string, seq: string, loc: string) {
   return `${prefix}-${loc}-${todayIST().slice(2, 4)}-${String(n).padStart(6, '0')}`;
 }
 
-async function seedDemoHistory(branches: Array<{ id: string; code: string; card_enabled: boolean }>, _ho: string) {
+async function seedDemoHistory(companyId: string, branches: Array<{ id: string; code: string; card_enabled: boolean; manager_user_id: string | null }>) {
   const days = 30;
   const today = toDate(todayIST());
-  const cats = await prisma.expenseCategory.findMany({ where: { parent_id: null, status: 'ACTIVE' } });
-  const owner = await prisma.user.findUniqueOrThrow({ where: { username: 'owner' } });
+  const cats = await prisma.expenseCategory.findMany({ where: { company_id: companyId, parent_id: null, status: 'ACTIVE' } });
+  const owner = await prisma.user.findFirstOrThrow({ where: { company_id: companyId, roles: { some: { role: { code: 'ADMIN' } } } } });
   const weekdayFactor = [1.15, 0.9, 0.9, 0.95, 1.0, 1.1, 1.25]; // Sun..Sat
   let created = 0;
 
   for (const [bi, b] of branches.entries()) {
     if (await prisma.dailySales.count({ where: { location_id: b.id } })) continue; // already seeded
-    const manager = await prisma.user.findUniqueOrThrow({ where: { username: `manager${bi + 1}` } });
+    const manager = await prisma.user.findFirstOrThrow({ where: { mobile: `90000000${String(11 + bi).padStart(2, '0')}` } });
     const rand = rng(1000 + bi);
     let opening = D(2000);
 
@@ -446,10 +328,10 @@ async function seedDemoHistory(branches: Array<{ id: string; code: string; card_
  * 4 g tea powder, 8 g sugar, 1 cup per ~15 rupees), some wastage, and an approved physical count each day for the last 12 days with
  * small shortages and excesses. The godown gets an opening stock too.
  */
-async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>) {
+async function seedDemoStockExtras(companyId: string, branches: Array<{ id: string; code: string }>) {
   if (await prisma.wastage.count()) return; // idempotent
-  const owner = await prisma.user.findUniqueOrThrow({ where: { username: 'owner' } });
-  const items = await prisma.inventoryItem.findMany();
+  const owner = await prisma.user.findFirstOrThrow({ where: { company_id: companyId, roles: { some: { role: { code: 'ADMIN' } } } } });
+  const items = await prisma.inventoryItem.findMany({ where: { company_id: companyId } });
   const item = (code: string) => items.find((i) => i.code === code)!;
   const today = toDate(todayIST());
   const openingDay = addDays(today, -31);
@@ -463,7 +345,7 @@ async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>
   for (const t of ['wastage', 'stock_counts']) await prisma.$executeRawUnsafe(`ALTER TABLE ${t} DISABLE TRIGGER t_lock_${t}`);
   try {
     for (const [bi, b] of branches.entries()) {
-      const manager = await prisma.user.findUniqueOrThrow({ where: { username: `manager${bi + 1}` } });
+      const manager = await prisma.user.findFirstOrThrow({ where: { mobile: `90000000${String(11 + bi).padStart(2, '0')}` } });
       const rand = rng(5000 + bi);
       const sales = await prisma.dailySales.findMany({ where: { location_id: b.id } });
       const avgCups = sales.length ? sales.reduce((a, r) => a.plus(r.total_sales), D(0)).div(sales.length).div(15) : D(300);
@@ -539,7 +421,7 @@ async function seedDemoStockExtras(branches: Array<{ id: string; code: string }>
     }
 
     // the central warehouse holds a stock too, so transfers to branches can be tried straight away
-    const godown = await prisma.location.findFirst({ where: { code: 'GDN01' } });
+    const godown = await prisma.location.findFirst({ where: { company_id: companyId, code: 'GDN01' } });
     if (godown) {
       for (const it of items) {
         const qty = D(it.code === 'ITM001' ? 200000 : it.code === 'ITM002' || it.code === 'ITM004' ? 60000 : it.code === 'ITM013' ? 30000 : 3000);

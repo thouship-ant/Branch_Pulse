@@ -5,7 +5,7 @@ import { IsArray, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-
 import { AttachmentsService } from '../attachments/attachments.service';
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
-import { isOwner, ReqCtx } from '../common/auth-user';
+import { isAdmin, ReqCtx } from '../common/auth-user';
 import { CodesService } from '../common/codes.service';
 import { addDays, fmtDate, toDate, todayIST } from '../common/dates';
 import { D, Dec, parseQty, round2, sum, ZERO } from '../common/money';
@@ -155,7 +155,7 @@ export class WastageService {
   async cancel(ctx: ReqCtx, id: string, dto: WastageActionDto) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const w = await this.loadFor(tx, id, ['SUBMITTED'], 'cancel');
-      if (w.entered_by !== ctx.user.id && !isOwner(ctx.user)) throw new AppException(403, 'FORBIDDEN', 'Only the person who entered it, or the owner, can cancel this entry');
+      if (w.entered_by !== ctx.user.id && !isAdmin(ctx.user)) throw new AppException(403, 'FORBIDDEN', 'Only the person who entered it, or the owner, can cancel this entry');
       const after = await tx.wastage.update({ where: { id }, data: { approval_status: 'CANCELLED', status: 'CANCELLED', updated_by: ctx.user.id, version: { increment: 1 } } });
       await this.giveBack(tx, ctx, w);
       await this.audit.log(tx, ctx, { action: 'CANCEL', entityType: 'WASTAGE', entityId: id, entityCode: w.code, locationId: w.location_id, before: w, after, reason: dto.reason });

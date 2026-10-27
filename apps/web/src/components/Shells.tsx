@@ -41,6 +41,9 @@ function Avatar({ name, className = '' }: { name: string; className?: string }) 
   );
 }
 
+/** ADMIN -> Admin, STOCK_MANAGER -> Stock Manager (role codes are data, so any custom role reads sensibly too). */
+const roleLabel = (code: string) => code.toLowerCase().split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
 function Logo({ compact, onDark = false }: { compact?: boolean; onDark?: boolean }) {
   const { t } = useT();
   return (
@@ -161,6 +164,8 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group
   { href: '/inventory', key: 'invTitle', icon: 'box', group: 'stock', perm: 'stock:view' },
   { href: '/recipes', key: 'recipesTitle', icon: 'sparkle', group: 'stock', perm: 'recipe:view' },
   { href: '/employees', key: 'employeesTitle', icon: 'user', group: 'people', perm: 'staff:view' },
+  { href: '/super/data-upload', key: 'dataUploadTitle', icon: 'box', group: 'setup', perm: 'company:manage' },
+  { href: '/super', key: 'companiesTitle', icon: 'store', group: 'setup', perm: 'company:manage' },
   { href: '/branches', key: 'branches', icon: 'store', group: 'setup', perm: 'location:manage' },
   { href: '/users', key: 'usersTitle', icon: 'users', group: 'setup', perm: 'user:manage' },
   { href: '/settings', key: 'settingsTitle', icon: 'settings', group: 'setup', perm: 'settings:manage' },
@@ -188,8 +193,9 @@ export function OfficeShell({ children }: { children: ReactNode }) {
 
   if (!ready || !me) return <Splash />;
   const links = OFFICE_LINKS.filter((l) => !l.perm || can(l.perm));
-  const current = links.find((l) => path.startsWith(l.href));
-  const isActive = (href: string) => path.startsWith(href);
+  // the longest matching link wins, so /super/data-upload does not also light up /super
+  const current = [...links].sort((a, b) => b.href.length - a.href.length).find((l) => path.startsWith(l.href));
+  const isActive = (href: string) => current?.href === href;
   const phoneMain = links.length > PHONE_SLOTS + 1 ? links.slice(0, PHONE_SLOTS) : links;
   const phoneMore = links.length > PHONE_SLOTS + 1 ? links.slice(PHONE_SLOTS) : [];
 
@@ -225,7 +231,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
             {!collapsed && (
               <div className="min-w-0 flex-1 text-sm">
                 <p className="truncate font-semibold">{me.fullName}</p>
-                <p className="truncate text-xs text-slate-500">{me.roles.join(', ')}</p>
+                <p className="truncate text-xs text-slate-500">{[me.company?.name, me.roles.map(roleLabel).join(', ')].filter(Boolean).join(' · ')}</p>
               </div>
             )}
             <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-ink" onClick={() => logout()} title={t('logout')} aria-label={t('logout')}>

@@ -6,6 +6,8 @@ import { AdminModule } from './admin/admin.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
+import { CompanyContextInterceptor } from './common/company-context.interceptor';
+import { CompanyModule } from './company/company.module';
 import { JwtAuthGuard, LocationScopeGuard, PermissionsGuard } from './common/guards';
 import { ResponseInterceptor } from './common/response';
 import { DailyModule } from './daily/daily.module';
@@ -24,6 +26,7 @@ import { SyncModule } from './sync/sync.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     ScheduleModule.forRoot(),
     CommonModule,
+    CompanyModule,
     AttachmentsModule,
     AuthModule,
     AdminModule,
@@ -44,6 +47,7 @@ import { SyncModule } from './sync/sync.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_GUARD, useClass: LocationScopeGuard },
+    { provide: APP_INTERCEPTOR, useClass: CompanyContextInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
   ],
 })

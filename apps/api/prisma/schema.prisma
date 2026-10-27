@@ -172,9 +172,47 @@ enum AlertSeverity {
 }
 
 // ---------------------------------------------------------------- access
+// ---------------------------------------------------------------- tenancy
+// One row per customer company. Every company-owned table carries company_id (defaulted from the session variable
+// app.company_id that PrismaService.runScoped sets) and row-level security keeps companies apart.
+model Company {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  code       String       @unique @db.VarChar(12)
+  name       String       @db.VarChar(120)
+  address    String? // main shop / head office
+  gstin      String?      @db.VarChar(15)
+  fssai      String?      @db.VarChar(14)
+  email      String?      @db.VarChar(120)
+  status     RecordStatus @default(ACTIVE)
+  created_at DateTime     @default(now()) @db.Timestamptz
+  created_by String?      @db.Uuid
+  updated_at DateTime     @updatedAt @db.Timestamptz
+  updated_by String?      @db.Uuid
+  version    Int          @default(1)
+
+  @@map("companies")
+}
+
+/// One-time passwords for mobile sign-in. password_ok marks an Admin who already passed the password step.
+model OtpCode {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  mobile      String    @db.VarChar(15)
+  code_hash   String
+  password_ok Boolean   @default(false)
+  attempts    Int       @default(0) @db.SmallInt
+  expires_at  DateTime  @db.Timestamptz
+  consumed_at DateTime? @db.Timestamptz
+  ip          String?   @db.Inet
+  created_at  DateTime  @default(now()) @db.Timestamptz
+
+  @@index([mobile, created_at(sort: Desc)])
+  @@map("otp_codes")
+}
+
 model Role {
   id         String       @id @default(uuid(7)) @db.Uuid
-  code       String       @unique @db.VarChar(30)
+  company_id String?      @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  code       String       @db.VarChar(30)
   name       String       @db.VarChar(60)
   is_system  Boolean      @default(false)
   scope_mode String       @db.VarChar(10) // ALL | ASSIGNED (CHECK in migration)
@@ -215,6 +253,7 @@ model RolePermission {
 
 model User {
   id                 String       @id @default(uuid(7)) @db.Uuid
+  company_id         String?      @db.Uuid
   username           String       @unique @db.VarChar(50)
   mobile             String?      @unique @db.VarChar(15)
   email              String?      @db.VarChar(120)
@@ -279,24 +318,26 @@ model Session {
 }
 
 model ApprovalLimit {
-  id         String   @id @default(uuid(7)) @db.Uuid
-  role_id    String   @db.Uuid
-  entity_type String  @db.VarChar(30) // EXPENSE, PURCHASE, ADVANCE, WASTAGE, CASH_VARIANCE
-  max_amount Decimal  @db.Decimal(14, 2)
-  created_at DateTime @default(now()) @db.Timestamptz
-  created_by String?  @db.Uuid
-  updated_at DateTime @updatedAt @db.Timestamptz
-  updated_by String?  @db.Uuid
-  version    Int      @default(1)
+  id          String   @id @default(uuid(7)) @db.Uuid
+  company_id  String   @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  role_id     String   @db.Uuid
+  entity_type String   @db.VarChar(30) // EXPENSE, PURCHASE, ADVANCE, WASTAGE, CASH_VARIANCE
+  max_amount  Decimal  @db.Decimal(14, 2)
+  created_at  DateTime @default(now()) @db.Timestamptz
+  created_by  String?  @db.Uuid
+  updated_at  DateTime @updatedAt @db.Timestamptz
+  updated_by  String?  @db.Uuid
+  version     Int      @default(1)
 
-  @@unique([role_id, entity_type])
+  @@unique([company_id, role_id, entity_type])
   @@map("approval_limits")
 }
 
 // ---------------------------------------------------------------- master data
 model Location {
   id                   String       @id @default(uuid(7)) @db.Uuid
-  code                 String       @unique @db.VarChar(10)
+  company_id           String       @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  code                 String       @db.VarChar(10)
   name                 String       @db.VarChar(100)
   name_ta              String?      @db.VarChar(100)
   type                 LocationType
@@ -320,6 +361,7 @@ model Location {
 
 model ExpenseCategory {
   id                     String       @id @default(uuid(7)) @db.Uuid
+  company_id             String       @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
   parent_id              String?      @db.Uuid
   name_en                String       @db.VarChar(60)
   name_ta                String?      @db.VarChar(60)
@@ -335,7 +377,6 @@ model ExpenseCategory {
   updated_by             String?      @db.Uuid
   version                Int          @default(1)
 
-  @@unique([parent_id, name_en])
   @@map("expense_categories")
 }
 
@@ -351,7 +392,8 @@ model Unit {
 
 model InventoryItem {
   id                     String       @id @default(uuid(7)) @db.Uuid
-  code                   String       @unique @db.VarChar(12)
+  company_id             String       @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  code                   String       @db.VarChar(12)
   name_en                String       @db.VarChar(80)
   name_ta                String?      @db.VarChar(80)
   category               String       @db.VarChar(30)
@@ -374,11 +416,11 @@ model InventoryItem {
 }
 
 model ItemLocationSetting {
-  item_id      String  @db.Uuid
-  location_id  String  @db.Uuid
-  min_stock    Decimal @default(0) @db.Decimal(14, 3)
-  reorder_qty  Decimal? @db.Decimal(14, 3)
-  is_stocked   Boolean @default(true)
+  item_id     String   @db.Uuid
+  location_id String   @db.Uuid
+  min_stock   Decimal  @default(0) @db.Decimal(14, 3)
+  reorder_qty Decimal? @db.Decimal(14, 3)
+  is_stocked  Boolean  @default(true)
 
   @@id([item_id, location_id])
   @@map("item_location_settings")
@@ -386,7 +428,8 @@ model ItemLocationSetting {
 
 model Supplier {
   id                   String       @id @default(uuid(7)) @db.Uuid
-  code                 String       @unique @db.VarChar(10)
+  company_id           String       @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  code                 String       @db.VarChar(10)
   name                 String       @db.VarChar(100)
   contact_person       String?      @db.VarChar(60)
   phone                String?      @db.VarChar(15)
@@ -414,12 +457,14 @@ model SupplierItem {
 }
 
 model Setting {
-  key         String   @id @db.VarChar(60)
+  company_id  String   @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  key         String   @db.VarChar(60)
   value       Json
   description String?
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
   updated_by  String?  @db.Uuid
 
+  @@id([company_id, key])
   @@map("settings")
 }
 
@@ -746,15 +791,15 @@ model InventoryTransaction {
 }
 
 model StockBalance {
-  location_id      String    @db.Uuid
-  item_id          String    @db.Uuid
-  quantity         Decimal   @default(0) @db.Decimal(14, 3)
-  in_transit_in    Decimal   @default(0) @db.Decimal(14, 3)
-  avg_cost         Decimal   @default(0) @db.Decimal(14, 4)
-  value            Decimal   @default(0) @db.Decimal(14, 2)
-  last_txn_at      DateTime? @db.Timestamptz
-  last_counted_on  DateTime? @db.Date
-  version          Int       @default(1)
+  location_id     String    @db.Uuid
+  item_id         String    @db.Uuid
+  quantity        Decimal   @default(0) @db.Decimal(14, 3)
+  in_transit_in   Decimal   @default(0) @db.Decimal(14, 3)
+  avg_cost        Decimal   @default(0) @db.Decimal(14, 4)
+  value           Decimal   @default(0) @db.Decimal(14, 2)
+  last_txn_at     DateTime? @db.Timestamptz
+  last_counted_on DateTime? @db.Date
+  version         Int       @default(1)
 
   @@id([location_id, item_id])
   @@map("stock_balances")
@@ -803,22 +848,22 @@ model StockTransferItem {
 }
 
 model StockCount {
-  id            String      @id @default(uuid(7)) @db.Uuid
-  location_id   String      @db.Uuid
-  business_date DateTime    @db.Date
-  count_type    String      @db.VarChar(10) // OPENING | CLOSING | ADHOC
-  status        CountStatus @default(IN_PROGRESS)
-  counted_by    String?     @db.Uuid
-  approved_by   String?     @db.Uuid
-  approved_at   DateTime?   @db.Timestamptz
-  remarks       String?
+  id             String      @id @default(uuid(7)) @db.Uuid
+  location_id    String      @db.Uuid
+  business_date  DateTime    @db.Date
+  count_type     String      @db.VarChar(10) // OPENING | CLOSING | ADHOC
+  status         CountStatus @default(IN_PROGRESS)
+  counted_by     String?     @db.Uuid
+  approved_by    String?     @db.Uuid
+  approved_at    DateTime?   @db.Timestamptz
+  remarks        String?
   review_comment String?
-  client_uuid   String?     @unique @db.Uuid
-  created_at    DateTime    @default(now()) @db.Timestamptz
-  created_by    String?     @db.Uuid
-  updated_at    DateTime    @updatedAt @db.Timestamptz
-  updated_by    String?     @db.Uuid
-  version       Int         @default(1)
+  client_uuid    String?     @unique @db.Uuid
+  created_at     DateTime    @default(now()) @db.Timestamptz
+  created_by     String?     @db.Uuid
+  updated_at     DateTime    @updatedAt @db.Timestamptz
+  updated_by     String?     @db.Uuid
+  version        Int         @default(1)
 
   items StockCountItem[]
 
@@ -877,7 +922,8 @@ model Wastage {
 
 model Recipe {
   id             String       @id @default(uuid(7)) @db.Uuid
-  code           String       @unique @db.VarChar(12)
+  company_id     String       @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  code           String       @db.VarChar(12)
   name_en        String       @db.VarChar(80)
   name_ta        String?      @db.VarChar(80)
   yield_qty      Decimal      @default(1) @db.Decimal(10, 3)
@@ -1087,6 +1133,7 @@ model Notification {
   rule_code       String        @db.VarChar(40)
   severity        AlertSeverity
   location_id     String?       @db.Uuid
+  company_id      String?       @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
   business_date   DateTime?     @db.Date
   title           String        @db.VarChar(160)
   message         String?
@@ -1123,6 +1170,7 @@ model AuditLog {
   actor_id       String?      @db.Uuid
   actor_role     String?      @db.VarChar(30)
   location_id    String?      @db.Uuid
+  company_id     String?      @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
   action         String       @db.VarChar(20)
   entity_type    String       @db.VarChar(30)
   entity_id      String?      @db.Uuid

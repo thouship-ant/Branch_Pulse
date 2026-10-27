@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AuthUser, can, isOwner } from './auth-user';
+import { AuthUser, can, isAdmin } from './auth-user';
 import { AppException, validation } from './app-exception';
 import { addDays, fmtDate, toDate, todayIST } from './dates';
 import { Dec, D } from './money';
@@ -18,7 +18,7 @@ export class RulesService {
     if (date.getTime() > today.getTime()) {
       throw validation('DATE_OUT_OF_RANGE', 'The date cannot be in the future', field);
     }
-    if (!isOwner(user)) {
+    if (!isAdmin(user)) {
       const backdate = await this.settings.getNumber('entry.backdate_days');
       if (date.getTime() < addDays(today, -backdate).getTime()) {
         throw validation('DATE_OUT_OF_RANGE', `Entries can be back-dated by at most ${backdate} days`, field);
@@ -54,7 +54,7 @@ export class RulesService {
    * Limits are data (approval_limits), configurable per role.
    */
   async approvalLimit(tx: Tx, user: AuthUser, entityType: string): Promise<Dec | null> {
-    if (isOwner(user)) return null;
+    if (isAdmin(user)) return null;
     const rows = await tx.approvalLimit.findMany({
       where: { entity_type: entityType, role_id: { in: await this.roleIds(tx, user) } },
       select: { max_amount: true },

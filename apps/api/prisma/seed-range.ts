@@ -4,9 +4,9 @@
  * sales is skipped, and a day whose closing is already APPROVED is never touched.
  *
  *   npx tsx prisma/seed-range.ts                              26 Sep 2026 .. 24 Oct 2026
- *   npx tsx prisma/seed-range.ts --from 2026-09-26 --to 2026-10-24
+ *   npx tsx prisma/seed-range.ts --from 2026-09-26 --to 2026-10-24 --company CMP001   (default: the first company)
  *
- * Runs as the database owner (DIRECT_URL), so it is not subject to RLS. Requires `npm run db:seed` (masters + users) first.
+ * Runs as the database owner (DIRECT_URL), so it is not subject to RLS. Requires `npm run db:seed` (company, masters, users) first.
  */
 import { Prisma, PrismaClient } from '@prisma/client';
 import { addDays, fmtDate, toDate } from '../src/common/dates';
@@ -43,12 +43,14 @@ const WASTE_ITEMS = ['ITM001', 'ITM002', 'ITM004'];
 const WASTE_REASONS = ['SPOILED', 'EXCESS_PREPARATION', 'BURNT', 'DAMAGED'] as const;
 
 async function main() {
-  const owner = await prisma.user.findUniqueOrThrow({ where: { username: 'owner' } });
-  const branches = await prisma.location.findMany({ where: { type: 'BRANCH', status: 'ACTIVE' }, orderBy: { code: 'asc' } });
-  const cats = await prisma.expenseCategory.findMany({ where: { parent_id: null, status: 'ACTIVE' } });
-  const items = await prisma.inventoryItem.findMany();
+  const companyCode = arg('company', '');
+  const company = await prisma.company.findFirstOrThrow({ where: companyCode ? { code: companyCode } : {}, orderBy: { code: 'asc' } });
+  const owner = await prisma.user.findFirstOrThrow({ where: { company_id: company.id, roles: { some: { role: { code: 'ADMIN' } } } } });
+  const branches = await prisma.location.findMany({ where: { company_id: company.id, type: 'BRANCH', status: 'ACTIVE' }, orderBy: { code: 'asc' } });
+  const cats = await prisma.expenseCategory.findMany({ where: { company_id: company.id, parent_id: null, status: 'ACTIVE' } });
+  const items = await prisma.inventoryItem.findMany({ where: { company_id: company.id } });
   const units = await prisma.unit.findMany();
-  const suppliers = await prisma.supplier.findMany();
+  const suppliers = await prisma.supplier.findMany({ where: { company_id: company.id } });
   const item = (code: string) => items.find((i) => i.code === code)!;
   const lastDay = TO.getTime();
   let days = 0, purchases = 0, wastes = 0;

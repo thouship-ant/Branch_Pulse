@@ -39,7 +39,7 @@ export function SettingsTab({ branch, onChanged }: { branch: any; onChanged: () 
             {branch.manager ? (
               <div>
                 <p className="font-medium">{branch.manager.fullName}</p>
-                <p className="text-sm text-slate-500">@{branch.manager.username}{branch.manager.mobile ? ` · ${branch.manager.mobile}` : ''}</p>
+                <p className="text-sm tabular-nums text-slate-500">{branch.manager.mobile ?? `@${branch.manager.username}`}</p>
               </div>
             ) : <p className="text-sm text-slate-500">{t('noManager')}</p>}
             <div className="flex flex-wrap gap-2">
