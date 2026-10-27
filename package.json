@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "description": "Multi-branch shop management system (PWA + API) - see docs/",
   "workspaces": [
-    "apps/*"
+    "apps/api",
+    "apps/web"
   ],
   "engines": {
     "node": ">=20"
@@ -20,6 +21,7 @@
     "test": "npm -w apps/api test",
     "prod": "docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build",
     "prod:api": "npm -w apps/api run start",
-    "prod:web": "npm -w apps/web run start"
+    "prod:web": "npm -w apps/web run start",
+    "dev:mobile": "npm --prefix apps/mobile run start"
   }
 }

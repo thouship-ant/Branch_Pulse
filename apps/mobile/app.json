@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Branch Pulse",
+    "slug": "branch-pulse",
+    "scheme": "branchpulse",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e2a8a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "pro.antstockpulse.branchpulse"
+    },
+    "android": {
+      "package": "pro.antstockpulse.branchpulse",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1e2a8a"
+      },
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Branch Pulse uses the camera to attach receipt and cash photos."
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

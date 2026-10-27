@@ -32,6 +32,10 @@ class OtpVerifyDto {
 }
 
 const COOKIE = 'bp_refresh';
+
+/** The mobile app has no cookie jar: it sends X-Client: native and gets the refresh token in the body instead. */
+const isNative = (req: Request) => req.headers['x-client'] === 'native';
+const withRefresh = (req: Request, c: { value: string }) => (isNative(req) ? { refreshToken: c.value } : {});
 const COOKIE_PATH = '/api/v1/auth';
 
 @Controller('auth')
@@ -77,7 +81,7 @@ export class AuthController {
     const result = await this.auth.login(dto, this.meta(req));
     if ('otpRequired' in result) return { otpRequired: true, mobile: result.mobile, resendInSeconds: env.otpResendSeconds };
     this.setCookie(res, result.tokens.refreshCookie);
-    return { accessToken: result.tokens.accessToken, expiresIn: result.tokens.expiresIn, user: await this.auth.me(result.user) };
+    return { accessToken: result.tokens.accessToken, expiresIn: result.tokens.expiresIn, ...withRefresh(req, result.tokens.refreshCookie), user: await this.auth.me(result.user) };
   }
 
   /** OTP-only users: send the code to their mobile. */
@@ -97,7 +101,7 @@ export class AuthController {
   async verifyOtp(@Body() dto: OtpVerifyDto, @Req() req: Request & { requestId?: string }, @Res({ passthrough: true }) res: Response) {
     const { tokens, user } = await this.auth.verifyOtp(dto.mobile, dto.otp, dto, this.meta(req));
     this.setCookie(res, tokens.refreshCookie);
-    return { accessToken: tokens.accessToken, expiresIn: tokens.expiresIn, user: await this.auth.me(user) };
+    return { accessToken: tokens.accessToken, expiresIn: tokens.expiresIn, ...withRefresh(req, tokens.refreshCookie), user: await this.auth.me(user) };
   }
 
   @Public()
@@ -105,9 +109,10 @@ export class AuthController {
   @HttpCode(200)
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const rawIp = req.ip?.replace(/^::ffff:/, '');
-    const r = await this.auth.refresh(req.cookies?.[COOKIE], { ip: rawIp && isIP(rawIp) ? rawIp : undefined });
+    const fromBody = isNative(req) && typeof req.body?.refreshToken === 'string' ? req.body.refreshToken : undefined;
+    const r = await this.auth.refresh(req.cookies?.[COOKIE] ?? fromBody, { ip: rawIp && isIP(rawIp) ? rawIp : undefined });
     this.setCookie(res, r.refreshCookie);
-    return { accessToken: r.accessToken, expiresIn: r.expiresIn, user: await this.auth.me(r.user) };
+    return { accessToken: r.accessToken, expiresIn: r.expiresIn, ...withRefresh(req, r.refreshCookie), user: await this.auth.me(r.user) };
   }
 
   @Post('logout')
