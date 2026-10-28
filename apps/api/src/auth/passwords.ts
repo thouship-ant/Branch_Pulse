@@ -49,3 +49,12 @@ export function generateTempPassword(): string {
   }
   return chars.join('');
 }
+
+const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', ACCOUNTANT: 'Accountant', STOCK_MANAGER: 'Stock Manager', BRANCH_MANAGER: 'Branch Manager', STAFF: 'Staff' };
+
+/** "Anna Nagar Manager (Branch Manager)": what the {user} placeholder of the SMS templates is replaced with. */
+export function userLabel(fullName: string, roleCodes: string[]): string {
+  const code = ORDER.find((c) => roleCodes.includes(c)) ?? roleCodes[0];
+  const role = code ? (ROLE_NAMES[code] ?? code.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' ')) : '';
+  return role ? `${fullName.trim()} (${role})` : fullName.trim();
+}

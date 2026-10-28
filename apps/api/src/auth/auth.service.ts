@@ -7,7 +7,7 @@ import { AuditService } from '../common/audit.service';
 import { AuthUser, ReqCtx } from '../common/auth-user';
 import { PrismaService } from '../common/prisma.service';
 import { env } from '../config/env';
-import { assertStrongPassword } from './passwords';
+import { assertStrongPassword, userLabel } from './passwords';
 import { JwtStrategy } from './jwt.strategy';
 import { SmsService } from './sms.service';
 
@@ -116,7 +116,7 @@ export class AuthService {
     }
     // Admin: password accepted, now the OTP
     if (!user.mobile) throw new AppException(400, 'NO_MOBILE', 'This account has no mobile number for the OTP. Ask the Super Admin to add one.');
-    await this.issueOtp(user.mobile, true, meta.ip);
+    await this.issueOtp(user.mobile, true, userLabel(user.full_name, codes), meta.ip);
     return { otpRequired: true, mobile: user.mobile };
   }
 
@@ -136,7 +136,7 @@ export class AuthService {
    * Creates and sends a one-time code. `passwordOk` marks an Admin who already passed the password step; an OTP asked for
    * directly (passwordOk=false) can never complete an Admin sign-in.
    */
-  private async issueOtp(mobile: string, passwordOk: boolean, ip?: string) {
+  private async issueOtp(mobile: string, passwordOk: boolean, label: string, ip?: string) {
     const last = await this.prisma.runAuth((tx) => tx.otpCode.findFirst({ where: { mobile }, orderBy: { created_at: 'desc' } }));
     if (last && Date.now() - last.created_at.getTime() < env.otpResendSeconds * 1000) {
       throw new AppException(429, 'OTP_TOO_SOON', `Please wait ${env.otpResendSeconds} seconds before asking for another OTP`);
@@ -148,7 +148,7 @@ export class AuthService {
       }),
     );
     if (!env.otpFixedCode) {
-      await this.sms.sendOtp(mobile, code).catch(() => {
+      await this.sms.sendOtp(mobile, code, label).catch(() => {
         throw new AppException(502, 'SMS_FAILED', 'Could not send the OTP right now. Please try again.');
       });
     }
@@ -160,7 +160,7 @@ export class AuthService {
     const user = await this.findUser(mobile);
     const codes = user?.roles.map((r) => r.role.code) ?? [];
     if (user && user.status === 'ACTIVE' && !codes.includes('ADMIN') && !codes.includes('SUPER_ADMIN')) {
-      await this.issueOtp(mobile, false, meta.ip);
+      await this.issueOtp(mobile, false, userLabel(user.full_name, codes), meta.ip);
     }
     return { sent: true, resendInSeconds: env.otpResendSeconds };
   }

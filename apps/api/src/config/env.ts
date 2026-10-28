@@ -28,11 +28,11 @@ export const env = {
     senderId: process.env.SMS_FORTIUS_SENDER_ID,
     templateId: process.env.SMS_FORTIUS_TEMPLATE_ID,
     baseUrl: process.env.SMS_FORTIUS_BASE_URL,
-    // must match the DLT-approved template text exactly; {otp} is replaced with the code
-    otpTemplate: process.env.SMS_OTP_TEMPLATE ?? 'Your Branch Pulse OTP is {otp}. Valid for 10 minutes. Do not share it.',
+    // must match the DLT-approved template text exactly; {user} is replaced with the person's name and role, {otp} with the code
+    otpTemplate: process.env.SMS_OTP_TEMPLATE ?? 'Hi {user}, Your Branch Pulse OTP is {otp}. Valid for 10 minutes. Do not share it.',
     // the temporary-password SMS is a separate DLT template ({password} is replaced); falls back to the OTP template id
     tempPasswordTemplateId: process.env.SMS_FORTIUS_TEMP_PASSWORD_TEMPLATE_ID || process.env.SMS_FORTIUS_TEMPLATE_ID,
-    tempPasswordTemplate: process.env.SMS_TEMP_PASSWORD_TEMPLATE ?? 'Your Branch Pulse temporary password is {password}. Sign in and change it now. Do not share it.',
+    tempPasswordTemplate: process.env.SMS_TEMP_PASSWORD_TEMPLATE ?? 'Hi {user}, Your Branch Pulse temporary password is {password}. Sign in and change it now. Do not share it.',
   },
   // AES-256-GCM key for encrypting employee bank details at rest: 64 hex characters (32 bytes).
   bankDetailsKey: required('BANK_DETAILS_KEY', '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),

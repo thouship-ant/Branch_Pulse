@@ -36,12 +36,12 @@ export class SmsService {
     return true;
   }
 
-  async sendOtp(mobile: string, otp: string): Promise<void> {
-    await this.send(mobile, env.sms.templateId, env.sms.otpTemplate.replace('{otp}', otp), `OTP for ${mobile} is ${otp}`);
+  async sendOtp(mobile: string, otp: string, user: string): Promise<void> {
+    await this.send(mobile, env.sms.templateId, env.sms.otpTemplate.replace('{user}', user).replace('{otp}', otp), `OTP for ${user} (${mobile}) is ${otp}`);
   }
 
   /** The temporary password a Super Admin reset sends to the user. */
-  sendTempPassword(mobile: string, password: string): Promise<boolean> {
-    return this.send(mobile, env.sms.tempPasswordTemplateId, env.sms.tempPasswordTemplate.replace('{password}', password), `temporary password for ${mobile} is ${password}`);
+  sendTempPassword(mobile: string, password: string, user: string): Promise<boolean> {
+    return this.send(mobile, env.sms.tempPasswordTemplateId, env.sms.tempPasswordTemplate.replace('{user}', user).replace('{password}', password), `temporary password for ${user} (${mobile}) is ${password}`);
   }
 }

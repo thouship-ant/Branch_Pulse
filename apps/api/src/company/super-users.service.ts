@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
-import { generateTempPassword } from '../auth/passwords';
+import { generateTempPassword, userLabel } from '../auth/passwords';
 import { SmsService } from '../auth/sms.service';
 import { AppException, notFound } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
@@ -109,7 +109,7 @@ export class SuperUsersService {
 
     let sent = false;
     try {
-      sent = await this.sms.sendTempPassword(user.mobile!, temp);
+      sent = await this.sms.sendTempPassword(user.mobile!, temp, userLabel(user.full_name, user.roles.map((r) => r.role.code)));
     } catch {
       throw new AppException(502, 'SMS_FAILED', 'The password was reset but the SMS could not be sent. Try the reset again.');
     }
