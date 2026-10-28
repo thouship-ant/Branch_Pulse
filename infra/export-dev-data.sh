@@ -35,6 +35,9 @@ $PG pg_dump -U postgres -d "$DEV_DB_NAME" --no-owner | $PG psql -U postgres -d "
   echo "DELETE FROM public.users WHERE company_id IS NULL; DELETE FROM public.roles WHERE company_id IS NULL;"
   echo "DELETE FROM public.audit_logs WHERE company_id IS NULL; DELETE FROM public.notifications WHERE company_id IS NULL;"
   echo "SELECT pg_temp.bp_sweep();"
+  # audit_logs.id is an auto-number that production already uses (1, 2, 3 ...): export the rows without it so production
+  # numbers them itself (nothing refers to an audit row's id)
+  echo "ALTER TABLE public.audit_logs DROP COLUMN id;"
 } | $PG psql -U postgres -d "$SCRATCH" -q -o /dev/null -v ON_ERROR_STOP=1
 
 echo "exporting: $(scratch -c "select count(*) from companies") company, $(scratch -c "select count(*) from locations") locations, $(scratch -c "select count(*) from users") users, $(scratch -c "select count(*) from expenses") expenses"
