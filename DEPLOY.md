@@ -82,6 +82,7 @@ $C run --rm migrate          # applies all migrations
 $C run --rm seed             # permissions, units and ONE Super Admin user (no company yet)
 $C up -d                     # api, web and caddy
 $C ps                        # all services should become "healthy"
+$C exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -q < dev-export/data.sql
 ```
 
 Open `https://YOUR_DOMAIN`, enter `superadmin`, then `SEED_PASSWORD`. Caddy fetches the certificate on the first request (give it a minute).
