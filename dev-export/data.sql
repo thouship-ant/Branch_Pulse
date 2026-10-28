@@ -25,21 +25,6 @@ SET SESSION AUTHORIZATION DEFAULT;
 
 ALTER TABLE public.employee_advances DISABLE TRIGGER ALL;
 
-INSERT INTO public.employee_advances (id, code, employee_id, location_id, request_date, amount, reason, monthly_recovery, status, requested_by, manager_approved_by, manager_approved_at, final_approved_by, final_approved_at, rejection_reason, paid_amount, paid_on, payment_mode, recovered_amount, remaining_amount, created_at, created_by, updated_at, updated_by, version) VALUES
-	('01a17ca2-511f-79d2-87b9-62d8dca8b189', 'ADV-BR001-26-000015', '01a17ca2-511a-77b2-8abf-4e59aa732d69', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 1300.00, 'Written as 1000 + 300 [Import 2025-10-19|SP-001]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.815+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.815+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5127-71a3-9104-3e9470160a06', 'ADV-BR001-26-000016', '01a17ca2-5123-7761-9ccc-a19ee2aa74ad', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 750.00, 'Staff payment from ledger [Import 2025-10-19|SP-002]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.824+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.824+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-512f-7322-8615-a20e2b216453', 'ADV-BR001-26-000017', '01a17ca2-512a-7303-9de2-fe9edc38f7b6', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 500.00, 'Digit unclear (500 or 800) [Import 2025-10-19|SP-003]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.831+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.831+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5136-7282-962d-a4bb68c1a2cd', 'ADV-BR001-26-000018', '01a17ca2-5132-7570-b5b4-a5d31323e6e1', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 1000.00, 'Staff payment from ledger [Import 2025-10-19|SP-004]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.839+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.839+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-513d-7c40-9c21-52e5abf71f71', 'ADV-BR001-26-000019', '01a17ca2-5139-7e90-8f6b-b71bcc39dfc2', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 650.00, 'Staff payment from ledger [Import 2025-10-19|SP-005]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.846+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.846+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5145-7ac2-a1fc-835b13fc6ad0', 'ADV-BR001-26-000020', '01a17ca2-5140-7a70-9130-be6a38f3b697', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 600.00, 'Staff payment from ledger [Import 2025-10-19|SP-006]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.853+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.853+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-514c-7b80-b782-c66e003c5c1a', 'ADV-BR001-26-000021', '01a17ca2-5148-7b92-b2a3-a117edfcc372', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 1400.00, 'Staff payment from ledger [Import 2025-10-19|SP-008]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.86+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.86+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5154-7a03-a5ed-f54ce879af55', 'ADV-BR001-26-000022', '01a17ca2-514e-7420-a729-049c696de24c', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 600.00, 'Staff payment from ledger [Import 2025-10-19|SP-009]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.868+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.868+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5159-7391-9786-f746cfec90df', 'ADV-BR001-26-000023', '01a17ca2-5156-7073-ad69-421384ab692f', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 650.00, 'Staff payment from ledger [Import 2025-10-19|SP-010]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.873+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.873+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-515d-7260-9cea-ecabe8396265', 'ADV-BR001-26-000024', '01a17ca2-515a-73d2-943c-fae812898a3b', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 650.00, 'Could be 660 [Import 2025-10-19|SP-011]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.878+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.878+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5163-7892-9824-0d920d60ebd2', 'ADV-BR001-26-000025', '01a17ca2-515f-7d33-8614-c5a7bd61d181', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 570.00, 'May be a name or an item - please confirm [Import 2025-10-19|SP-012]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.883+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.883+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5168-7520-9dc2-c787d7d635aa', 'ADV-BR001-26-000026', '01a17ca2-5165-7aa0-a637-a8268955a504', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 200.00, 'A circled 500 is written next to it - not added [Import 2025-10-19|SP-013]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.889+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.889+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-516d-7623-a03b-5030f0eeca27', 'ADV-BR001-26-000027', '01a17ca2-516a-7152-b01b-f7a86fb4ef09', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 400.00, 'Staff payment from ledger [Import 2025-10-19|SP-014]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.893+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.893+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5172-7530-bf36-9bb44b0eb4b5', 'ADV-BR001-26-000028', '01a17ca2-516f-7672-959a-1e7ac4a825fc', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', 500.00, 'Staff payment from ledger [Import 2025-10-19|SP-015]', NULL, 'REQUESTED', '01a17c9e-bdac-77a0-a906-dbc5e6161273', NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 0.00, 0.00, '2026-10-27 09:12:54.898+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.898+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1);
 
 
 ALTER TABLE public.employee_advances ENABLE TRIGGER ALL;
@@ -71,8 +56,7 @@ ALTER TABLE public.alert_rules ENABLE TRIGGER ALL;
 ALTER TABLE public.companies DISABLE TRIGGER ALL;
 
 INSERT INTO public.companies (id, code, name, address, gstin, fssai, email, status, created_at, created_by, updated_at, updated_by, version) VALUES
-	('f2328b4f-e294-41ec-80a4-3d3c7645e3f5', 'CMP000', 'Default Company', NULL, NULL, NULL, NULL, 'ACTIVE', '2026-10-27 08:47:16.98302+00', NULL, '2026-10-27 08:47:16.98302+00', NULL, 1),
-	('01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1', 'CMP001', 'Chai Point', '12 Main Road, Coimbatore', '33ABCDE1234F1Z5', '12345678901234', 'ravi@chaipoint.test', 'ACTIVE', '2026-10-27 09:11:15.822+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:11:15.822+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1);
+	('f2328b4f-e294-41ec-80a4-3d3c7645e3f5', 'CMP000', 'Default Company', NULL, NULL, NULL, NULL, 'ACTIVE', '2026-10-27 08:47:16.98302+00', NULL, '2026-10-27 08:47:16.98302+00', NULL, 1);
 
 
 ALTER TABLE public.companies ENABLE TRIGGER ALL;
@@ -84,7 +68,6 @@ ALTER TABLE public.companies ENABLE TRIGGER ALL;
 ALTER TABLE public.approval_limits DISABLE TRIGGER ALL;
 
 INSERT INTO public.approval_limits (id, role_id, entity_type, max_amount, created_at, created_by, updated_at, updated_by, version, company_id) VALUES
-	('01a17ca0-cf1a-7911-953f-45bcd9fe018b', '01a17ca0-cef8-75c0-94e4-a20df94e536b', 'WASTAGE', 2000.00, '2026-10-27 09:11:15.994+00', NULL, '2026-10-27 09:11:15.994+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
 	('01a0ded1-e3da-7f72-909a-2102d67e0af2', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf', 'EXPENSE', 500.00, '2026-09-26 17:44:52.442+00', NULL, '2026-09-28 07:52:58.776+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e3e1-7b43-94e7-c8d76154d218', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf', 'WASTAGE', 200.00, '2026-09-26 17:44:52.449+00', NULL, '2026-09-28 07:52:58.78+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e3e4-7a41-91cd-eadb894b860d', '01a0ded1-e3a3-7513-a509-6a4bea31bc50', 'EXPENSE', 25000.00, '2026-09-26 17:44:52.453+00', NULL, '2026-09-28 07:52:58.781+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
@@ -92,14 +75,7 @@ INSERT INTO public.approval_limits (id, role_id, entity_type, max_amount, create
 	('01a0ded1-e3ec-75f0-8df1-32769ba798de', '01a0ded1-e3a3-7513-a509-6a4bea31bc50', 'ADVANCE', 5000.00, '2026-09-26 17:44:52.461+00', NULL, '2026-09-28 07:52:58.785+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e3ef-7f30-91f5-3e5a3088b145', '01a0ded1-e3a3-7513-a509-6a4bea31bc50', 'CASH_VARIANCE', 5000.00, '2026-09-26 17:44:52.464+00', NULL, '2026-09-28 07:52:58.789+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e3f2-7032-aaa2-0a8f8d4e8876', '01a0ded1-e3af-7243-b3ce-ee365dc0b2cb', 'PURCHASE', 25000.00, '2026-09-26 17:44:52.467+00', NULL, '2026-09-28 07:52:58.791+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e3f5-7a03-8563-17799f13e194', '01a0ded1-e3af-7243-b3ce-ee365dc0b2cb', 'WASTAGE', 2000.00, '2026-09-26 17:44:52.469+00', NULL, '2026-09-28 07:52:58.792+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a17ca0-cf02-7293-93a0-6be2edfd51dd', '01a17ca0-cefc-7131-b07c-a94eda402073', 'EXPENSE', 500.00, '2026-10-27 09:11:15.971+00', NULL, '2026-10-27 09:11:15.971+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf0a-79e1-94e7-5fafe50fd917', '01a17ca0-cefc-7131-b07c-a94eda402073', 'WASTAGE', 200.00, '2026-10-27 09:11:15.978+00', NULL, '2026-10-27 09:11:15.978+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf0c-7b70-bef4-c1ec3dfd4096', '01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', 'EXPENSE', 25000.00, '2026-10-27 09:11:15.981+00', NULL, '2026-10-27 09:11:15.981+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf0f-7943-9670-2a3bb118aa82', '01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', 'PURCHASE', 25000.00, '2026-10-27 09:11:15.983+00', NULL, '2026-10-27 09:11:15.983+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf13-74f2-9e38-a2b86a5cfa42', '01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', 'ADVANCE', 5000.00, '2026-10-27 09:11:15.988+00', NULL, '2026-10-27 09:11:15.988+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf16-7c03-af1c-f4ed5de784e1', '01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', 'CASH_VARIANCE', 5000.00, '2026-10-27 09:11:15.99+00', NULL, '2026-10-27 09:11:15.99+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf18-7862-825d-c9ab0f282e42', '01a17ca0-cef8-75c0-94e4-a20df94e536b', 'PURCHASE', 25000.00, '2026-10-27 09:11:15.992+00', NULL, '2026-10-27 09:11:15.992+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1');
+	('01a0ded1-e3f5-7a03-8563-17799f13e194', '01a0ded1-e3af-7243-b3ce-ee365dc0b2cb', 'WASTAGE', 2000.00, '2026-09-26 17:44:52.469+00', NULL, '2026-09-28 07:52:58.792+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5');
 
 
 ALTER TABLE public.approval_limits ENABLE TRIGGER ALL;
@@ -135,25 +111,14 @@ INSERT INTO public.audit_logs (id, occurred_at, actor_id, actor_role, location_i
 	(110, '2026-10-27 09:09:13.838+00', '01a0ded1-e88e-7bb1-937c-bf964be014e0', 'BRANCH_MANAGER', NULL, 'LOGIN', 'USER', '01a0ded1-e88e-7bb1-937c-bf964be014e0', '9000000012', NULL, NULL, '{}', NULL, '53a13425-21b6-4fe4-b512-d1e7212ac891', '::1', 'curl/8.21.0', NULL, 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(111, '2026-10-27 09:09:14.129+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', NULL, NULL, 'LOGIN_FAILED', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '9000000001', NULL, NULL, '{}', NULL, '01393602-d870-46a6-bf6e-1592824c4e00', '::1', 'curl/8.21.0', NULL, 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(112, '2026-10-27 09:09:14.443+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'ADMIN', NULL, 'LOGIN', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '9000000001', NULL, NULL, '{}', NULL, '05c505aa-e876-476c-8b75-815ac8b4c611', '::1', 'curl/8.21.0', NULL, 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	(113, '2026-10-27 09:09:14.749+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', NULL, 'LOGIN', 'USER', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'superadmin', NULL, NULL, '{}', NULL, '54e9f553-8233-4bec-93eb-7b33514646a1', '::1', 'curl/8.21.0', NULL, 'WEB', NULL),
 	(114, '2026-10-27 09:11:15.493+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', NULL, NULL, 'LOGIN_FAILED', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '9000000001', NULL, NULL, '{}', NULL, '2d0a2401-a0cb-4446-bf63-aae00f4937d4', '::1', 'curl/8.21.0', NULL, 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	(115, '2026-10-27 09:11:16.188+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', NULL, 'CREATE', 'COMPANY', '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1', 'CMP002', NULL, '{"code": "CMP002", "name": "Chai Point", "admin": {"name": "Ravi Kumar", "mobile": "9111111111"}, "fssai": "12345678901234", "gstin": "33ABCDE1234F1Z5", "address": "12 Main Road, Coimbatore"}', '{code,name,address,gstin,fssai,admin}', NULL, '16ed4f7b-84fc-4a99-b8bb-8a0947b21c79', '::1', 'curl/8.21.0', NULL, 'WEB', '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	(116, '2026-10-27 09:11:16.854+00', '01a17ca0-cfd7-7840-9d8d-1d2a6fff61ee', 'ADMIN', NULL, 'LOGIN', 'USER', '01a17ca0-cfd7-7840-9d8d-1d2a6fff61ee', '9111111111', NULL, NULL, '{}', NULL, '331ddf9c-1536-4906-be51-46202b9462b0', '::1', 'curl/8.21.0', NULL, 'WEB', '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	(118, '2026-10-27 09:12:05.378+00', NULL, NULL, NULL, 'LOGIN_FAILED', 'USER', NULL, '9333333333', NULL, NULL, '{}', NULL, '5885dfcf-9a0e-4264-9c13-e35feddfd19e', '::1', 'curl/8.21.0', NULL, 'WEB', NULL),
-	(119, '2026-10-27 09:12:54.716+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', '01a17ca2-507e-7731-b107-f07d9f626d44', 'CREATE', 'LOCATION', '01a17ca2-507e-7731-b107-f07d9f626d44', 'BR001', NULL, '{"id": "01a17ca2-507e-7731-b107-f07d9f626d44", "code": "BR001", "name": "Gandhipuram", "type": "BRANCH", "notes": null, "phone": null, "status": "ACTIVE", "address": "45 Cross Cut Rd, Coimbatore", "manager": "Suresh", "name_ta": null, "version": 1, "opened_on": "2025-10-19T00:00:00.000Z", "company_id": "01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1", "created_at": "2026-10-27T09:12:54.655Z", "created_by": "01a17c9e-bdac-77a0-a906-dbc5e6161273", "updated_at": "2026-10-27T09:12:54.655Z", "updated_by": "01a17c9e-bdac-77a0-a906-dbc5e6161273", "card_enabled": true, "monthly_rent": null, "manager_user_id": null, "default_opening_cash": "2000"}', '{id,company_id,code,name,name_ta,type,address,phone,manager_user_id,default_opening_cash,card_enabled,opened_on,monthly_rent,notes,status,manager}', NULL, '9c520bf6-c72c-474c-9ea3-1d5b94dce5a7', '::1', 'curl/8.21.0', NULL, 'WEB', '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	(120, '2026-10-27 09:12:54.9+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', '01a17ca2-507e-7731-b107-f07d9f626d44', 'CREATE', 'DATA_IMPORT', NULL, 'CMP002', NULL, '{"sales": null, "branch": "BR001", "advances": 14, "expenses": 23, "newEmployees": ["Shail", "Riyas", "Amma", "Ahamed", "Ameen", "Ajay", "Karman", "Lakshi", "Dhanraj", "Rajendra", "Beer", "MD", "Nabil", "Aasif"]}', '{branch,expenses,advances,newEmployees,sales}', NULL, '9c520bf6-c72c-474c-9ea3-1d5b94dce5a7', '::1', 'curl/8.21.0', NULL, 'WEB', '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	(121, '2026-10-27 09:12:55.671+00', '01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', 'BRANCH_MANAGER', NULL, 'LOGIN', 'USER', '01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', '9333333333', NULL, NULL, '{}', NULL, 'fd804727-ceee-4b2c-b578-bb7b7195958d', '::1', 'curl/8.21.0', NULL, 'WEB', '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	(122, '2026-10-27 18:31:41.502+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', NULL, 'LOGIN', 'USER', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'superadmin', NULL, NULL, '{}', NULL, 'd3bb3699-4d80-4f88-a836-3c3744970d8b', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-d8a66ccd', 'WEB', NULL),
 	(48, '2026-09-29 11:13:15.57+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'OWNER', NULL, 'LOGOUT', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'owner', NULL, NULL, '{}', NULL, '74580ad7-b36a-4bd7-9c76-8c635bccadf1', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-unknown', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(49, '2026-09-29 11:13:54.864+00', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'BRANCH_MANAGER', NULL, 'LOGIN', 'USER', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'manager1', NULL, NULL, '{}', NULL, 'dd0bd2e3-a0ff-4360-abbb-63ec42870911', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-unknown', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(50, '2026-09-29 11:38:11.847+00', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'BRANCH_MANAGER', NULL, 'LOGIN', 'USER', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'manager1', NULL, NULL, '{}', NULL, '7767e94a-9616-4ee3-93d5-34f853020760', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', 'pwa-c6408346', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(51, '2026-09-29 11:57:33.423+00', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'BRANCH_MANAGER', NULL, 'LOGIN', 'USER', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'manager1', NULL, NULL, '{}', NULL, '19ded977-0ea8-4ddc-90e6-5c02b7ab1aa0', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', 'pwa-16be80b2', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	(123, '2026-10-27 18:41:47.313+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', NULL, 'LOGOUT', 'USER', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'superadmin', NULL, NULL, '{}', NULL, '811a5e5f-dec3-4e20-8df9-9e9f4939f007', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-d8a66ccd', 'WEB', NULL),
 	(124, '2026-10-27 18:42:27.039+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'ADMIN', NULL, 'LOGIN', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '9000000001', NULL, NULL, '{}', NULL, 'e9b5d0e4-90b0-4d8c-86a5-695d1e9b6646', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-d8a66ccd', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(74, '2026-09-30 15:26:16.422+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'OWNER', NULL, 'PERMISSION_CHANGE', 'USER', '01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', NULL, NULL, NULL, '{}', 'force logout', 'c4bca401-ddcb-497c-9eec-0fc03cd04641', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-unknown', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(75, '2026-09-30 15:27:59.941+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'OWNER', NULL, 'LOGOUT', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'owner', NULL, NULL, '{}', NULL, '23e961f6-0e2b-4543-ac01-fcfbe9dba8a9', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-unknown', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	(125, '2026-10-27 18:55:14.009+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', NULL, 'LOGIN', 'USER', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'superadmin', NULL, NULL, '{}', NULL, '9f4ac24a-37a8-433a-8857-7ff94c293895', '::1', 'curl/8.21.0', NULL, 'WEB', NULL),
-	(126, '2026-10-27 18:55:14.55+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'SUPER_ADMIN', NULL, 'LOGIN', 'USER', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'superadmin', NULL, NULL, '{}', NULL, 'b91e4f7f-0dff-43cb-9b39-cd28187991df', '::1', 'curl/8.21.0', NULL, 'WEB', NULL),
 	(84, '2026-10-21 07:58:56.408+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'OWNER', NULL, 'LOGIN', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'owner', NULL, NULL, '{}', NULL, '0799cea7-cb57-4997-82c5-8762d7141e48', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-d8a66ccd', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(85, '2026-10-21 08:01:32.949+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'OWNER', NULL, 'LOGOUT', 'USER', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'owner', NULL, NULL, '{}', NULL, '613eebc9-3da6-41f5-8006-59a0e0b2431d', '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', 'pwa-d8a66ccd', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	(86, '2026-10-21 08:02:09.457+00', '01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', 'ACCOUNTANT', NULL, 'LOGIN', 'USER', '01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', 'accountant', NULL, NULL, '{}', NULL, '555f99a4-477c-4c45-9254-acd572d54dfd', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'pwa-d8a66ccd', 'WEB', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
@@ -2229,8 +2194,7 @@ INSERT INTO public.daily_closing (id, location_id, business_date, status, daily_
 	('01a17ea4-ecde-7fa2-8f94-c2bcfb180edb', '01a0ded1-e415-7ee0-ba16-a1ad2ce54248', '2026-10-28', 'PENDING', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-10-27 18:35:00.19+00', NULL, '2026-10-27 18:35:00.19+00', NULL, 1),
 	('01a17ea4-ecde-7fa2-8f94-c2c51575be13', '01a0ded1-e41d-74b3-8c29-57ecf8473596', '2026-10-28', 'PENDING', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-10-27 18:35:00.19+00', NULL, '2026-10-27 18:35:00.19+00', NULL, 1),
 	('01a17ea4-ecde-7fa2-8f94-c2d2a4fcd487', '01a0ded1-e423-7d90-8248-670567b63c80', '2026-10-28', 'PENDING', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-10-27 18:35:00.19+00', NULL, '2026-10-27 18:35:00.19+00', NULL, 1),
-	('01a17ea4-ecde-7fa2-8f94-c2e4b102ae30', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-28', 'PENDING', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-10-27 18:35:00.19+00', NULL, '2026-10-27 18:35:00.19+00', NULL, 1),
-	('01a17ea4-ecde-7fa2-8f94-c2ff1ce8109b', '01a17ca2-507e-7731-b107-f07d9f626d44', '2026-10-28', 'PENDING', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-10-27 18:35:00.19+00', NULL, '2026-10-27 18:35:00.19+00', NULL, 1);
+	('01a17ea4-ecde-7fa2-8f94-c2e4b102ae30', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-28', 'PENDING', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-10-27 18:35:00.19+00', NULL, '2026-10-27 18:35:00.19+00', NULL, 1);
 
 
 ALTER TABLE public.daily_closing ENABLE TRIGGER ALL;
@@ -3020,21 +2984,7 @@ ALTER TABLE public.daily_sales ENABLE TRIGGER ALL;
 ALTER TABLE public.employees DISABLE TRIGGER ALL;
 
 INSERT INTO public.employees (id, code, full_name, location_id, job_role, phone, joining_date, exit_date, salary_type, base_salary, overtime_rate_per_hour, payment_method, bank_details_enc, status, created_at, created_by, updated_at, updated_by, version) VALUES
-	('01a0e89a-3212-7802-a976-3da5498a4936', 'EMP000001', 'Verify Test Employee', '01a0ded1-e3fb-7350-b2e2-f598768b534e', 'Waiter', NULL, '2026-01-15', NULL, 'MONTHLY', 15000.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-09-28 15:20:14.61+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-09-28 15:20:14.61+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 1),
-	('01a17ca2-511a-77b2-8abf-4e59aa732d69', 'EMP000016', 'Shail', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.81+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.81+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5123-7761-9ccc-a19ee2aa74ad', 'EMP000017', 'Riyas', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.819+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.819+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-512a-7303-9de2-fe9edc38f7b6', 'EMP000018', 'Amma', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.827+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.827+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5132-7570-b5b4-a5d31323e6e1', 'EMP000019', 'Ahamed', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.835+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.835+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5139-7e90-8f6b-b71bcc39dfc2', 'EMP000020', 'Ameen', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.842+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.842+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5140-7a70-9130-be6a38f3b697', 'EMP000021', 'Ajay', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.849+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.849+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5148-7b92-b2a3-a117edfcc372', 'EMP000022', 'Karman', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.856+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.856+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-514e-7420-a729-049c696de24c', 'EMP000023', 'Lakshi', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.863+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.863+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5156-7073-ad69-421384ab692f', 'EMP000024', 'Dhanraj', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.87+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.87+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-515a-73d2-943c-fae812898a3b', 'EMP000025', 'Rajendra', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.875+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.875+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-515f-7d33-8614-c5a7bd61d181', 'EMP000026', 'Beer', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.88+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.88+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5165-7aa0-a637-a8268955a504', 'EMP000027', 'MD', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.886+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.886+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-516a-7152-b01b-f7a86fb4ef09', 'EMP000028', 'Nabil', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.89+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.89+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-516f-7672-959a-1e7ac4a825fc', 'EMP000029', 'Aasif', '01a17ca2-507e-7731-b107-f07d9f626d44', 'Staff', NULL, '2025-10-19', NULL, 'DAILY', 0.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-10-27 09:12:54.895+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.895+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1);
+	('01a0e89a-3212-7802-a976-3da5498a4936', 'EMP000001', 'Verify Test Employee', '01a0ded1-e3fb-7350-b2e2-f598768b534e', 'Waiter', NULL, '2026-01-15', NULL, 'MONTHLY', 15000.00, 0.00, 'CASH', NULL, 'ACTIVE', '2026-09-28 15:20:14.61+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-09-28 15:20:14.61+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 1);
 
 
 ALTER TABLE public.employees ENABLE TRIGGER ALL;
@@ -3046,46 +2996,7 @@ ALTER TABLE public.employees ENABLE TRIGGER ALL;
 ALTER TABLE public.expense_categories DISABLE TRIGGER ALL;
 
 INSERT INTO public.expense_categories (id, parent_id, name_en, name_ta, pl_bucket, requires_receipt_above, unusual_threshold, sort_order, status, created_at, created_by, updated_at, updated_by, version, requires_supplier, company_id) VALUES
-	('01a17ca0-cf20-7461-843b-92f2cfe8e7d0', NULL, 'Milk', 'பால்', 'RAW_MATERIAL', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.001+00', NULL, '2026-10-27 09:11:16.001+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf23-7280-8428-8079662fd4a0', NULL, 'Tea powder', 'தேயிலைத் தூள்', 'RAW_MATERIAL', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.004+00', NULL, '2026-10-27 09:11:16.004+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf26-7d33-b94a-e741f589c9cc', NULL, 'Coffee', 'காபி', 'RAW_MATERIAL', NULL, NULL, 2, 'ACTIVE', '2026-10-27 09:11:16.006+00', NULL, '2026-10-27 09:11:16.006+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf28-7cd1-8215-3d2e141aebb6', NULL, 'Sugar', 'சர்க்கரை', 'RAW_MATERIAL', NULL, NULL, 3, 'ACTIVE', '2026-10-27 09:11:16.008+00', NULL, '2026-10-27 09:11:16.008+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 'Snacks / raw materials', 'சிற்றுண்டி / மூலப்பொருட்கள்', 'RAW_MATERIAL', NULL, NULL, 4, 'ACTIVE', '2026-10-27 09:11:16.011+00', NULL, '2026-10-27 09:11:16.011+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf2d-75f2-aa2b-fe6cec0f7dde', NULL, 'Salary', 'சம்பளம்', 'SALARY', NULL, NULL, 5, 'ACTIVE', '2026-10-27 09:11:16.013+00', NULL, '2026-10-27 09:11:16.013+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf2f-74e2-932b-b502809613a0', NULL, 'Staff advance', 'ஊழியர் முன்பணம்', 'NON_PL', NULL, NULL, 6, 'ACTIVE', '2026-10-27 09:11:16.016+00', NULL, '2026-10-27 09:11:16.016+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf32-7df1-8544-f2f135d931cc', NULL, 'Rent', 'வாடகை', 'RENT', NULL, NULL, 7, 'ACTIVE', '2026-10-27 09:11:16.018+00', NULL, '2026-10-27 09:11:16.018+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf34-7c43-9c65-acc507932072', NULL, 'Electricity', 'மின்சாரம்', 'ELECTRICITY', NULL, NULL, 8, 'ACTIVE', '2026-10-27 09:11:16.02+00', NULL, '2026-10-27 09:11:16.02+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf36-7e92-bd8f-6ad4c88959fc', NULL, 'Gas', 'எரிவாயு', 'OTHER', NULL, NULL, 9, 'ACTIVE', '2026-10-27 09:11:16.022+00', NULL, '2026-10-27 09:11:16.022+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf37-7400-9dcb-ae33c7c923b9', NULL, 'Transport', 'போக்குவரத்து', 'TRANSPORT', NULL, NULL, 10, 'ACTIVE', '2026-10-27 09:11:16.024+00', NULL, '2026-10-27 09:11:16.024+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf39-7462-9665-a72ed76823b2', NULL, 'Maintenance', 'பராமரிப்பு', 'MAINTENANCE', NULL, NULL, 11, 'ACTIVE', '2026-10-27 09:11:16.026+00', NULL, '2026-10-27 09:11:16.026+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf3b-78e2-96af-a1c82fdb0fcb', NULL, 'Repairs', 'பழுதுபார்ப்பு', 'MAINTENANCE', NULL, NULL, 12, 'ACTIVE', '2026-10-27 09:11:16.028+00', NULL, '2026-10-27 09:11:16.028+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf3d-7be2-a263-db2971b14c46', NULL, 'Cleaning', 'சுத்தம்', 'MAINTENANCE', NULL, NULL, 13, 'ACTIVE', '2026-10-27 09:11:16.03+00', NULL, '2026-10-27 09:11:16.03+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf3f-7f31-8e92-0506c0f4e30b', NULL, 'Cooking oil', 'சமையல் எண்ணெய்', 'RAW_MATERIAL', NULL, NULL, 14, 'ACTIVE', '2026-10-27 09:11:16.032+00', NULL, '2026-10-27 09:11:16.032+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf42-7023-b23b-f1834d14ccc7', NULL, 'Packaging', 'பேக்கிங்', 'RAW_MATERIAL', NULL, NULL, 15, 'ACTIVE', '2026-10-27 09:11:16.034+00', NULL, '2026-10-27 09:11:16.034+00', NULL, 1, true, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 'Miscellaneous', 'இதர', 'OTHER', NULL, NULL, 16, 'ACTIVE', '2026-10-27 09:11:16.037+00', NULL, '2026-10-27 09:11:16.037+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf48-7ff1-b3d7-c6b3d3f8a5ce', '01a17ca0-cf20-7461-843b-92f2cfe8e7d0', 'Cow milk', 'பசும்பால்', 'RAW_MATERIAL', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.041+00', NULL, '2026-10-27 09:11:16.041+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf4b-75d3-a4d3-2eb838f1ad48', '01a17ca0-cf20-7461-843b-92f2cfe8e7d0', 'Buffalo milk', 'எருமைப்பால்', 'RAW_MATERIAL', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.044+00', NULL, '2026-10-27 09:11:16.044+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf4f-75f2-ad61-6dde5da0eccd', '01a17ca0-cf2d-75f2-aa2b-fe6cec0f7dde', 'Monthly salary', 'மாதச் சம்பளம்', 'SALARY', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.047+00', NULL, '2026-10-27 09:11:16.047+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf51-7843-aa72-21f525c2d6e3', '01a17ca0-cf2d-75f2-aa2b-fe6cec0f7dde', 'Daily wages', 'தினக்கூலி', 'SALARY', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.049+00', NULL, '2026-10-27 09:11:16.049+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf53-76c0-9d16-7dc78dc9bff2', '01a17ca0-cf2d-75f2-aa2b-fe6cec0f7dde', 'Overtime', 'கூடுதல் நேரம்', 'SALARY', NULL, NULL, 2, 'ACTIVE', '2026-10-27 09:11:16.051+00', NULL, '2026-10-27 09:11:16.051+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf56-7891-9a05-76caa975baf2', '01a17ca0-cf36-7e92-bd8f-6ad4c88959fc', 'Commercial cylinder', 'வணிக சிலிண்டர்', 'OTHER', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.054+00', NULL, '2026-10-27 09:11:16.054+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf58-7122-8201-695e42f3a356', '01a17ca0-cf36-7e92-bd8f-6ad4c88959fc', 'Cylinder delivery', 'சிலிண்டர் விநியோகம்', 'OTHER', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.056+00', NULL, '2026-10-27 09:11:16.056+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf5c-7b01-9c70-713e9f6945c4', '01a17ca0-cf34-7c43-9c65-acc507932072', 'Shop meter bill', 'கடை மின் கட்டணம்', 'ELECTRICITY', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.06+00', NULL, '2026-10-27 09:11:16.06+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
 	('01a0ded1-e4ac-77a0-845e-3b89f30e17a7', NULL, 'Cleaning', 'சுத்தம்', 'MAINTENANCE', NULL, NULL, 13, 'ACTIVE', '2026-09-26 17:44:52.653+00', NULL, '2026-09-26 17:44:52.653+00', NULL, 1, false, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a17ca0-cf5e-7942-813e-29a164834467', '01a17ca0-cf34-7c43-9c65-acc507932072', 'Generator fuel', 'ஜெனரேட்டர் எரிபொருள்', 'ELECTRICITY', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.062+00', NULL, '2026-10-27 09:11:16.062+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf60-7760-ac33-f428fd659e42', '01a17ca0-cf37-7400-9dcb-ae33c7c923b9', 'Fuel', 'எரிபொருள்', 'TRANSPORT', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.065+00', NULL, '2026-10-27 09:11:16.065+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf62-7940-9f5a-8124a09cc5fe', '01a17ca0-cf37-7400-9dcb-ae33c7c923b9', 'Delivery charges', 'விநியோகக் கட்டணம்', 'TRANSPORT', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.067+00', NULL, '2026-10-27 09:11:16.067+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf64-7410-aa32-f15dbe175b2a', '01a17ca0-cf37-7400-9dcb-ae33c7c923b9', 'Vehicle hire', 'வாகன வாடகை', 'TRANSPORT', NULL, NULL, 2, 'ACTIVE', '2026-10-27 09:11:16.069+00', NULL, '2026-10-27 09:11:16.069+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf67-7fc2-9b37-5d111bc9901e', '01a17ca0-cf39-7462-9665-a72ed76823b2', 'Electrical work', 'மின் பணி', 'MAINTENANCE', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.072+00', NULL, '2026-10-27 09:11:16.072+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf69-7581-b0ca-44f782ded383', '01a17ca0-cf39-7462-9665-a72ed76823b2', 'Plumbing', 'குழாய் பணி', 'MAINTENANCE', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.073+00', NULL, '2026-10-27 09:11:16.073+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf6b-7fc1-a605-6d8264ff62a8', '01a17ca0-cf39-7462-9665-a72ed76823b2', 'Equipment service', 'கருவி சேவை', 'MAINTENANCE', NULL, NULL, 2, 'ACTIVE', '2026-10-27 09:11:16.075+00', NULL, '2026-10-27 09:11:16.075+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf6f-7843-9eed-2d7e85c857c0', '01a17ca0-cf3d-7be2-a263-db2971b14c46', 'Housekeeping supplies', 'சுத்தம் செய்யும் பொருட்கள்', 'MAINTENANCE', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.08+00', NULL, '2026-10-27 09:11:16.08+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf74-73e1-b76b-6eab3c4b5ab4', '01a17ca0-cf3d-7be2-a263-db2971b14c46', 'Pest control', 'பூச்சிக் கட்டுப்பாடு', 'MAINTENANCE', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.085+00', NULL, '2026-10-27 09:11:16.085+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf79-7d11-9a3d-3203399ee091', '01a17ca0-cf42-7023-b23b-f1834d14ccc7', 'Paper cups', 'காகிதக் குவளைகள்', 'RAW_MATERIAL', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.09+00', NULL, '2026-10-27 09:11:16.09+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf7b-7231-b47a-e89f0e61d838', '01a17ca0-cf42-7023-b23b-f1834d14ccc7', 'Carry bags', 'கைப்பைகள்', 'RAW_MATERIAL', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.092+00', NULL, '2026-10-27 09:11:16.092+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf7e-7ba3-bfac-98b55071b88c', '01a17ca0-cf42-7023-b23b-f1834d14ccc7', 'Parcel boxes', 'பார்சல் பெட்டிகள்', 'RAW_MATERIAL', NULL, NULL, 2, 'ACTIVE', '2026-10-27 09:11:16.094+00', NULL, '2026-10-27 09:11:16.094+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf81-7320-beb3-25079f4ac918', '01a17ca0-cf3b-78e2-96af-a1c82fdb0fcb', 'Furniture', 'மரச்சாமான்', 'MAINTENANCE', NULL, NULL, 0, 'ACTIVE', '2026-10-27 09:11:16.098+00', NULL, '2026-10-27 09:11:16.098+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf83-7140-bfb7-fd9de3d9e92a', '01a17ca0-cf3b-78e2-96af-a1c82fdb0fcb', 'Appliances', 'மின்சாதனங்கள்', 'MAINTENANCE', NULL, NULL, 1, 'ACTIVE', '2026-10-27 09:11:16.099+00', NULL, '2026-10-27 09:11:16.099+00', NULL, 1, false, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
 	('01a0ded1-e496-7ed2-8f9e-2370ccd39911', NULL, 'Electricity', 'மின்சாரம்', 'ELECTRICITY', NULL, NULL, 8, 'ACTIVE', '2026-09-26 17:44:52.631+00', NULL, '2026-09-26 17:44:52.631+00', NULL, 1, false, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e4a3-7a50-927f-0c865ca80a73', NULL, 'Maintenance', 'பராமரிப்பு', 'MAINTENANCE', NULL, NULL, 11, 'ACTIVE', '2026-09-26 17:44:52.644+00', NULL, '2026-09-26 17:44:52.644+00', NULL, 1, false, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e4ba-7550-8cb0-c34e73a449d9', NULL, 'Miscellaneous', 'இதர', 'OTHER', NULL, NULL, 16, 'ACTIVE', '2026-09-26 17:44:52.666+00', NULL, '2026-09-26 17:44:52.666+00', NULL, 1, false, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
@@ -4291,30 +4202,7 @@ INSERT INTO public.expenses (id, code, location_id, business_date, category_id, 
 	('01a16a4f-50b1-78d3-a1f7-a93c92eeb4ca', 'EXP-BR007-26-001149', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-23', '01a0ded1-e484-7840-9e88-0bea4ab5ac8f', NULL, 1659.00, 'CASH', NULL, NULL, NULL, NULL, NULL, NULL, 'APPROVED', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-10-23 00:00:00+00', NULL, '01a0e700-b8be-7070-889b-8f311e5bc6af', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-23 19:49:05.33+00', NULL, '2026-10-23 19:49:05.33+00', NULL, 1),
 	('01a16a4f-50c3-7a83-aa43-796b86576e6b', 'EXP-BR007-26-001150', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-23', '01a0ded1-e4a8-7093-922a-ac5bc12586b3', NULL, 2191.00, 'CASH', NULL, NULL, NULL, NULL, NULL, NULL, 'APPROVED', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-10-23 00:00:00+00', NULL, '01a0e700-b8be-7070-889b-8f311e5bc6af', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-23 19:49:05.347+00', NULL, '2026-10-23 19:49:05.347+00', NULL, 1),
 	('01a16a4f-5140-77d3-a907-09de194572ab', 'EXP-BR007-26-001151', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-24', '01a0ded1-e476-7e12-84d6-dcf899564b52', NULL, 1788.00, 'CASH', NULL, NULL, NULL, NULL, NULL, NULL, 'APPROVED', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-10-24 00:00:00+00', NULL, '01a0e700-b8be-7070-889b-8f311e5bc6af', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-23 19:49:05.472+00', NULL, '2026-10-23 19:49:05.472+00', NULL, 1),
-	('01a16a4f-5153-76c0-aee8-98dff4a5222f', 'EXP-BR007-26-001152', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-24', '01a0ded1-e4a8-7093-922a-ac5bc12586b3', NULL, 474.00, 'CASH', NULL, NULL, NULL, NULL, NULL, NULL, 'APPROVED', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-10-24 00:00:00+00', NULL, '01a0e700-b8be-7070-889b-8f311e5bc6af', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-23 19:49:05.491+00', NULL, '2026-10-23 19:49:05.491+00', NULL, 1),
-	('01a17ca2-50c4-77c1-9a13-1adb129266a4', 'EXP-BR001-26-001177', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf20-7461-843b-92f2cfe8e7d0', NULL, 2100.00, 'CASH', NULL, NULL, 'Silk Milk (ledger: Silk Mill) [Import 2025-10-19|EXP-001]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.724+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.724+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50c9-7363-8b34-2926728cce78', 'EXP-BR001-26-001178', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf20-7461-843b-92f2cfe8e7d0', NULL, 1450.00, 'CASH', NULL, NULL, 'Dh. Milk (ledger: Dh. Mill) [Import 2025-10-19|EXP-002]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.729+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.729+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50cd-7ba2-9c48-248d5d926a8b', 'EXP-BR001-26-001179', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf20-7461-843b-92f2cfe8e7d0', NULL, 860.00, 'CASH', NULL, NULL, 'J. Milk (ledger: J. Mill) [Import 2025-10-19|EXP-003]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.734+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.734+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50d1-7442-9ed9-82551ea7d6aa', 'EXP-BR001-26-001180', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf20-7461-843b-92f2cfe8e7d0', NULL, 4100.00, 'CASH', NULL, NULL, 'Jaila Milk (ledger: Jaila Mill) [Import 2025-10-19|EXP-004]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.738+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.738+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50d4-7f42-badb-125a85be048b', 'EXP-BR001-26-001181', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 650.00, 'CASH', NULL, NULL, 'Food (ledger: Food) [Import 2025-10-19|EXP-005]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.741+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.741+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50d8-7b92-99c1-6f6d00eefa82', 'EXP-BR001-26-001182', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 120.00, 'CASH', NULL, NULL, 'Water (ledger: Water) [Import 2025-10-19|EXP-006]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.745+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.745+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50dc-7eb0-9b85-392712af8797', 'EXP-BR001-26-001183', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 500.00, 'CASH', NULL, NULL, 'Cutlet (ledger: Cutlet) [Import 2025-10-19|EXP-007]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.748+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.748+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50e0-7633-b180-cbe636a2859b', 'EXP-BR001-26-001184', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 1935.00, 'CASH', NULL, NULL, 'Nuts (ledger: Nuts) [Import 2025-10-19|EXP-008]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.752+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.752+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50e3-7481-a2e4-c947444218db', 'EXP-BR001-26-001185', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 2100.00, 'CASH', NULL, NULL, 'Samsa (ledger: Samsa) [Import 2025-10-19|EXP-009]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.755+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.755+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50e6-7b83-8af7-e7fe6749d537', 'EXP-BR001-26-001186', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 2000.00, 'CASH', NULL, NULL, 'G.J (unclear) (ledger: G.J) [Import 2025-10-19|EXP-010]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.758+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.758+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50e9-7350-943f-737d4da04065', 'EXP-BR001-26-001187', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 6200.00, 'CASH', NULL, NULL, 'C-gold (unclear) (ledger: C-gold) [Import 2025-10-19|EXP-011]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.762+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.762+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50ed-7f03-9798-6a66c2bad794', 'EXP-BR001-26-001188', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 2412.00, 'CASH', NULL, NULL, 'D-Snack (ledger: D-Snack) [Import 2025-10-19|EXP-012]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.765+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.765+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50f1-71c3-ae82-b713043e9ebb', 'EXP-BR001-26-001189', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 357.00, 'CASH', NULL, NULL, 'Bakery (ledger: Bakery) [Import 2025-10-19|EXP-013]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.77+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.77+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50f4-78a1-99a8-59edc9c0e861', 'EXP-BR001-26-001190', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 150.00, 'CASH', NULL, NULL, 'Boli (ledger: Boli) [Import 2025-10-19|EXP-014]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.773+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.773+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50f7-7620-a3a0-632713eaf557', 'EXP-BR001-26-001191', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 500.00, 'CASH', NULL, NULL, 'Sundal (ledger: Sundal) [Import 2025-10-19|EXP-015]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.776+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.776+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50fa-7cf0-9d98-2d5ddcd3c280', 'EXP-BR001-26-001192', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 400.00, 'CASH', NULL, NULL, 'Chocolate? (unclear) (ledger: Chocke) [Import 2025-10-19|EXP-016]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.779+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.779+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-50fd-75c3-99e1-45a5f8de4d94', 'EXP-BR001-26-001193', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 100.00, 'CASH', NULL, NULL, 'JOP (unclear) (ledger: JOP) [Import 2025-10-19|EXP-017]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.782+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.782+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5101-78e3-a0d3-491d709b0adc', 'EXP-BR001-26-001194', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 2707.00, 'CASH', NULL, NULL, 'Coca-Cola (ledger: Coke Cola) [Import 2025-10-19|EXP-018]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.786+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.786+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5104-7741-8295-e90131d0d918', 'EXP-BR001-26-001195', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 1050.00, 'CASH', NULL, NULL, 'Aquamar (bottled water?) (ledger: Aquamar) [Import 2025-10-19|EXP-019]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.789+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.789+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5107-74f3-b3f3-bc91b152c3ed', 'EXP-BR001-26-001196', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 40.00, 'CASH', NULL, NULL, 'Soup (ledger: Soup) [Import 2025-10-19|EXP-020]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.792+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.792+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-510b-7a50-8ff6-66eda0f8c2be', 'EXP-BR001-26-001197', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf2a-7d81-89d8-59a3039fe2d1', NULL, 400.00, 'CASH', NULL, NULL, 'Paal Kova (ledger: Paal Kova) [Import 2025-10-19|EXP-021]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.796+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.796+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5110-79e0-9585-09cdcee94e88', 'EXP-BR001-26-001198', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 2000.00, 'CASH', NULL, NULL, 'P.M.V (unclear) (ledger: P.M.V) [Import 2025-10-19|EXP-022]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.8+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.8+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1),
-	('01a17ca2-5114-7fd3-b9e6-abd0d84cc456', 'EXP-BR001-26-001199', '01a17ca2-507e-7731-b107-f07d9f626d44', '2025-10-19', '01a17ca0-cf44-7e00-b044-2ff11fc3e09e', NULL, 240.00, 'CASH', NULL, NULL, 'C-Yoll (unclear) (ledger: C-Yoll) [Import 2025-10-19|EXP-023]', NULL, NULL, NULL, 'SUBMITTED', NULL, NULL, NULL, '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-27 09:12:54.804+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.804+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1);
+	('01a16a4f-5153-76c0-aee8-98dff4a5222f', 'EXP-BR007-26-001152', '01a0dfbe-2645-76b2-8cb2-14eadd35154f', '2026-10-24', '01a0ded1-e4a8-7093-922a-ac5bc12586b3', NULL, 474.00, 'CASH', NULL, NULL, NULL, NULL, NULL, NULL, 'APPROVED', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-10-24 00:00:00+00', NULL, '01a0e700-b8be-7070-889b-8f311e5bc6af', 'ACTIVE', NULL, NULL, NULL, 'SYSTEM', '2026-10-23 19:49:05.491+00', NULL, '2026-10-23 19:49:05.491+00', NULL, 1);
 
 
 ALTER TABLE public.expenses ENABLE TRIGGER ALL;
@@ -6225,9 +6113,7 @@ INSERT INTO public.locations (id, code, name, type, address, phone, manager_user
 	('01a0ded1-e415-7ee0-ba16-a1ad2ce54248', 'BR004', 'Adyar', 'BRANCH', NULL, NULL, '01a0ded1-e8a9-7502-a92a-7834134c9634', 2000.00, true, '2026-08-12', NULL, NULL, 'ACTIVE', '2026-09-26 17:44:52.501+00', NULL, '2026-09-28 07:52:59.344+00', NULL, 1, 'அடையாறு', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e41d-74b3-8c29-57ecf8473596', 'BR005', 'Tambaram', 'BRANCH', NULL, NULL, '01a0ded1-e8b5-7043-86d0-0be9de519d62', 2000.00, true, '2026-08-12', NULL, NULL, 'ACTIVE', '2026-09-26 17:44:52.51+00', NULL, '2026-09-28 07:52:59.347+00', NULL, 1, 'தாம்பரம்', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e423-7d90-8248-670567b63c80', 'BR006', 'Porur', 'BRANCH', NULL, NULL, '01a0ded1-e8c4-77e2-9416-167bcbdd9538', 2000.00, true, '2026-08-12', NULL, NULL, 'ACTIVE', '2026-09-26 17:44:52.515+00', NULL, '2026-09-28 07:52:59.349+00', NULL, 1, 'போரூர்', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0dfbe-2645-76b2-8cb2-14eadd35154f', 'BR007', 'Chrompet', 'BRANCH', '', '', '01a0e700-b8be-7070-889b-8f311e5bc6af', 2000.00, true, NULL, 7000.00, '', 'ACTIVE', '2026-09-26 22:02:55.939+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-09-28 07:52:59.354+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 2, 'குரோம்பேட்டை', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a17ca0-cf8b-78c0-a3a7-e087caa32cfd', 'HO001', 'Head Office', 'CENTRAL_OFFICE', '12 Main Road, Coimbatore', NULL, NULL, 0.00, true, NULL, NULL, NULL, 'ACTIVE', '2026-10-27 09:11:16.108+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:11:16.108+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1, NULL, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca2-507e-7731-b107-f07d9f626d44', 'BR001', 'Gandhipuram', 'BRANCH', '45 Cross Cut Rd, Coimbatore', NULL, '01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', 2000.00, true, '2025-10-19', NULL, NULL, 'ACTIVE', '2026-10-27 09:12:54.655+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:54.713+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1, NULL, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1');
+	('01a0dfbe-2645-76b2-8cb2-14eadd35154f', 'BR007', 'Chrompet', 'BRANCH', '', '', '01a0e700-b8be-7070-889b-8f311e5bc6af', 2000.00, true, NULL, 7000.00, '', 'ACTIVE', '2026-09-26 22:02:55.939+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-09-28 07:52:59.354+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 2, 'குரோம்பேட்டை', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5');
 
 
 ALTER TABLE public.locations ENABLE TRIGGER ALL;
@@ -6251,94 +6137,6 @@ ALTER TABLE public.notifications DISABLE TRIGGER ALL;
 
 
 ALTER TABLE public.notifications ENABLE TRIGGER ALL;
-
---
--- Data for Name: otp_codes; Type: TABLE DATA; Schema: public; Owner: -
---
-
-ALTER TABLE public.otp_codes DISABLE TRIGGER ALL;
-
-INSERT INTO public.otp_codes (id, mobile, code_hash, password_ok, attempts, expires_at, consumed_at, ip, created_at) VALUES
-	('01a17c9e-f0fe-7170-8bfa-d82a3128949c', '9000000012', '8a3e225529cfad78a1cd94f939407aa9fe86903ca37fad403e5d37d5babd9f36', false, 1, '2026-10-27 09:19:13.596+00', '2026-10-27 09:09:13.762+00', '::1', '2026-10-27 09:09:13.599+00'),
-	('01a17c9e-f399-7da0-898f-5c956ef109c2', '9000000001', '8f5c6310f8f408bd1761bec6d9d9a0456cbd2a9213bbb7116442233b1c94bab4', true, 0, '2026-10-27 09:19:14.264+00', '2026-10-27 09:09:14.414+00', '::1', '2026-10-27 09:09:14.265+00'),
-	('01a17ca0-d20d-72a2-8761-96d8a08ff530', '9111111111', '2435a12e7386d56273bf2ad9e9e4b4d8e5372a6aa6509acfd2b013e951749113', true, 0, '2026-10-27 09:21:16.749+00', '2026-10-27 09:11:16.827+00', '::1', '2026-10-27 09:11:16.75+00'),
-	('01a17ca2-5400-7260-b0a4-788f8410859c', '9333333333', 'd19ded93fbb4a8197455c72449b7ec17cc7f9d944a651b78e310a83a7b596cb9', false, 0, '2026-10-27 09:22:55.552+00', '2026-10-27 09:12:55.64+00', '::1', '2026-10-27 09:12:55.553+00'),
-	('01a17eab-8e05-76e1-943f-95a521c48748', '9000000001', '8f5c6310f8f408bd1761bec6d9d9a0456cbd2a9213bbb7116442233b1c94bab4', true, 0, '2026-10-27 18:52:14.658+00', '2026-10-27 18:42:26.975+00', '::1', '2026-10-27 18:42:14.659+00');
-
-
-ALTER TABLE public.otp_codes ENABLE TRIGGER ALL;
-
---
--- Data for Name: permissions; Type: TABLE DATA; Schema: public; Owner: -
---
-
-ALTER TABLE public.permissions DISABLE TRIGGER ALL;
-
-INSERT INTO public.permissions (id, code, module, description) VALUES
-	('01a0ded1-e181-7f23-825d-e18f2188cf79', 'user:manage', 'user', NULL),
-	('01a0ded1-e1ba-7860-a273-006d8e063aa8', 'role:manage', 'role', NULL),
-	('01a0ded1-e1c4-7240-92b3-fa80bd6502a5', 'location:view', 'location', NULL),
-	('01a0ded1-e1cb-7341-90eb-83d535fe2f03', 'location:manage', 'location', NULL),
-	('01a0ded1-e1d4-7082-8eb4-27d355faabc3', 'settings:manage', 'settings', NULL),
-	('01a0ded1-e1db-74d2-adb9-adf56ab53362', 'sales:view', 'sales', NULL),
-	('01a0ded1-e1e2-7ab2-aabc-b50c1a1284f5', 'sales:enter', 'sales', NULL),
-	('01a0ded1-e1e9-71a3-93c1-8e6152147fdc', 'cash:view', 'cash', NULL),
-	('01a0ded1-e1f0-70b2-8c88-20f087bd713e', 'cash:enter', 'cash', NULL),
-	('01a0ded1-e1f6-7181-846a-9197a41ac162', 'cash:approve', 'cash', NULL),
-	('01a0ded1-e1fd-71d3-9086-6a3feecdd14a', 'closing:view', 'closing', NULL),
-	('01a0ded1-e205-7600-ad46-8789e4703104', 'closing:submit', 'closing', NULL),
-	('01a0ded1-e20c-7fd0-b6a7-88cfcbb08e45', 'closing:approve', 'closing', NULL),
-	('01a0ded1-e213-7360-b61f-c4d9a309be4c', 'closing:reopen', 'closing', NULL),
-	('01a0ded1-e219-79d3-a4c3-770fd5fd42b8', 'expense:view', 'expense', NULL),
-	('01a0ded1-e220-7b21-89c1-509b217d7177', 'expense:create', 'expense', NULL),
-	('01a0ded1-e22a-7e60-afb2-44b65da8fef8', 'expense:edit', 'expense', NULL),
-	('01a0ded1-e236-7453-bbb1-47f1d7d809f6', 'expense:approve', 'expense', NULL),
-	('01a0ded1-e23d-7f71-a102-d4cf1e87d532', 'expense:reverse', 'expense', NULL),
-	('01a0ded1-e244-7ea1-8950-3a7810035478', 'purchase:view', 'purchase', NULL),
-	('01a0ded1-e24a-7993-9318-a4616c6864ee', 'purchase:create', 'purchase', NULL),
-	('01a0ded1-e251-77f0-956c-a6a12de2b1dc', 'purchase:approve', 'purchase', NULL),
-	('01a0ded1-e257-72a0-a294-9b7a3295afde', 'supplier:view', 'supplier', NULL),
-	('01a0ded1-e25d-7e22-a72c-790fa07a5235', 'supplier:manage', 'supplier', NULL),
-	('01a0ded1-e264-7491-9b60-67cb38041b19', 'supplier:pay', 'supplier', NULL),
-	('01a0ded1-e26b-7293-9f06-cfd2238dfc71', 'item:manage', 'item', NULL),
-	('01a0ded1-e272-7c22-a0f6-23234be3a41d', 'stock:view', 'stock', NULL),
-	('01a0ded1-e279-7230-b5fc-7f6fd3ff56cb', 'transfer:view', 'transfer', NULL),
-	('01a0ded1-e280-7ea0-97be-346bc6e92ec2', 'transfer:create', 'transfer', NULL),
-	('01a0ded1-e286-7a51-85a5-cf6f60ff692c', 'transfer:dispatch', 'transfer', NULL),
-	('01a0ded1-e28b-78b2-81aa-86e37710d9ae', 'transfer:approve', 'transfer', NULL),
-	('01a0ded1-e291-7082-af67-e97a582917a8', 'transfer:receive', 'transfer', NULL),
-	('01a0ded1-e298-7413-9aa5-2d794af89056', 'count:view', 'count', NULL),
-	('01a0ded1-e29d-7a93-88a1-2968830a7ed0', 'count:enter', 'count', NULL),
-	('01a0ded1-e2a3-7783-99a4-8bfa96debd28', 'count:submit', 'count', NULL),
-	('01a0ded1-e2a9-77d3-a521-ca522cb277eb', 'count:approve', 'count', NULL),
-	('01a0ded1-e2af-7512-95fe-b37495b1ec8f', 'wastage:view', 'wastage', NULL),
-	('01a0ded1-e2b9-7db3-bb08-8636e86e9146', 'wastage:create', 'wastage', NULL),
-	('01a0ded1-e2c1-71b0-8952-d3e8984a0e29', 'wastage:approve', 'wastage', NULL),
-	('01a0ded1-e2c7-7631-94fe-a14df2f59d4b', 'recipe:view', 'recipe', NULL),
-	('01a0ded1-e2ce-7802-b790-7e1f8de06d5e', 'recipe:manage', 'recipe', NULL),
-	('01a0ded1-e2d3-7760-a637-091ef23ce832', 'staff:view', 'staff', NULL),
-	('01a0ded1-e2d9-7bb3-9af0-98cd3f48509c', 'staff:manage', 'staff', NULL),
-	('01a0ded1-e2de-7db0-b6ff-f4ab3587b37b', 'attendance:view', 'attendance', NULL),
-	('01a0ded1-e2e4-7843-ab40-ad77e0c9781f', 'attendance:mark', 'attendance', NULL),
-	('01a0ded1-e2e9-7671-9d65-d550bf8b9f97', 'salary:manage', 'salary', NULL),
-	('01a0ded1-e2f2-76e3-866d-492b6a93970a', 'salary:approve', 'salary', NULL),
-	('01a0ded1-e2fe-7622-9d14-f835f7cb3dab', 'salary:pay', 'salary', NULL),
-	('01a0ded1-e30a-7821-aeb0-281f7246993e', 'advance:request', 'advance', NULL),
-	('01a0ded1-e316-7701-98a0-3906586370c5', 'advance:manager_approve', 'advance', NULL),
-	('01a0ded1-e321-7e90-8c6b-cf9d0bb82a90', 'advance:approve', 'advance', NULL),
-	('01a0ded1-e32d-7b42-9265-ec0228db43ff', 'advance:pay', 'advance', NULL),
-	('01a0ded1-e339-7331-b71f-6a452ab19605', 'dashboard:view', 'dashboard', NULL),
-	('01a0ded1-e343-7ea2-9f89-40ca64179bda', 'alert:view', 'alert', NULL),
-	('01a0ded1-e34d-7770-ab19-3010ef8938a8', 'alert:manage', 'alert', NULL),
-	('01a0ded1-e356-7150-9cd1-64741c8f4f70', 'pl:view', 'pl', NULL),
-	('01a0ded1-e35f-77b2-b0fa-983ba9c6cb97', 'report:view', 'report', NULL),
-	('01a0ded1-e36b-7a50-acf9-c1d0f45f528e', 'report:export', 'report', NULL),
-	('01a0ded1-e378-7960-91d3-b63fd3d99866', 'audit:view', 'audit', NULL),
-	('01a0e700-b625-74a3-85c5-71d061671539', 'advance:view', 'advance', NULL),
-	('a26fa0f7-0755-4095-bb93-de154e4be2fa', 'company:manage', 'company', 'Create and manage companies (Super Admin only)');
-
-
-ALTER TABLE public.permissions ENABLE TRIGGER ALL;
 
 --
 -- Data for Name: profit_loss; Type: TABLE DATA; Schema: public; Owner: -
@@ -6740,17 +6538,11 @@ ALTER TABLE public.report_exports ENABLE TRIGGER ALL;
 ALTER TABLE public.roles DISABLE TRIGGER ALL;
 
 INSERT INTO public.roles (id, code, name, is_system, scope_mode, status, created_at, created_by, updated_at, updated_by, version, company_id) VALUES
-	('3cca9fad-d27d-407a-abd7-6bb1cd964940', 'SUPER_ADMIN', 'Super Admin', true, 'ALL', 'ACTIVE', '2026-10-27 08:47:16.98302+00', NULL, '2026-10-27 08:47:16.98302+00', NULL, 1, NULL),
 	('01a0ded1-e3a3-7513-a509-6a4bea31bc50', 'ACCOUNTANT', 'Accountant', true, 'ALL', 'ACTIVE', '2026-09-26 17:44:52.388+00', NULL, '2026-09-28 07:52:58.743+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf', 'BRANCH_MANAGER', 'Branch Manager', true, 'ASSIGNED', 'ACTIVE', '2026-09-26 17:44:52.414+00', NULL, '2026-09-28 07:52:58.761+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e3c9-7c83-abbc-b530235dd237', 'STAFF', 'Staff', true, 'ASSIGNED', 'ACTIVE', '2026-09-26 17:44:52.425+00', NULL, '2026-09-28 07:52:58.767+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('01a0ded1-e386-7612-b7d7-366fc685af1c', 'ADMIN', 'Admin', true, 'ALL', 'ACTIVE', '2026-09-26 17:44:52.358+00', NULL, '2026-09-28 07:52:58.7+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e3af-7243-b3ce-ee365dc0b2cb', 'STOCK_MANAGER', 'Stock Manager', true, 'ASSIGNED', 'ACTIVE', '2026-09-26 17:44:52.399+00', NULL, '2026-09-28 07:52:58.751+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', 'ADMIN', 'Admin', true, 'ALL', 'ACTIVE', '2026-10-27 09:11:15.948+00', NULL, '2026-10-27 09:11:15.948+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', 'ACCOUNTANT', 'Accountant', true, 'ALL', 'ACTIVE', '2026-10-27 09:11:15.955+00', NULL, '2026-10-27 09:11:15.955+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', 'STOCK_MANAGER', 'Stock Manager', true, 'ASSIGNED', 'ACTIVE', '2026-10-27 09:11:15.96+00', NULL, '2026-10-27 09:11:15.96+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', 'BRANCH_MANAGER', 'Branch Manager', true, 'ASSIGNED', 'ACTIVE', '2026-10-27 09:11:15.965+00', NULL, '2026-10-27 09:11:15.965+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', 'STAFF', 'Staff', true, 'ASSIGNED', 'ACTIVE', '2026-10-27 09:11:15.968+00', NULL, '2026-10-27 09:11:15.968+00', NULL, 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1');
+	('01a0ded1-e3af-7243-b3ce-ee365dc0b2cb', 'STOCK_MANAGER', 'Stock Manager', true, 'ASSIGNED', 'ACTIVE', '2026-09-26 17:44:52.399+00', NULL, '2026-09-28 07:52:58.751+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5');
 
 
 ALTER TABLE public.roles ENABLE TRIGGER ALL;
@@ -6762,48 +6554,6 @@ ALTER TABLE public.roles ENABLE TRIGGER ALL;
 ALTER TABLE public.role_permissions DISABLE TRIGGER ALL;
 
 INSERT INTO public.role_permissions (role_id, permission_id) VALUES
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e343-7ea2-9f89-40ca64179bda'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e35f-77b2-b0fa-983ba9c6cb97'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e36b-7a50-acf9-c1d0f45f528e'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e378-7960-91d3-b63fd3d99866'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e1c4-7240-92b3-fa80bd6502a5'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e339-7331-b71f-6a452ab19605'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e1db-74d2-adb9-adf56ab53362'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e1e2-7ab2-aabc-b50c1a1284f5'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e1e9-71a3-93c1-8e6152147fdc'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e1f0-70b2-8c88-20f087bd713e'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e1fd-71d3-9086-6a3feecdd14a'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e205-7600-ad46-8789e4703104'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e219-79d3-a4c3-770fd5fd42b8'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e220-7b21-89c1-509b217d7177'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e22a-7e60-afb2-44b65da8fef8'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e244-7ea1-8950-3a7810035478'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e24a-7993-9318-a4616c6864ee'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e257-72a0-a294-9b7a3295afde'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e272-7c22-a0f6-23234be3a41d'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e279-7230-b5fc-7f6fd3ff56cb'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e291-7082-af67-e97a582917a8'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e298-7413-9aa5-2d794af89056'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e29d-7a93-88a1-2968830a7ed0'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e2a3-7783-99a4-8bfa96debd28'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e2af-7512-95fe-b37495b1ec8f'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e2b9-7db3-bb08-8636e86e9146'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e2d3-7760-a637-091ef23ce832'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e2de-7db0-b6ff-f4ab3587b37b'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e2e4-7843-ab40-ad77e0c9781f'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0e700-b625-74a3-85c5-71d061671539'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e30a-7821-aeb0-281f7246993e'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e316-7701-98a0-3906586370c5'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e343-7ea2-9f89-40ca64179bda'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e35f-77b2-b0fa-983ba9c6cb97'),
-	('01a17ca0-cefc-7131-b07c-a94eda402073', '01a0ded1-e36b-7a50-acf9-c1d0f45f528e'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', '01a0ded1-e272-7c22-a0f6-23234be3a41d'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', '01a0ded1-e29d-7a93-88a1-2968830a7ed0'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', '01a0ded1-e2b9-7db3-bb08-8636e86e9146'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', '01a0ded1-e2e4-7843-ab40-ad77e0c9781f'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', '01a0e700-b625-74a3-85c5-71d061671539'),
-	('01a17ca0-cf00-7840-a047-11ebc622357b', '01a0ded1-e30a-7821-aeb0-281f7246993e'),
-	('3cca9fad-d27d-407a-abd7-6bb1cd964940', 'a26fa0f7-0755-4095-bb93-de154e4be2fa'),
 	('01a0ded1-e386-7612-b7d7-366fc685af1c', '01a0ded1-e181-7f23-825d-e18f2188cf79'),
 	('01a0ded1-e386-7612-b7d7-366fc685af1c', '01a0ded1-e1ba-7860-a273-006d8e063aa8'),
 	('01a0ded1-e386-7612-b7d7-366fc685af1c', '01a0ded1-e1c4-7240-92b3-fa80bd6502a5'),
@@ -6954,118 +6704,7 @@ INSERT INTO public.role_permissions (role_id, permission_id) VALUES
 	('01a0ded1-e3c9-7c83-abbc-b530235dd237', '01a0ded1-e2b9-7db3-bb08-8636e86e9146'),
 	('01a0ded1-e3c9-7c83-abbc-b530235dd237', '01a0ded1-e2e4-7843-ab40-ad77e0c9781f'),
 	('01a0ded1-e3c9-7c83-abbc-b530235dd237', '01a0e700-b625-74a3-85c5-71d061671539'),
-	('01a0ded1-e3c9-7c83-abbc-b530235dd237', '01a0ded1-e30a-7821-aeb0-281f7246993e'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e181-7f23-825d-e18f2188cf79'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1ba-7860-a273-006d8e063aa8'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1c4-7240-92b3-fa80bd6502a5'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1cb-7341-90eb-83d535fe2f03'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1d4-7082-8eb4-27d355faabc3'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1db-74d2-adb9-adf56ab53362'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1e2-7ab2-aabc-b50c1a1284f5');
-INSERT INTO public.role_permissions (role_id, permission_id) VALUES
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1e9-71a3-93c1-8e6152147fdc'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1f0-70b2-8c88-20f087bd713e'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1f6-7181-846a-9197a41ac162'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e1fd-71d3-9086-6a3feecdd14a'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e205-7600-ad46-8789e4703104'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e20c-7fd0-b6a7-88cfcbb08e45'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e213-7360-b61f-c4d9a309be4c'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e219-79d3-a4c3-770fd5fd42b8'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e220-7b21-89c1-509b217d7177'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e22a-7e60-afb2-44b65da8fef8'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e236-7453-bbb1-47f1d7d809f6'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e23d-7f71-a102-d4cf1e87d532'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e244-7ea1-8950-3a7810035478'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e24a-7993-9318-a4616c6864ee'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e251-77f0-956c-a6a12de2b1dc'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e257-72a0-a294-9b7a3295afde'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e25d-7e22-a72c-790fa07a5235'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e264-7491-9b60-67cb38041b19'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e26b-7293-9f06-cfd2238dfc71'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e272-7c22-a0f6-23234be3a41d'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e279-7230-b5fc-7f6fd3ff56cb'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e280-7ea0-97be-346bc6e92ec2'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e286-7a51-85a5-cf6f60ff692c'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e28b-78b2-81aa-86e37710d9ae'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e291-7082-af67-e97a582917a8'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e298-7413-9aa5-2d794af89056'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e29d-7a93-88a1-2968830a7ed0'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2a3-7783-99a4-8bfa96debd28'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2a9-77d3-a521-ca522cb277eb'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2af-7512-95fe-b37495b1ec8f'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2b9-7db3-bb08-8636e86e9146'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2c1-71b0-8952-d3e8984a0e29'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2c7-7631-94fe-a14df2f59d4b'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2ce-7802-b790-7e1f8de06d5e'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2d3-7760-a637-091ef23ce832'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2d9-7bb3-9af0-98cd3f48509c'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2de-7db0-b6ff-f4ab3587b37b'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2e4-7843-ab40-ad77e0c9781f'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2e9-7671-9d65-d550bf8b9f97'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2f2-76e3-866d-492b6a93970a'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e2fe-7622-9d14-f835f7cb3dab'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0e700-b625-74a3-85c5-71d061671539'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e30a-7821-aeb0-281f7246993e'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e316-7701-98a0-3906586370c5'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e321-7e90-8c6b-cf9d0bb82a90'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e32d-7b42-9265-ec0228db43ff'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e339-7331-b71f-6a452ab19605'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e343-7ea2-9f89-40ca64179bda'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e34d-7770-ab19-3010ef8938a8'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e356-7150-9cd1-64741c8f4f70'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e35f-77b2-b0fa-983ba9c6cb97'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e36b-7a50-acf9-c1d0f45f528e'),
-	('01a17ca0-ceec-7020-9ce1-ff347c1bef1a', '01a0ded1-e378-7960-91d3-b63fd3d99866'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e1c4-7240-92b3-fa80bd6502a5'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e1db-74d2-adb9-adf56ab53362'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e1e9-71a3-93c1-8e6152147fdc'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e1f6-7181-846a-9197a41ac162'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e1fd-71d3-9086-6a3feecdd14a'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e219-79d3-a4c3-770fd5fd42b8'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e236-7453-bbb1-47f1d7d809f6'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e23d-7f71-a102-d4cf1e87d532'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e244-7ea1-8950-3a7810035478'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e251-77f0-956c-a6a12de2b1dc'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e257-72a0-a294-9b7a3295afde'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e264-7491-9b60-67cb38041b19'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e272-7c22-a0f6-23234be3a41d'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e279-7230-b5fc-7f6fd3ff56cb'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e298-7413-9aa5-2d794af89056'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2af-7512-95fe-b37495b1ec8f'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2c7-7631-94fe-a14df2f59d4b'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2d3-7760-a637-091ef23ce832'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2de-7db0-b6ff-f4ab3587b37b'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2e9-7671-9d65-d550bf8b9f97'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2f2-76e3-866d-492b6a93970a'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e2fe-7622-9d14-f835f7cb3dab'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0e700-b625-74a3-85c5-71d061671539'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e321-7e90-8c6b-cf9d0bb82a90'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e32d-7b42-9265-ec0228db43ff'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e339-7331-b71f-6a452ab19605'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e343-7ea2-9f89-40ca64179bda'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e356-7150-9cd1-64741c8f4f70'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e35f-77b2-b0fa-983ba9c6cb97'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e36b-7a50-acf9-c1d0f45f528e'),
-	('01a17ca0-cef3-77f3-8f73-1fbdb2cf8e61', '01a0ded1-e378-7960-91d3-b63fd3d99866'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e1c4-7240-92b3-fa80bd6502a5'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e339-7331-b71f-6a452ab19605'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e244-7ea1-8950-3a7810035478'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e24a-7993-9318-a4616c6864ee'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e251-77f0-956c-a6a12de2b1dc'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e257-72a0-a294-9b7a3295afde'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e25d-7e22-a72c-790fa07a5235'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e26b-7293-9f06-cfd2238dfc71'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e272-7c22-a0f6-23234be3a41d'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e279-7230-b5fc-7f6fd3ff56cb'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e280-7ea0-97be-346bc6e92ec2'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e286-7a51-85a5-cf6f60ff692c'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e28b-78b2-81aa-86e37710d9ae'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e298-7413-9aa5-2d794af89056'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e29d-7a93-88a1-2968830a7ed0'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e2a9-77d3-a521-ca522cb277eb'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e2af-7512-95fe-b37495b1ec8f'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e2c1-71b0-8952-d3e8984a0e29'),
-	('01a17ca0-cef8-75c0-94e4-a20df94e536b', '01a0ded1-e2c7-7631-94fe-a14df2f59d4b');
+	('01a0ded1-e3c9-7c83-abbc-b530235dd237', '01a0ded1-e30a-7821-aeb0-281f7246993e');
 
 
 ALTER TABLE public.role_permissions ENABLE TRIGGER ALL;
@@ -7083,119 +6722,6 @@ INSERT INTO public.salary (id, employee_id, location_id, period_month, working_d
 ALTER TABLE public.salary ENABLE TRIGGER ALL;
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
---
-
-ALTER TABLE public.users DISABLE TRIGGER ALL;
-
-INSERT INTO public.users (id, username, mobile, email, full_name, password_hash, preferred_language, employee_id, mfa_enabled, failed_logins, locked_until, last_login_at, status, created_at, created_by, updated_at, updated_by, version, company_id) VALUES
-	('01a0ded1-e89b-7b81-8301-fa9ccab62a07', '9000000013', '9000000013', NULL, 'Velachery Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 17:44:53.66+00', NULL, '2026-09-26 17:44:53.66+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e8a9-7502-a92a-7834134c9634', '9000000014', '9000000014', NULL, 'Adyar Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 17:44:53.673+00', NULL, '2026-09-26 17:44:53.673+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e8b5-7043-86d0-0be9de519d62', '9000000015', '9000000015', NULL, 'Tambaram Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 17:44:53.686+00', NULL, '2026-09-26 17:44:53.686+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0e700-b8be-7070-889b-8f311e5bc6af', '9000000017', '9000000017', NULL, 'Chrompet Manager', '$argon2id$v=19$m=65536,t=3,p=4$QMZBeKECmu3edFTmMsSwKA$ydUFAmYb55hh/xZfReAyBE0gdF6YT2iOvxDi+N7dCN0', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-28 07:52:59.326+00', NULL, '2026-09-28 07:52:59.326+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e88e-7bb1-937c-bf964be014e0', '9000000012', '9000000012', NULL, 'T Nagar Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-27 09:09:13.828+00', 'ACTIVE', '2026-09-26 17:44:53.647+00', NULL, '2026-10-27 09:09:13.829+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0dfbe-26fa-7bd1-af55-0386c63b95a6', '9600249294', '9600249294', NULL, 'Mohamed Thouship M', '$argon2id$v=19$m=65536,t=3,p=4$izzZMS9A50KA7nW1njoqSA$G3n2yjxaIPxQPVQ3IJi3N6ACclHNZDamOBDT2/eIZUE', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 22:02:56.122+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-09-26 22:02:56.122+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', '9000000002', '9000000002', NULL, 'Accountant', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-21 08:02:09.389+00', 'ACTIVE', '2026-09-26 17:44:53.602+00', NULL, '2026-10-21 08:02:09.391+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e86e-7373-8696-adddda76c26b', '9000000003', '9000000003', NULL, 'Stock Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-21 08:02:33.73+00', 'ACTIVE', '2026-09-26 17:44:53.614+00', NULL, '2026-10-21 08:02:33.732+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e8c4-77e2-9416-167bcbdd9538', '9000000016', '9000000016', NULL, 'Porur Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-09-26 19:08:22.287+00', 'ACTIVE', '2026-09-26 17:44:53.7+00', NULL, '2026-09-26 19:08:22.288+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a0ded1-e882-71e2-b6b3-550e4baace50', '9000000011', '9000000011', NULL, 'Anna Nagar Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-23 19:59:39.342+00', 'ACTIVE', '2026-09-26 17:44:53.634+00', NULL, '2026-10-23 19:59:39.344+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a17ca0-cfd7-7840-9d8d-1d2a6fff61ee', '9111111111', '9111111111', 'ravi@chaipoint.test', 'Ravi Kumar', '$argon2id$v=19$m=65536,t=3,p=4$CIMipEMgLQynMDGzCHBFpA$J0BURxbqdp6NNe9FDEgaUN1quBrBVd6QF3iwyocqKN8', 'en', NULL, false, 0, NULL, '2026-10-27 09:11:16.848+00', 'ACTIVE', '2026-10-27 09:11:16.184+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:11:16.849+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', '9333333333', '9333333333', NULL, 'Suresh', '$argon2id$v=19$m=65536,t=3,p=4$9KuQFY9dt/S337viQ1+CcQ$Vr40kKqu8DvfzVqssjvm9cYvwV8cOkIWN+TUEBsjQnM', 'en', NULL, false, 0, NULL, '2026-10-27 09:12:55.663+00', 'ACTIVE', '2026-10-27 09:12:54.708+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:12:55.664+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '9000000001', '9000000001', NULL, 'Admin', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-27 18:42:27.03+00', 'ACTIVE', '2026-09-26 17:44:53.583+00', NULL, '2026-10-27 18:42:27.031+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('01a17c9e-bdac-77a0-a906-dbc5e6161273', 'superadmin', NULL, NULL, 'Super Admin', '$argon2id$v=19$m=65536,t=3,p=4$w3qsAm0PO2CbjQZE3B5ezg$UD4DjWhbr1OskYIGDq+hlGmHvUYF9dR91F5xMqqR6PA', 'en', NULL, false, 0, NULL, '2026-10-27 18:55:14.534+00', 'ACTIVE', '2026-10-27 09:09:00.46+00', NULL, '2026-10-27 18:55:14.535+00', NULL, 1, NULL);
-
-
-ALTER TABLE public.users ENABLE TRIGGER ALL;
-
---
--- Data for Name: sessions; Type: TABLE DATA; Schema: public; Owner: -
---
-
-ALTER TABLE public.sessions DISABLE TRIGGER ALL;
-
-INSERT INTO public.sessions (id, user_id, refresh_token_hash, device_label, user_agent, ip, created_at, expires_at, revoked_at) VALUES
-	('01a0dee2-d993-7391-9f6e-04455f40d770', '01a0ded1-e882-71e2-b6b3-550e4baace50', '520632f9c631615457de80738ff79408f092ff885b31bf6ae9dadafa757cf270', 'mobile:', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.28000.2952', '::1', '2026-09-26 18:03:23.923+00', '2026-10-03 18:03:24.182+00', NULL),
-	('01a0dee2-db9c-7a62-b36d-c3de83967684', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '90e409c2bae0270d5d4e9e0cb0320c69307d9c3de6df27ccc2110ba6d7f3a469', 'mobile:', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.28000.2952', '::1', '2026-09-26 18:03:24.445+00', '2026-10-03 18:03:24.444+00', NULL),
-	('01a0deea-2c78-7531-a1ea-09fcedfdcae6', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'c45d534181b8f048ba31f42620f30632155204d86e5cd3067128586fef0f2a70', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 18:11:23.896+00', '2026-09-27 06:11:23.893+00', '2026-09-26 18:20:32.74+00'),
-	('01a0def2-e402-7470-8941-e171e5dc968f', '01a0ded1-e882-71e2-b6b3-550e4baace50', '955d69d15a147bacb03b6362d4a83914f13cb6be1e66009c2ba844b23b74efdd', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 18:20:55.17+00', '2026-09-27 06:20:55.168+00', '2026-09-26 18:23:42.094+00'),
-	('01a0df2b-80ed-7f43-a73f-b40335807a69', '01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', 'c31d32e6fa6609b06ef0308990e1141e8e0a25c1003377255a17ee075247bed4', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-26 19:22:45.357+00', '2026-10-03 19:22:45.354+00', '2026-09-26 19:24:03.712+00'),
-	('01a0df4d-4465-79e2-a4aa-94a452e6114a', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '7270bb124488e3fa1731d16425c863502352855b96e75feac0cbfeb3ad60e8a0', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-26 19:59:38.085+00', '2026-10-03 19:59:38.08+00', '2026-09-26 20:01:48.204+00'),
-	('01a0df4f-86b2-7530-9946-ee01a1f4431c', '01a0ded1-e882-71e2-b6b3-550e4baace50', '503ac75bf0240e536f92d69bc524a6d4d146d4bccfa29b3bb55547cf031f7e8f', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 20:02:06.13+00', '2026-09-27 08:02:06.128+00', '2026-09-26 20:14:22.817+00'),
-	('01a0def7-43f1-72b3-953f-af2c0b52cfe2', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'f4b32643569a7b8d2ead6a6a071ed9a33501ea0f7648b93db4fff8bded8fba33', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 18:25:41.873+00', '2026-09-27 07:05:00.868+00', '2026-09-26 19:05:46.937+00'),
-	('01a0df1e-5579-7da0-9e83-572101521874', '01a0ded1-e8c4-77e2-9416-167bcbdd9538', '736f94aa26cf03a38c48694e15492c7ae2c7414dceb1a799ebf6d123de22f8ba', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-26 19:08:22.265+00', '2026-10-03 19:08:22.263+00', '2026-09-26 19:09:52.923+00'),
-	('01a0df1f-fffb-7010-bd08-456137a098d5', '01a0ded1-e86e-7373-8696-adddda76c26b', '665dad92e15093721919ba23bd00c69342c2e36b79a1d0a9d309fb1e83e7853b', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-26 19:10:11.451+00', '2026-10-03 19:16:00.497+00', '2026-09-26 19:22:23.788+00'),
-	('01a0df67-5498-7c73-93d1-d20ff09eecf7', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '8c1b4619d3e82d5c2dde32d12d0e413661b215726fa7dfce58b7ca33ec74830c', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', '::1', '2026-09-26 20:28:06.168+00', '2026-09-27 08:28:12.675+00', NULL),
-	('01a0df6a-d40a-7812-a8d9-80f2b385619a', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '5fab2174b243839c6e43385d1c461d776a75db43132bfe6ca155443efeb72d55', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', '::1', '2026-09-26 20:31:55.402+00', '2026-09-27 08:31:58.683+00', NULL),
-	('01a0df5a-e80f-7221-93d8-9d7851a6e6c0', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '17b08d769eb98cfda78b0035d2c866c3f9a158243ad0ba133d1aff5d19cff0f2', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 20:14:31.951+00', '2026-09-27 09:01:09.614+00', NULL),
-	('01a0df6b-29c5-7d53-a6d7-77b87479f63d', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '02dd978e27afcd21e3d8d2b3e288d7a7d44eeffdeaa94ec00569febd17ad0431', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', '::1', '2026-09-26 20:32:17.349+00', '2026-09-27 08:32:29.44+00', NULL),
-	('01a0df6b-bfe5-7c21-9a71-f1222302da87', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '8a68353034f6eca8e1451eb9234c6efa57bccf7fe990deff478acb1cefe38512', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', '::1', '2026-09-26 20:32:55.781+00', '2026-10-03 20:32:56.615+00', NULL),
-	('01a0df6d-5414-7120-9835-55a4785da788', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'a074368219615de1825813ee48e594795c1e103ced20295313ecdebf75a48bf2', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', '::1', '2026-09-26 20:34:39.252+00', '2026-10-03 20:34:40.262+00', NULL),
-	('01a0dfa7-cd51-7912-a6fd-b1e66e162f77', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'a3ce6f0a88d91a9b5fb1326d0cc10d24c5fc91288eccce279f518e5fa5ded724', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 21:38:31.377+00', '2026-09-27 12:01:42.808+00', NULL),
-	('01a0df97-affb-7bd2-9b2f-cb89e3561f0d', '01a0ded1-e882-71e2-b6b3-550e4baace50', '3387f95b301d3a15ccac5d69e02d992c4b837b8fc583159be62a5fdb54e465db', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-26 21:20:55.292+00', '2026-09-27 09:30:27.342+00', '2026-09-26 21:38:22.848+00'),
-	('01a0dfb5-b18b-7ce1-9dbb-88035165091b', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'e20d9b45bee5b474bf7fd55a2d1b1487cba4d0dc942bee59a9e1c6e6437f0ca6', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', '::1', '2026-09-26 21:53:41.771+00', '2026-09-27 09:53:45.618+00', NULL),
-	('01a0e02b-d27c-7c31-86a0-584069d910bb', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '331858b613abf230aaadbebec56da44ed436e5cdcd09a4c730fbf710fdd94547', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-27 00:02:43.452+00', '2026-09-27 12:16:20.705+00', NULL),
-	('01a0e5de-fbcb-7840-ba36-699fbfc25a40', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'f7feed94f638f19ea153e9a763bcef95a1ee0ecdb15df32ba54bb4da35696f0d', 'mobile:', 'curl/8.21.0', '::1', '2026-09-28 02:36:31.051+00', '2026-10-05 02:36:31.05+00', NULL),
-	('01a0e5c3-ce91-75f0-b36e-e1ede0801e8f', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'f4f5b1031fe0ee94c9616e8c3d0bd84530937992e52e153c5478f35c4802885f', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-28 02:06:49.997+00', '2026-09-29 05:39:12.482+00', NULL),
-	('01a0e898-4049-7361-a10e-5ec4059fa48c', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '18a1e2dd0f5f04c361c65852384fe5193f71ad5078a801772289f104debcb3c6', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 15:18:07.175+00', '2026-09-29 03:20:11.752+00', NULL),
-	('01a0ecdd-f977-76c0-8bf7-f4d271977952', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '69cd3ce7782429cb316d5e9c14cc60e21f00c02faf85c4796b7f54d390d5a44d', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-29 11:12:45.432+00', '2026-09-29 23:12:45.429+00', '2026-09-29 11:13:15.553+00'),
-	('01a0e618-ef5f-7483-88c3-f0bcd9ff7748', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '7426c2122a9173192b8faf6934f0f1642f6287062f2f8fd059008b3c64c8e11f', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 03:39:48.96+00', '2026-10-05 03:43:42.223+00', NULL),
-	('01a0e8aa-fd53-7072-968f-27da32d8bcef', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '03bdcb8edbc216628240c6e91fb78d3400bc3d837fb0054c2ad79736d689bc1a', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 15:38:35.22+00', '2026-09-29 03:38:42.304+00', NULL),
-	('01a0e5fb-c58d-7fc0-b305-c16228af85ce', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '4cc933ea7a616e3003ae17b7063aff7fdbe966df5201a3c4326e78d79e363462', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 03:07:57.71+00', '2026-10-05 03:09:36.396+00', NULL),
-	('01a0e5e3-d5ac-7712-8638-def324e5c6cd', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'a0649e42f75869cf91c21edb5e7236f1d5b2acf5c2c408191d813d82a9043d5c', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 02:41:48.973+00', '2026-10-05 02:44:37.923+00', NULL),
-	('01a0ed0a-72d6-7160-a574-e9f89adf251a', '01a0ded1-e882-71e2-b6b3-550e4baace50', '227cfd14e2db0f40e4a69dff45d8e57e1857c023c6df78df9becb12ca1c83af4', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 12:01:20.086+00', '2026-10-06 12:01:22.523+00', NULL),
-	('01a0e5f6-6a27-79a2-b1a6-97d1ae311576', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'f67ae7379b18ed208eae400d49454238b7eef086af00cb74f71c26884f372356', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 03:02:06.631+00', '2026-10-05 03:02:18.044+00', NULL),
-	('01a0e64f-7eaf-7f50-888a-e9cd9fdebdb3', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '7bb770ccd1389441c0771278734481bcb40c5905a8057d44f16c456c64a4b263', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 04:39:24.591+00', '2026-09-28 16:41:38.313+00', NULL),
-	('01a0ed0c-8e28-7923-9e81-f1595011d2b1', '01a0ded1-e882-71e2-b6b3-550e4baace50', '7385c59c8b7cc6fd420173a9a33e56657817ab0c09af40e074c62a4461a4241a', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 12:03:38.152+00', '2026-10-06 12:03:41.074+00', NULL),
-	('01a0e8c6-b648-7c20-ac06-c1950aa01690', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'a5c9478f402040b19ff3ff7ed265d37365dc5a35a3602dfffe5315f58c0cfdba', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-28 16:08:52.04+00', '2026-09-29 04:10:13.947+00', NULL),
-	('01a0ecd8-4698-7943-8ed6-bc3d33fcfc83', '01a0ded1-e882-71e2-b6b3-550e4baace50', '1757538bdcbb29f191207b4fdc59cc3c13985e47e807f3d330f26c5e1ea6d8e1', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 11:06:31.96+00', '2026-10-06 11:06:35.985+00', NULL),
-	('01a0ecf5-43ea-7130-a42a-52703b5b94e7', '01a0ded1-e882-71e2-b6b3-550e4baace50', '646c55f9232b14daf9fb0e2490065364e707ec33b7048ee7f2232770c309ca19', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 11:38:11.818+00', '2026-10-06 11:50:27.339+00', NULL),
-	('01a0ed06-fd48-7561-87e8-677f1de287c9', '01a0ded1-e882-71e2-b6b3-550e4baace50', '43fd4e43b5bf89062ad92cb03f0173259b89e6d3d0962825b92eb678b0ce5438', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 11:57:33.384+00', '2026-10-06 11:57:35.592+00', NULL),
-	('01a0ed11-4098-7b70-bf9d-78e6bc925fc4', '01a0ded1-e882-71e2-b6b3-550e4baace50', '359d082ba741a721f3bceac26379e42271f5509430fb0e8c493b84656f24f324', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 12:08:45.977+00', '2026-10-06 12:09:04.518+00', NULL),
-	('01a0ed1b-6ed1-73b1-a9ad-bc6192f59a10', '01a0ded1-e882-71e2-b6b3-550e4baace50', '8b2cab113e48e46dd2ad155b3313b199d8b82dfd5b38b7d94bff26ae1d3b56f5', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 12:19:53.169+00', '2026-10-06 12:19:55.854+00', NULL),
-	('01a0ecdf-0844-7f53-ac29-d43eb182a876', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'e9aa2a7d400b9f3049a94e5f81d4fccfb8a022b26eb584e1104ee1bf78d65208', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-29 11:13:54.756+00', '2026-09-30 00:30:45.373+00', '2026-09-29 12:31:02.346+00'),
-	('01a0ed16-c6f6-7161-8aae-2091eea0da21', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'c7590eae28b5144ec7a5287486a23039d51c6e7712a02dd94df9e9e3592dd100', 'mobile:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 12:14:48.054+00', '2026-10-06 12:15:51.38+00', NULL),
-	('01a0ed29-db14-7540-a46b-b891d538920b', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'ac50c945d251ef057293882c86e6e333c370d3dfe7f9a718e0a64e5f4d68bdde', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-29 12:35:38.388+00', '2026-09-30 00:35:43.785+00', NULL),
-	('01a0ed26-0a2e-7b40-b4b3-ab74ff944db4', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'c9d36d90d6a81e4622ad5a2cdf5168b572d182c038c4a1e8372f8445c5ed87b8', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-29 12:31:28.302+00', '2026-09-30 00:48:12.98+00', '2026-09-29 12:51:27.79+00'),
-	('01a0ed45-1a48-7c50-83c2-b85dd86f59cb', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '4c808112d9e65585a06ff802a8710ecb56852d3ee818ac1a7ad55dba1583c01a', 'mobile:', 'curl/8.21.0', '::1', '2026-09-29 13:05:24.04+00', '2026-10-06 13:05:24.038+00', NULL),
-	('01a0ed45-5494-7a61-bcee-726fe7f5115b', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '843914ba6402078ef3bd5f84080237c636db87f0840155845a7f70087b0b8f7a', 'mobile:', 'curl/8.21.0', '::1', '2026-09-29 13:05:38.964+00', '2026-10-06 13:05:38.963+00', NULL),
-	('01a15d7b-c076-7252-bb0a-8368dd30fb2c', '01a0ded1-e86e-7373-8696-adddda76c26b', '6c601e2ba1ba855a141579ec5a76b972dc3796fcf9aab0334c08afad4493a468', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-21 08:02:33.719+00', '2026-10-21 20:02:33.717+00', '2026-10-21 08:02:38.245+00'),
-	('01a0ed46-6566-7431-bfc4-dc42fd733b1d', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '75a3482ce0d748faf84f4aadedf543a51fae9166b89eda30535d5fb0f88f5385', 'mobile:', 'curl/8.21.0', '::1', '2026-09-29 13:06:48.806+00', '2026-10-06 13:06:48.804+00', NULL),
-	('01a0f312-f87d-76f2-bf97-3fab950f56ab', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '19d68651e4e2d3619bf682a31c3771f2bfd430a3ace2a3eb82b00557d59f4d8c', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-30 16:08:21.881+00', '2026-10-01 04:08:27.509+00', NULL),
-	('01a0f2cf-8dd3-7c90-90b8-7f467b69f196', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '0744a590383fe111e8e80914eb4bff9d46c1812aa8977f73405a76e202841ea9', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-30 14:54:43.666+00', '2026-10-01 02:54:43.66+00', '2026-09-30 15:09:00.497+00'),
-	('01a0f2dd-398d-79a0-9e31-6e75ba199e3f', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '1c08fd22362a98e9b55a419b20867f5aed53ac26f2c66cfb3882d669cb5aa3e3', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-30 15:09:39.597+00', '2026-10-01 03:09:39.596+00', '2026-09-30 15:09:59.532+00'),
-	('01a0ed42-a8f3-7901-bf6a-a80dc8e69304', '01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', '029066419624d50ae3934b7991ad5be08e8e0aba662dd9c23cf023ed622a5e5f', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-29 13:02:43.954+00', '2026-10-06 18:45:43.879+00', '2026-09-30 15:26:16.414+00'),
-	('01a0f2dd-e2e6-74d3-b8a4-15f0693a76f7', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '95ebb1bfaee48bd430d171618084c3b7b291228dd08ab79b573ddee993041890', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-09-30 15:10:22.951+00', '2026-10-01 03:25:24.965+00', '2026-09-30 15:27:59.932+00'),
-	('01a0f2f1-9946-7372-a2fa-8eee5e05ec7e', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'd1165e80b84b4cb7e355ac784479cafe47a530aa102f01c4e27d5a6c7f0d6f47', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-30 15:31:54.822+00', '2026-10-07 15:31:54.821+00', '2026-09-30 15:35:18.999+00'),
-	('01a0f2f9-69e3-7d61-a237-4b6cb9fb389f', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '4d43df6eb5dae0b3e718bbb8b657e354c750179dc9df44e85762a453e8191a49', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0', '::1', '2026-09-30 15:40:26.979+00', '2026-10-01 03:40:26.978+00', NULL),
-	('01a15d81-8a44-7f22-a5a2-8e271f0e2b69', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'a421c9db90bbcb7da22c2673f3db39712cd60cef37b26e42320761424d658792', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0', '127.0.0.1', '2026-10-21 08:08:53.061+00', '2026-10-21 20:08:55.163+00', NULL),
-	('01a0f2f4-fff6-79a1-803f-3062edf77967', '01a0ded1-e882-71e2-b6b3-550e4baace50', '41244f49055be841dd4a63d65e75d08550dea659e60c67e88be6f28617294585', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-30 15:35:37.719+00', '2026-10-07 15:35:37.716+00', '2026-09-30 15:48:19.79+00'),
-	('01a0f300-f884-78a2-82c2-9ecc92b0f0f7', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'ec4b396360ce43060b7c786091e5efcab748ea9c5083428cebbb9e46eaa2e5cb', 'mobile:Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) Apple', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', '::1', '2026-09-30 15:48:42.244+00', '2026-10-07 16:44:53.758+00', NULL),
-	('01a15d78-6f05-7c32-aa09-e514461f3d08', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'b9501f7792f2c7010b9eca4ddf435c735e2ee49975b168ac2b1a64593f124bfd', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-21 07:58:56.259+00', '2026-10-21 19:58:56.256+00', '2026-10-21 08:01:32.93+00'),
-	('01a15d7b-615a-7dc1-bac6-447137084524', '01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', '59cfed73ab29144107ac5a6719754707d68003409529f4a980fb35ccea2f8609', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-21 08:02:09.37+00', '2026-10-21 20:02:09.368+00', '2026-10-21 08:02:20.199+00'),
-	('01a15e83-d73b-7370-a3c4-ca0f6aa7b227', '01a0ded1-e882-71e2-b6b3-550e4baace50', '3ad46ef3ee1c2241adc9f5fbba24fafc1cad694dfc9ac4ff6e1536a111af9851', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0', '127.0.0.1', '2026-10-21 12:51:01.049+00', '2026-10-22 00:51:16.281+00', NULL),
-	('01a15eaa-397a-71d3-a4dd-36a844f97e52', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'd9057b83196d2e9a4ec266aeb777ffa67db1d0e3417beca45566f7b14c19e807', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-21 13:32:56.57+00', '2026-10-22 01:41:01.746+00', '2026-10-21 13:41:05.126+00'),
-	('01a15e9f-0782-7a02-ae46-71bb011a9bf8', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'b218004f7de5abc610df2d4b0fe034feea7b2a485bdbd0fe2acacd72198a031a', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0', '127.0.0.1', '2026-10-21 13:20:42.883+00', '2026-10-22 01:20:44.444+00', NULL),
-	('01a15d7c-00d2-7002-aed8-ca48b92ec7e1', '01a0ded1-e882-71e2-b6b3-550e4baace50', '90b773447271ad6c7a2d1494e4db2c5e14cf2db7a5b0c786600f827427f488dd', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-21 08:02:50.194+00', '2026-10-22 01:15:51.045+00', '2026-10-21 13:27:56.251+00'),
-	('01a15ed0-4b32-7362-a3d9-66585fd76259', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '51fe6d026e2fb493dc9da537bd65c18e4e43b667ce35c0a5dd8cd3998f4a512a', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-21 14:14:31.471+00', '2026-10-22 02:30:31.704+00', NULL),
-	('01a16351-60d8-7093-8430-cbee26815c35', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '46442beab14baa3a63fb4efca7682e2b4246d4bfd12904322474be5f6033f003', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-22 11:14:00.016+00', '2026-10-23 03:39:23.789+00', NULL),
-	('01a16a12-9bd2-7a71-8ec2-e763c3f10d75', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '7dfe3d3133f5987831583b46b1cc6247a1879914735d263356e3482167740d7c', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-23 18:42:46.862+00', '2026-10-24 07:57:08.422+00', '2026-10-23 19:59:05.368+00'),
-	('01a16a58-fd41-79f2-9bbc-8f3ddbbe5ab3', '01a0ded1-e882-71e2-b6b3-550e4baace50', 'e63cbce421172c1c81a462887d8a21143ec784fba2a96bc05957f9be13d306f8', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-23 19:59:39.329+00', '2026-10-24 08:15:16.151+00', '2026-10-23 20:18:30.717+00'),
-	('01a16a6a-c12c-7202-a909-a3808e1ae096', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'a2b24451e493a47bc83b83a609cf495d271430628dd9dde78f6fa8c51bcbfa1a', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '127.0.0.1', '2026-10-23 20:19:03.596+00', '2026-10-24 08:59:49.379+00', NULL),
-	('01a16e87-13ff-7461-a0da-edcb3d3e40fe', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '875dee578225249c0b6905ab43d7939819832faed76649e7062e051355fb1ed2', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-10-24 15:28:28.669+00', '2026-10-25 03:28:28.664+00', NULL),
-	('01a17c9e-f1a8-7311-a7b3-0b9a2d5228cc', '01a0ded1-e88e-7bb1-937c-bf964be014e0', '99dd05dc8cbbf9371daa0c52839fb9eb2a7795c0802c65e1bbce60286bfb3103', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 09:09:13.769+00', '2026-11-03 09:09:13.768+00', NULL),
-	('01a17c9e-f434-7930-bfb7-14e727532fc2', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '20dd0b1baab8b855844a9a0491f9293e2490fc53cfe33cdc7fc87ce28cd4a428', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 09:09:14.421+00', '2026-11-03 09:09:14.42+00', NULL),
-	('01a17c9e-f566-7d51-96be-b3529211e3dc', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '5d8945ae59acc681112340e52ec557c118a6a0aa963df175dc83489f62af566b', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 09:09:14.726+00', '2026-11-03 09:09:14.725+00', NULL),
-	('01a17ca0-d262-79c3-9f6c-2426de16c593', '01a17ca0-cfd7-7840-9d8d-1d2a6fff61ee', '2fde8a584df995029ee20d873733713eb0226b71e5a2bf8b7e78a4872f97ff7e', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 09:11:16.834+00', '2026-11-03 09:11:16.833+00', NULL),
-	('01a17ca2-5460-7063-abe7-d037ce4beee3', '01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', '3aee278ded5abe649865742c76d976875c58b67310c53894b9b71ffdc1f0bcde', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 09:12:55.648+00', '2026-11-03 09:12:55.647+00', NULL),
-	('01a17ea1-e42e-7183-9388-7100b2df86d1', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '6cea7a97ef7f281435fccf8a6d8e5edbfd0eca9be0d853a4fbc76c3a7051ab88', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-10-27 18:31:41.356+00', '2026-10-28 06:31:41.352+00', '2026-10-27 18:41:47.298+00'),
-	('01a17eab-be2b-7ba1-a40c-e9b70e586786', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '17bb628de8ab9887deccf4a1f6bc008eff8a7e03f549f2448f33fe2f1eafc7df', 'desktop:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', '::1', '2026-10-27 18:42:26.987+00', '2026-10-28 06:42:26.985+00', NULL),
-	('01a17eb7-7199-7d70-890c-566bda367ed2', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 'c24c4f8807a606396276861426324ae0094c1846db6311d422d6d48dcfaec9f0', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 18:55:13.803+00', '2026-11-03 18:55:14.291+00', NULL),
-	('01a17eb7-7449-7cc1-8071-e721c05cadca', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '51ff99c75cbbc62a522f22cea1a41cec2948af270fc2aa993f648db2d9ce11f6', 'mobile:', 'curl/8.21.0', '::1', '2026-10-27 18:55:14.505+00', '2026-11-03 18:55:14.504+00', NULL);
-
-
-ALTER TABLE public.sessions ENABLE TRIGGER ALL;
-
---
 -- Data for Name: settings; Type: TABLE DATA; Schema: public; Owner: -
 --
 
@@ -7204,9 +6730,7 @@ ALTER TABLE public.settings DISABLE TRIGGER ALL;
 INSERT INTO public.settings (key, value, description, updated_at, updated_by, company_id) VALUES
 	('business.type', '"TEA_SHOP"', NULL, '2026-09-26 17:44:53.563+00', NULL, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
 	('branch.code_prefix', '"BR"', NULL, '2026-09-28 16:10:12.625+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('business.name', '"Default Company"', NULL, '2026-10-27 09:09:00.771+00', NULL, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
-	('business.name', '"Chai Point"', NULL, '2026-10-27 09:11:16.101+00', NULL, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1'),
-	('business.type', '"TEA_SHOP"', NULL, '2026-10-27 09:11:16.105+00', NULL, '01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1');
+	('business.name', '"Default Company"', NULL, '2026-10-27 09:09:00.771+00', NULL, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5');
 
 
 ALTER TABLE public.settings ENABLE TRIGGER ALL;
@@ -7528,21 +7052,26 @@ INSERT INTO public.sync_operations (client_uuid, user_id, device_id, entity_type
 ALTER TABLE public.sync_operations ENABLE TRIGGER ALL;
 
 --
--- Data for Name: units; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-ALTER TABLE public.units DISABLE TRIGGER ALL;
+ALTER TABLE public.users DISABLE TRIGGER ALL;
 
-INSERT INTO public.units (id, code, name, base_unit_id, factor_to_base) VALUES
-	('01a0ded1-e43c-7453-aacd-e1627eb685e2', 'ML', 'Millilitre', NULL, 1.000000),
-	('01a0ded1-e447-7230-af12-2e208f700964', 'L', 'Litre', '01a0ded1-e43c-7453-aacd-e1627eb685e2', 1000.000000),
-	('01a0ded1-e44e-7e72-a26f-c2a9d1dc5e1f', 'G', 'Gram', NULL, 1.000000),
-	('01a0ded1-e455-7d62-b963-847839309532', 'KG', 'Kilogram', '01a0ded1-e44e-7e72-a26f-c2a9d1dc5e1f', 1000.000000),
-	('01a0ded1-e45b-7fe2-b502-aa3b0850216e', 'PCS', 'Piece', NULL, 1.000000),
-	('01a0ded1-e464-76a2-ac1e-b35582bd2bae', 'PKT', 'Packet (50 pcs)', '01a0ded1-e45b-7fe2-b502-aa3b0850216e', 50.000000);
+INSERT INTO public.users (id, username, mobile, email, full_name, password_hash, preferred_language, employee_id, mfa_enabled, failed_logins, locked_until, last_login_at, status, created_at, created_by, updated_at, updated_by, version, company_id) VALUES
+	('01a0ded1-e89b-7b81-8301-fa9ccab62a07', '9000000013', '9000000013', NULL, 'Velachery Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 17:44:53.66+00', NULL, '2026-09-26 17:44:53.66+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e8a9-7502-a92a-7834134c9634', '9000000014', '9000000014', NULL, 'Adyar Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 17:44:53.673+00', NULL, '2026-09-26 17:44:53.673+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e8b5-7043-86d0-0be9de519d62', '9000000015', '9000000015', NULL, 'Tambaram Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 17:44:53.686+00', NULL, '2026-09-26 17:44:53.686+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0e700-b8be-7070-889b-8f311e5bc6af', '9000000017', '9000000017', NULL, 'Chrompet Manager', '$argon2id$v=19$m=65536,t=3,p=4$QMZBeKECmu3edFTmMsSwKA$ydUFAmYb55hh/xZfReAyBE0gdF6YT2iOvxDi+N7dCN0', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-28 07:52:59.326+00', NULL, '2026-09-28 07:52:59.326+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e88e-7bb1-937c-bf964be014e0', '9000000012', '9000000012', NULL, 'T Nagar Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-27 09:09:13.828+00', 'ACTIVE', '2026-09-26 17:44:53.647+00', NULL, '2026-10-27 09:09:13.829+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0dfbe-26fa-7bd1-af55-0386c63b95a6', '9600249294', '9600249294', NULL, 'Mohamed Thouship M', '$argon2id$v=19$m=65536,t=3,p=4$izzZMS9A50KA7nW1njoqSA$G3n2yjxaIPxQPVQ3IJi3N6ACclHNZDamOBDT2/eIZUE', 'en', NULL, false, 0, NULL, NULL, 'ACTIVE', '2026-09-26 22:02:56.122+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '2026-09-26 22:02:56.122+00', '01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e861-7b71-ac67-e3cfabf0e4b8', '9000000002', '9000000002', NULL, 'Accountant', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-21 08:02:09.389+00', 'ACTIVE', '2026-09-26 17:44:53.602+00', NULL, '2026-10-21 08:02:09.391+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e86e-7373-8696-adddda76c26b', '9000000003', '9000000003', NULL, 'Stock Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-21 08:02:33.73+00', 'ACTIVE', '2026-09-26 17:44:53.614+00', NULL, '2026-10-21 08:02:33.732+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e8c4-77e2-9416-167bcbdd9538', '9000000016', '9000000016', NULL, 'Porur Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-09-26 19:08:22.287+00', 'ACTIVE', '2026-09-26 17:44:53.7+00', NULL, '2026-09-26 19:08:22.288+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e882-71e2-b6b3-550e4baace50', '9000000011', '9000000011', NULL, 'Anna Nagar Manager', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-23 19:59:39.342+00', 'ACTIVE', '2026-09-26 17:44:53.634+00', NULL, '2026-10-23 19:59:39.344+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5'),
+	('01a0ded1-e84f-7cd0-89f4-46fd1f236e7e', '9000000001', '9000000001', NULL, 'Admin', '$argon2id$v=19$m=65536,t=3,p=4$T8kNwLPB/26KhyhlWoDAsA$WfmrhR2CnqCku99+BvRGSp7ftngA+Xmc3yHqihyBjtM', 'en', NULL, false, 0, NULL, '2026-10-27 18:42:27.03+00', 'ACTIVE', '2026-09-26 17:44:53.583+00', NULL, '2026-10-27 18:42:27.031+00', NULL, 1, 'f2328b4f-e294-41ec-80a4-3d3c7645e3f5');
 
 
-ALTER TABLE public.units ENABLE TRIGGER ALL;
+ALTER TABLE public.users ENABLE TRIGGER ALL;
 
 --
 -- Data for Name: user_locations; Type: TABLE DATA; Schema: public; Owner: -
@@ -7565,8 +7094,7 @@ INSERT INTO public.user_locations (user_id, location_id) VALUES
 	('01a0ded1-e8b5-7043-86d0-0be9de519d62', '01a0ded1-e41d-74b3-8c29-57ecf8473596'),
 	('01a0ded1-e8c4-77e2-9416-167bcbdd9538', '01a0ded1-e423-7d90-8248-670567b63c80'),
 	('01a0dfbe-26fa-7bd1-af55-0386c63b95a6', '01a0dfbe-2645-76b2-8cb2-14eadd35154f'),
-	('01a0e700-b8be-7070-889b-8f311e5bc6af', '01a0dfbe-2645-76b2-8cb2-14eadd35154f'),
-	('01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', '01a17ca2-507e-7731-b107-f07d9f626d44');
+	('01a0e700-b8be-7070-889b-8f311e5bc6af', '01a0dfbe-2645-76b2-8cb2-14eadd35154f');
 
 
 ALTER TABLE public.user_locations ENABLE TRIGGER ALL;
@@ -7588,10 +7116,7 @@ INSERT INTO public.user_roles (user_id, role_id) VALUES
 	('01a0ded1-e8b5-7043-86d0-0be9de519d62', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf'),
 	('01a0ded1-e8c4-77e2-9416-167bcbdd9538', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf'),
 	('01a0dfbe-26fa-7bd1-af55-0386c63b95a6', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf'),
-	('01a0e700-b8be-7070-889b-8f311e5bc6af', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf'),
-	('01a17c9e-bdac-77a0-a906-dbc5e6161273', '3cca9fad-d27d-407a-abd7-6bb1cd964940'),
-	('01a17ca0-cfd7-7840-9d8d-1d2a6fff61ee', '01a17ca0-ceec-7020-9ce1-ff347c1bef1a'),
-	('01a17ca2-50b3-7371-a9ae-f6f0c2ffd71e', '01a17ca0-cefc-7131-b07c-a94eda402073');
+	('01a0e700-b8be-7070-889b-8f311e5bc6af', '01a0ded1-e3bd-7942-bc1c-2cfa1643f0bf');
 
 
 ALTER TABLE public.user_roles ENABLE TRIGGER ALL;
@@ -7778,63 +7303,63 @@ ALTER TABLE public.wastage ENABLE TRIGGER ALL;
 -- Name: audit_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.audit_logs_id_seq', 126, true);
+SELECT pg_catalog.setval('public.audit_logs_id_seq', greatest(126, (SELECT last_value FROM public.audit_logs_id_seq)), true);
 
 
 --
 -- Name: seq_code_advance; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_advance', 28, true);
+SELECT pg_catalog.setval('public.seq_code_advance', greatest(28, (SELECT last_value FROM public.seq_code_advance)), true);
 
 
 --
 -- Name: seq_code_company; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_company', 1, true);
+SELECT pg_catalog.setval('public.seq_code_company', greatest(1, (SELECT last_value FROM public.seq_code_company)), true);
 
 
 --
 -- Name: seq_code_employee; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_employee', 29, true);
+SELECT pg_catalog.setval('public.seq_code_employee', greatest(29, (SELECT last_value FROM public.seq_code_employee)), true);
 
 
 --
 -- Name: seq_code_expense; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_expense', 1199, true);
+SELECT pg_catalog.setval('public.seq_code_expense', greatest(1199, (SELECT last_value FROM public.seq_code_expense)), true);
 
 
 --
 -- Name: seq_code_purchase; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_purchase', 150, true);
+SELECT pg_catalog.setval('public.seq_code_purchase', greatest(150, (SELECT last_value FROM public.seq_code_purchase)), true);
 
 
 --
 -- Name: seq_code_supplier_payment; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_supplier_payment', 1, false);
+SELECT pg_catalog.setval('public.seq_code_supplier_payment', greatest(1, (SELECT last_value FROM public.seq_code_supplier_payment)), false);
 
 
 --
 -- Name: seq_code_transfer; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_transfer', 1, true);
+SELECT pg_catalog.setval('public.seq_code_transfer', greatest(1, (SELECT last_value FROM public.seq_code_transfer)), true);
 
 
 --
 -- Name: seq_code_wastage; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_wastage', 167, true);
+SELECT pg_catalog.setval('public.seq_code_wastage', greatest(167, (SELECT last_value FROM public.seq_code_wastage)), true);
 
 
 --

@@ -96,20 +96,24 @@ To load an existing ledger, the Super Admin opens **Company - Data Upload**, pic
 
 Changing a password later: the Super Admin's from the database seed (`SEED_PASSWORD`), an Admin's from **Users** (an Admin can reset another Admin's password).
 
-## 5b. Moving the dev data to production (once, at go-live)
+## 5b. Moving the default company from dev to production (once, at go-live)
 
-To carry everything in your dev database (companies, users, branches, sales, expenses, receipts) over to production:
+Carries the **default company (`CMP000`)** over: its details, branches, users, roles, masters (items, suppliers, recipes, categories, settings) and all its business data and receipts. Other dev companies (e.g. test ones) and the dev Super Admin are **not** exported.
 
 ```bash
 # on your dev machine (Docker Desktop running)
-./infra/export-dev-data.sh                    # writes dev-export/data.sql (plain SQL) + uploads.tgz
-scp -r dev-export deploy@server:~/branch-pulse/     # or any file transfer
+./infra/export-dev-data.sh     # writes dev-export/data.sql, idmap.txt and uploads.tgz
+# copy the whole dev-export/ folder to ~/branch-pulse/dev-export/ on the server (git, scp, WinSCP ...)
 
-# on the server, AFTER `run --rm migrate`
-./infra/import-dev-data.sh                    # backs up production, empties it, loads the dev data
+# on the server, AFTER `run --rm migrate` (and `run --rm seed` for the Super Admin)
+./infra/import-dev-data.sh     # backs up production, replaces CMP000, leaves everything else alone
 ```
 
-It is deliberately **not** part of `deploy.sh`: it replaces all production data, so run it only at go-live. It writes a backup first and asks you to type the database name. The dev data includes any test users and dummy history. The Super Admin keeps the production password (from `SEED_PASSWORD`), not the dev one. The default company is `CMP000`; companies created later are `CMP001`, `CMP002` ... `dev-export/` holds real data and is git-ignored; delete it after the import.
+- Only `CMP000` is replaced. Production's Super Admin (password from `SEED_PASSWORD`) and any company created there stay untouched; running the import again simply replaces `CMP000` again.
+- Permissions and units are shared master data with different ids in each database; they are mapped by code (`idmap.txt`), so both databases must be on the same migrations.
+- Companies created later get `CMP001`, `CMP002` ...; code counters (expense numbers etc.) only ever move forward.
+- It runs in one transaction: if anything fails nothing changes. It also writes a backup first and asks you to type the database name. It is deliberately **not** part of `deploy.sh`.
+- The export holds real data. Delete `dev-export/` from the server after the import.
 
 ## 6. Updating later
 
