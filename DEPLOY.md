@@ -102,7 +102,7 @@ Carries the **default company (`CMP000`)** over: its details, branches, users, r
 
 ```bash
 # on your dev machine (Docker Desktop running)
-./infra/export-dev-data.sh     # writes dev-export/data.sql, idmap.txt and uploads.tgz
+./infra/export-dev-data.sh     # writes dev-export/data.sql (self-contained) and uploads.tgz
 # copy the whole dev-export/ folder to ~/branch-pulse/dev-export/ on the server (git, scp, WinSCP ...)
 
 # on the server, AFTER `run --rm migrate` (and `run --rm seed` for the Super Admin)
@@ -110,7 +110,10 @@ Carries the **default company (`CMP000`)** over: its details, branches, users, r
 ```
 
 - Only `CMP000` is replaced. Production's Super Admin (password from `SEED_PASSWORD`) and any company created there stay untouched; running the import again simply replaces `CMP000` again.
-- Permissions and units are shared master data with different ids in each database; they are mapped by code (`idmap.txt`), so both databases must be on the same migrations.
+- `data.sql` is self-contained: it also loads with plain `psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -f data.sql` and replaces any earlier copy of the company (matched by code or id) first.
+- **Mobile numbers already used in production** (by someone in another company) are renumbered: the imported user gets the next free number (`9000000001` taken -> `9000000003` ...), and the username follows the mobile. Tell those users their new sign-in number.
+- Permissions and units are shared master data with different ids in each database; they are mapped by code, so both databases must be on the same migrations.
+- Test companies left in production from an earlier import can be removed in the same step: `ALSO_REMOVE="CMP002" ./infra/import-dev-data.sh`.
 - Companies created later get `CMP001`, `CMP002` ...; code counters (expense numbers etc.) only ever move forward.
 - It runs in one transaction: if anything fails nothing changes. It also writes a backup first and asks you to type the database name. It is deliberately **not** part of `deploy.sh`.
 - The export holds real data. Delete `dev-export/` from the server after the import.

@@ -3,7 +3,7 @@
 # its business data - plus its uploaded receipts, into ./dev-export/.
 #   ./infra/export-dev-data.sh
 # Other companies and the Super Admin are NOT exported. Copy dev-export/ to the server (scp, WinSCP ...) and run
-# ./infra/import-dev-data.sh there. Data only: the schema comes from the migrations, so run `migrate` on the server first.
+# ./infra/import-dev-data.sh there (or just: psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -f data.sql). Data only: the schema comes from the migrations, so run `migrate` on the server first.
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -42,19 +42,28 @@ $PG pg_dump -U postgres -d "$DEV_DB_NAME" --no-owner | $PG psql -U postgres -d "
 
 echo "exporting: $(scratch -c "select count(*) from companies") company, $(scratch -c "select count(*) from locations") locations, $(scratch -c "select count(*) from users") users, $(scratch -c "select count(*) from expenses") expenses"
 
-# 3. plain SQL, data only (INSERT statements + sequence values): portable between machines, loads with psql.
-#    permissions and units are shared master data that production already has (ids differ), so they are mapped by code
-#    on import (idmap.txt) instead of being copied. Sessions and OTPs are not carried over.
-$PG pg_dump -U postgres -d "$SCRATCH" --data-only --no-owner --disable-triggers --column-inserts --rows-per-insert=200 \
-  --exclude-table=_prisma_migrations --exclude-table-data=permissions --exclude-table-data=units \
-  --exclude-table-data=sessions --exclude-table-data=otp_codes \
-  | sed '/^[\\]restrict /d;/^[\\]unrestrict /d' \
-  | sed -E "s/setval\('([^']+)', ([0-9]+), (true|false)\)/setval('\1', greatest(\2, (SELECT last_value FROM \1)), \3)/" \
-  > "$OUT/data.sql"   # a sequence only ever moves forward, so production codes already issued are never reused
-
-# the company's id is the same in every copy, so the importer can find (and replace) it even if production knows it by an old code
-scratch -F'|' -c "select code, id from companies" > "$OUT/company.txt"
-dev -F'|' -c "select 'permissions:'||code, id from permissions union all select 'units:'||code, id from units" > "$OUT/idmap.txt"
+# 3. ONE self-contained SQL file (loads with plain psql, in one transaction): a prelude that replaces any earlier copy of
+#    the company and maps permissions/units by code, then the data as INSERT statements, then a postlude. Permissions and
+#    units are shared master data production already has (ids differ), so they are mapped, not copied. Sessions and
+#    OTPs are not carried over. A user whose mobile/username is already taken is renumbered to the next free one.
+COMPANY_ID=$(scratch -c "select id from companies where code='$COMPANY'")
+MAPVALUES=$(dev -F'|' -c "select 'permissions', code, id from permissions union all select 'units', code, id from units" \
+  | awk -F'|' '{ printf "%s('"'"'%s'"'"', '"'"'%s'"'"', '"'"'%s'"'"')", (NR>1?",\n":""), $1, $2, $3 }')
+PURGE=$(cat infra/purge-rows.sql)
+{
+  awk -v code="$COMPANY" -v id="$COMPANY_ID" -v map="$MAPVALUES" -v purge="$PURGE" '{
+    if ($0 == "__PURGE__") print purge; else if ($0 == "__MAP__;") print map ";";
+    else { gsub(/__CODE__/, code); gsub(/__ID__/, id); print }
+  }' infra/import-prelude.sql
+  $PG pg_dump -U postgres -d "$SCRATCH" --data-only --no-owner --disable-triggers --column-inserts --rows-per-insert=200 \
+    --exclude-table=_prisma_migrations --exclude-table-data=permissions --exclude-table-data=units \
+    --exclude-table-data=sessions --exclude-table-data=otp_codes \
+    | sed '/^[\]restrict /d;/^[\]unrestrict /d' \
+    | sed '/^ALTER TABLE public\.users \(DISABLE\|ENABLE\) TRIGGER ALL;$/d' \
+    | sed -E "s/setval\('([^']+)', ([0-9]+), (true|false)\)/setval('\1', greatest(\2, (SELECT last_value FROM \1)), \3)/"
+  cat infra/import-postlude.sql
+} > "$OUT/data.sql"   # a sequence only ever moves forward, so production codes already issued are never reused
+rm -f "$OUT/company.txt" "$OUT/idmap.txt"
 $PG psql -U postgres -d postgres -qc "DROP DATABASE $SCRATCH" >/dev/null
 
 if [ -d "$UPLOADS_DIR" ]; then

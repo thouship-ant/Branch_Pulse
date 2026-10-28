@@ -2,30 +2,22 @@
 # Step 2 (on the server, right after `run --rm migrate`): load the default company (CMP000) exported from dev.
 #   ./infra/import-dev-data.sh               # asks you to type the database name to confirm
 #   CONFIRM=yes ./infra/import-dev-data.sh   # non-interactive
+#   ALSO_REMOVE="CMP002 CMP003" ./infra/import-dev-data.sh   # also delete these (test) companies
 #
-# Replaces ONLY the default company (found by code or id) (its details, branches, users and data). The Super Admin and every other company in
-# production are left untouched. A full backup is written first. Run it at go-live, never as part of deploy.sh.
+# Replaces ONLY the default company (found by code or id). The Super Admin and every other company in production are
+# left untouched. A user whose mobile number is already taken is renumbered to the next free one. A backup is written first.
+# dev-export/data.sql is self-contained, so this wrapper is optional:
+#   docker compose ... exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -q < dev-export/data.sql
 set -eu
 cd "$(dirname "$0")/.."
 
 COMPANY="${COMPANY_CODE:-CMP000}"
 COMPOSE="${COMPOSE:-docker compose -f docker-compose.prod.yml --env-file .env.prod}"
 DATA=dev-export/data.sql
-MAP=dev-export/idmap.txt
-IDFILE=dev-export/company.txt
 [ -f .env.prod ] || { echo "Missing .env.prod"; exit 1; }
-[ -f "$DATA" ] && [ -f "$MAP" ] && [ -f "$IDFILE" ] || { echo "Missing $DATA / $MAP - run infra/export-dev-data.sh on the dev machine and copy dev-export/ here"; exit 1; }
-
-# which production rows are "this company": its code, its id (same in every copy - covers a copy loaded earlier under
-# an old code such as CMP001) and, optionally, other test companies to clear:  ALSO_REMOVE="CMP002 CMP003" ./infra/import-dev-data.sh
-COMPANY_ID=$(cut -d'|' -f2 "$IDFILE")
-CODES="'$COMPANY'"; for c in ${ALSO_REMOVE:-}; do CODES="$CODES, '$c'"; done
-COND="code IN ($CODES) OR id = '$COMPANY_ID'"
+[ -f "$DATA" ] || { echo "Missing $DATA - run infra/export-dev-data.sh on the dev machine and copy dev-export/ here"; exit 1; }
 
 PSQL="$COMPOSE exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 -qAt"
-
-# the schema must already be migrated
-[ "$($PSQL -c "select count(*) from _prisma_migrations where finished_at is not null")" -gt 0 ] || { echo "Run migrate first"; exit 1; }
 
 echo "Production companies: $($PSQL -c "select coalesce(string_agg(code, ', ' order by code), 'none') from companies")"
 if [ "${CONFIRM:-}" != "yes" ]; then
@@ -34,22 +26,7 @@ if [ "${CONFIRM:-}" != "yes" ]; then
   [ "$answer" = "branch_pulse" ] || { echo "Cancelled."; exit 1; }
 fi
 
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
-
-# 1. permissions and units are shared master data with different ids in each database: map dev id -> production id by code
-$PSQL -c "select 'permissions:'||code||'|'||id from permissions union all select 'units:'||code||'|'||id from units" | sort -t'|' -k1,1 > "$TMP/prod.map"
-sort -t'|' -k1,1 "$MAP" > "$TMP/dev.map"
-join -t'|' -j1 "$TMP/dev.map" "$TMP/prod.map" > "$TMP/joined.map"
-if [ "$(wc -l < "$TMP/joined.map")" -ne "$(wc -l < "$TMP/dev.map")" ]; then
-  echo "Production is missing permissions/units that dev has (migrations differ). Missing:"
-  cut -d'|' -f1 "$TMP/dev.map" | sort > "$TMP/a"; cut -d'|' -f1 "$TMP/joined.map" | sort > "$TMP/b"; comm -23 "$TMP/a" "$TMP/b" | head
-  exit 1
-fi
-awk -F'|' '{ print "s/" $2 "/" $3 "/g" }' "$TMP/joined.map" > "$TMP/map.sed"
-sed -f "$TMP/map.sed" "$DATA" > "$TMP/data.sql"
-
-# 2. safety net
+# 1. safety net
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/branch-pulse}"
 mkdir -p "$BACKUP_DIR"
 SAFE="$BACKUP_DIR/before-dev-import-$(date +%F_%H%M).dump"
@@ -58,17 +35,14 @@ echo "backup of current production data: $SAFE"
 
 $COMPOSE stop api web
 
-# 3. one transaction: remove the old copy of the company (if any), then load the new one. If anything fails nothing changes.
-{
-  echo "SET session_replication_role = replica;"
-  cat infra/purge-rows.sql
-  echo "SELECT pg_temp.bp_delete_company(\$c\$$COND\$c\$);"
-  echo "SELECT pg_temp.bp_sweep();"
-  cat "$TMP/data.sql"
-} | $COMPOSE exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -q -o /dev/null \
-  || { echo "Import FAILED - nothing was changed. Restarting the app."; $COMPOSE start api web; exit 1; }
+# 2. one transaction: if anything fails nothing changes
+ALSO=""
+for c in ${ALSO_REMOVE:-}; do ALSO="${ALSO:+$ALSO,}'$c'"; done
+if $COMPOSE exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -q ${ALSO:+-v also_remove="$ALSO"} < "$DATA" >/dev/null; then :; else
+  echo "Import FAILED - nothing was changed. Restarting the app."; $COMPOSE start api web; exit 1
+fi
 
-# 4. receipts and photos
+# 3. receipts and photos
 if [ -f dev-export/uploads.tgz ]; then
   docker run --rm -v branch-pulse_uploads:/data -v "$PWD/dev-export":/in alpine tar xzf /in/uploads.tgz -C /data
 fi
