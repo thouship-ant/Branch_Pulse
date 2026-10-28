@@ -3,7 +3,7 @@
 #   ./infra/import-dev-data.sh               # asks you to type the database name to confirm
 #   CONFIRM=yes ./infra/import-dev-data.sh   # non-interactive
 #
-# Replaces ONLY the default company (its details, branches, users and data). The Super Admin and every other company in
+# Replaces ONLY the default company (found by code or id) (its details, branches, users and data). The Super Admin and every other company in
 # production are left untouched. A full backup is written first. Run it at go-live, never as part of deploy.sh.
 set -eu
 cd "$(dirname "$0")/.."
@@ -12,8 +12,15 @@ COMPANY="${COMPANY_CODE:-CMP000}"
 COMPOSE="${COMPOSE:-docker compose -f docker-compose.prod.yml --env-file .env.prod}"
 DATA=dev-export/data.sql
 MAP=dev-export/idmap.txt
+IDFILE=dev-export/company.txt
 [ -f .env.prod ] || { echo "Missing .env.prod"; exit 1; }
-[ -f "$DATA" ] && [ -f "$MAP" ] || { echo "Missing $DATA / $MAP - run infra/export-dev-data.sh on the dev machine and copy dev-export/ here"; exit 1; }
+[ -f "$DATA" ] && [ -f "$MAP" ] && [ -f "$IDFILE" ] || { echo "Missing $DATA / $MAP - run infra/export-dev-data.sh on the dev machine and copy dev-export/ here"; exit 1; }
+
+# which production rows are "this company": its code, its id (same in every copy - covers a copy loaded earlier under
+# an old code such as CMP001) and, optionally, other test companies to clear:  ALSO_REMOVE="CMP002 CMP003" ./infra/import-dev-data.sh
+COMPANY_ID=$(cut -d'|' -f2 "$IDFILE")
+CODES="'$COMPANY'"; for c in ${ALSO_REMOVE:-}; do CODES="$CODES, '$c'"; done
+COND="code IN ($CODES) OR id = '$COMPANY_ID'"
 
 PSQL="$COMPOSE exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 -qAt"
 
@@ -55,7 +62,7 @@ $COMPOSE stop api web
 {
   echo "SET session_replication_role = replica;"
   cat infra/purge-rows.sql
-  echo "SELECT pg_temp.bp_delete_company(\$c\$code = '$COMPANY'\$c\$);"
+  echo "SELECT pg_temp.bp_delete_company(\$c\$$COND\$c\$);"
   echo "SELECT pg_temp.bp_sweep();"
   cat "$TMP/data.sql"
 } | $COMPOSE exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -q -o /dev/null \

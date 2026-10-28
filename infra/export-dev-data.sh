@@ -52,6 +52,8 @@ $PG pg_dump -U postgres -d "$SCRATCH" --data-only --no-owner --disable-triggers 
   | sed -E "s/setval\('([^']+)', ([0-9]+), (true|false)\)/setval('\1', greatest(\2, (SELECT last_value FROM \1)), \3)/" \
   > "$OUT/data.sql"   # a sequence only ever moves forward, so production codes already issued are never reused
 
+# the company's id is the same in every copy, so the importer can find (and replace) it even if production knows it by an old code
+scratch -F'|' -c "select code, id from companies" > "$OUT/company.txt"
 dev -F'|' -c "select 'permissions:'||code, id from permissions union all select 'units:'||code, id from units" > "$OUT/idmap.txt"
 $PG psql -U postgres -d postgres -qc "DROP DATABASE $SCRATCH" >/dev/null
 
