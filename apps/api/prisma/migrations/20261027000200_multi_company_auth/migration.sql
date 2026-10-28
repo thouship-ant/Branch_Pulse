@@ -14,7 +14,7 @@ CREATE POLICY p_company ON roles
 -- Sign-in name = mobile number for every user that has one (the seeded dev users got theirs in the previous migration).
 UPDATE users SET username = mobile WHERE mobile IS NOT NULL AND company_id IS NOT NULL;
 
--- A fresh database has no data to move: drop the empty placeholder company so the first real company is CMP001 (CMP000 is the default company that existing data moves into).
+-- (a fresh database never gets the placeholder company any more; this stays for databases migrated by the earlier version)
 DELETE FROM companies c
 WHERE c.code = 'CMP000'
   AND NOT EXISTS (SELECT 1 FROM locations WHERE company_id = c.id)

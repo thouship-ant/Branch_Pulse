@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { existsSync } from 'node:fs';
@@ -7,6 +7,7 @@ import { Ctx, ReqCtx, RequirePermissions } from '../common/auth-user';
 import { AppException } from '../common/app-exception';
 import { CompanyService, CreateCompanyDto, UpdateCompanyDto } from './company.service';
 import { DataUploadDto, LedgerImportService } from './ledger-import.service';
+import { SuperUpdateUserDto, SuperUsersService } from './super-users.service';
 
 const MAX_UPLOAD = 5 * 1024 * 1024; // 5 MB: a ledger workbook is far smaller
 
@@ -17,6 +18,7 @@ export class CompanyController {
   constructor(
     private readonly companies: CompanyService,
     private readonly importer: LedgerImportService,
+    private readonly users: SuperUsersService,
   ) {}
 
   @Get('companies')
@@ -32,6 +34,25 @@ export class CompanyController {
   @Patch('companies/:id')
   update(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCompanyDto) {
     return this.companies.update(ctx, id, dto);
+  }
+
+  /** Every user of a company, whatever their role. */
+  @Get('companies/:id/users')
+  companyUsers(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string) {
+    return this.users.list(ctx, id);
+  }
+
+  /** Change a user's name, mobile number, email or status. */
+  @Patch('users/:id')
+  updateUser(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string, @Body() dto: SuperUpdateUserDto) {
+    return this.users.update(ctx, id, dto);
+  }
+
+  /** New temporary password for the user, sent by SMS; they must change it at the next sign-in. */
+  @Post('users/:id/reset-password')
+  @HttpCode(200)
+  resetPassword(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string) {
+    return this.users.resetPassword(ctx, id);
   }
 
   @Get('companies/:id/branches')

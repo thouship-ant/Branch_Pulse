@@ -2,11 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
-import { AppException, notFound } from '../common/app-exception';
+import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { AuthUser, ReqCtx } from '../common/auth-user';
 import { PrismaService } from '../common/prisma.service';
 import { env } from '../config/env';
+import { assertStrongPassword } from './passwords';
 import { JwtStrategy } from './jwt.strategy';
 import { SmsService } from './sms.service';
 
@@ -252,6 +253,40 @@ export class AuthService {
   }
 
   /** Profile with roles, permissions, the company and the locations the caller may see (loaded under RLS). */
+  /**
+   * The signed-in user sets a new password. While the account still has the default / temporary password
+   * (mustChangePassword) no current password is asked for; otherwise it must be supplied.
+   */
+  async changePassword(user: AuthUser, input: { currentPassword?: string; newPassword: string; confirmPassword: string }) {
+    if (input.newPassword !== input.confirmPassword) throw validation('PASSWORD_MISMATCH', 'New Password and Confirm Password do not match', 'confirmPassword');
+    assertStrongPassword(input.newPassword, 'newPassword');
+    const profile = await this.prisma.runAuth((tx) => tx.user.findUnique({ where: { id: user.id } }));
+    if (!profile) throw notFound('User');
+    if (!profile.must_change_password) {
+      const ok = input.currentPassword ? await argon2.verify(profile.password_hash, input.currentPassword).catch(() => false) : false;
+      if (!ok) throw validation('WRONG_PASSWORD', 'Current password is wrong', 'currentPassword');
+    }
+    if (await argon2.verify(profile.password_hash, input.newPassword).catch(() => false)) {
+      throw validation('SAME_PASSWORD', 'Choose a password different from the current one', 'newPassword');
+    }
+    const hash = await argon2.hash(input.newPassword);
+    await this.prisma.runAuth(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { password_hash: hash, must_change_password: false, password_changed_at: new Date(), failed_logins: 0, locked_until: null },
+      });
+      // other devices must sign in again; this session stays
+      await tx.session.updateMany({ where: { user_id: user.id, revoked_at: null, id: { not: user.sessionId } }, data: { revoked_at: new Date() } });
+      await tx.auditLog.create({
+        data: {
+          actor_id: user.id, company_id: user.companyId, action: 'UPDATE', entity_type: 'USER', entity_id: user.id, entity_code: user.username,
+          reason: 'Password changed by the user', changed_fields: ['password'], source: 'WEB',
+        },
+      });
+    });
+    return { ok: true };
+  }
+
   async me(user: AuthUser) {
     const profile = await this.prisma.runAuth((tx) => tx.user.findUnique({ where: { id: user.id } }));
     if (!profile) throw notFound('User');
@@ -277,6 +312,8 @@ export class AuthService {
       permissions: user.permissions,
       allLocations: user.allLocations,
       isSuper: user.isSuper,
+      /** true until the user replaces the default / temporary password: the app shows the change-password prompt */
+      mustChangePassword: profile.must_change_password,
       company,
       locations,
     };

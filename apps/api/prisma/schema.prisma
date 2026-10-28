@@ -259,6 +259,8 @@ model User {
   email              String?      @db.VarChar(120)
   full_name          String       @db.VarChar(100)
   password_hash      String
+  must_change_password Boolean    @default(false)
+  password_changed_at  DateTime?  @db.Timestamptz
   preferred_language String       @default("en") @db.Char(2)
   employee_id        String?      @db.Uuid
   mfa_enabled        Boolean      @default(false)

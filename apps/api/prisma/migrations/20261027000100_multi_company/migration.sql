@@ -34,9 +34,13 @@ CREATE TABLE otp_codes (
 );
 CREATE INDEX otp_codes_mobile_created_at_idx ON otp_codes (mobile, created_at DESC);
 
--- everything that exists today belongs to one company
+-- A database that already holds single-company data (a dev database) moves it into one "Default Company" (CMP000).
+-- A fresh database (production) gets NO default company: the Super Admin creates every company from the app.
 INSERT INTO companies (code, name)
-SELECT 'CMP000', coalesce((SELECT value #>> '{}' FROM settings WHERE key = 'business.name'), 'Default Company');
+SELECT 'CMP000', coalesce((SELECT value #>> '{}' FROM settings WHERE key = 'business.name'), 'Default Company')
+WHERE EXISTS (SELECT 1 FROM locations) OR EXISTS (SELECT 1 FROM users) OR EXISTS (SELECT 1 FROM inventory_items)
+   OR EXISTS (SELECT 1 FROM suppliers) OR EXISTS (SELECT 1 FROM recipes) OR EXISTS (SELECT 1 FROM settings)
+   OR EXISTS (SELECT 1 FROM approval_limits) OR EXISTS (SELECT 1 FROM expense_categories);
 
 -- ------------------------------------------------------------------ company_id columns
 -- Nullable first, backfilled with the default company, then tightened. The column default reads the session variable

@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'node:crypto';
 import { ArrayMinSize, IsArray, IsEmail, IsIn, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { ReqCtx } from '../common/auth-user';
+import { assertStrongPassword, defaultPasswordFor } from '../auth/passwords';
 import { PrismaService, Tx } from '../common/prisma.service';
 
 export class CreateUserDto {
   /** the 10-digit mobile number is the sign-in name (OTP is sent to it) */
   @Matches(/^\d{10}$/, { message: 'Mobile must be 10 digits' }) mobile: string;
-  /** only Admin users sign in with a password (plus OTP); everyone else uses OTP alone */
+  /** optional: left blank the role's default password is used (Admin@1234, Account@1234 ...). The user must change it at the first sign-in. */
   @IsOptional() @IsString() @MaxLength(200) password?: string;
   @IsString() @MaxLength(100) fullName: string;
   @IsOptional() @IsEmail() email?: string;
@@ -30,16 +30,7 @@ export class UpdateUserDto {
   @IsOptional() @IsIn(['en', 'ta']) preferredLanguage?: 'en' | 'ta';
 }
 
-// V28: minimal breached-password screen; swap for a k-anonymity HIBP check when online.
-const COMMON_PASSWORDS = new Set([
-  'password', 'password1', '12345678', '123456789', 'qwerty123', 'iloveyou', 'admin123', 'welcome1', 'abc12345', 'letmein123',
-]);
-
-export function assertStrongPassword(pw: string) {
-  if (pw.length < 8 || COMMON_PASSWORDS.has(pw.toLowerCase())) {
-    throw validation('WEAK_PASSWORD', 'Password must be at least 8 characters and not a common password', 'password');
-  }
-}
+export { assertStrongPassword };
 
 const BRANCH_ROLES = new Set(['BRANCH_MANAGER', 'STAFF']);
 
@@ -76,8 +67,6 @@ export class UsersService {
   async create(ctx: ReqCtx, dto: CreateUserDto) {
     const roles = await this.resolveRoles(dto.roleCodes);
     this.assertScopeRules(roles, dto.locationIds ?? []);
-    const isAdmin = roles.some((r) => r.code === 'ADMIN');
-    if (isAdmin && !dto.password) throw validation('PASSWORD_REQUIRED', 'Admin users need a password', 'password');
     if (dto.password) assertStrongPassword(dto.password);
 
     return this.prisma.runCurrent(async (tx) => {
@@ -92,8 +81,9 @@ export class UsersService {
           full_name: dto.fullName,
           mobile: dto.mobile,
           email: dto.email,
-          // non-admins never use it (OTP only); a random hash keeps the column filled without a guessable password
-          password_hash: await argon2.hash(dto.password ?? randomBytes(24).toString('hex')),
+          // role default unless one is given; either way the user must pick their own after the first sign-in
+          password_hash: await argon2.hash(dto.password ?? defaultPasswordFor(roles.map((r) => r.code))),
+          must_change_password: true,
           preferred_language: dto.preferredLanguage ?? 'en',
           created_by: ctx.user.id,
           updated_by: ctx.user.id,
@@ -151,6 +141,7 @@ export class UsersService {
           preferred_language: dto.preferredLanguage,
           status: dto.status,
           password_hash: dto.password ? await argon2.hash(dto.password) : undefined,
+          must_change_password: dto.password ? true : undefined,
           failed_logins: dto.password ? 0 : undefined,
           locked_until: dto.password ? null : undefined,
           updated_by: ctx.user.id,

@@ -10,22 +10,38 @@ import { env } from '../config/env';
 export class SmsService {
   private readonly log = new Logger('SMS');
 
-  async sendOtp(mobile: string, otp: string): Promise<void> {
-    const { apiKey, senderId, templateId, baseUrl, otpTemplate } = env.sms;
+  get configured(): boolean {
+    const { apiKey, senderId, templateId, baseUrl } = env.sms;
+    return !!(apiKey && senderId && templateId && baseUrl);
+  }
+
+  /** @returns true when the gateway accepted the message, false when it is not configured (logged only) */
+  private async send(mobile: string, templateId: string | undefined, message: string, logLine: string): Promise<boolean> {
+    const { apiKey, senderId, baseUrl } = env.sms;
     if (!apiKey || !senderId || !templateId || !baseUrl) {
-      this.log.warn(`SMS Fortius is not configured: OTP for ${mobile} is ${otp} (development only)`);
-      return;
+      this.log.warn(`SMS Fortius is not configured: ${logLine} (development only)`);
+      return false;
     }
     const params = new URLSearchParams({
       apikey: apiKey,
       senderid: senderId,
       templateid: templateId,
       number: mobile.replace(/^\+?91/, ''),
-      message: otpTemplate.replace('{otp}', otp),
+      message,
     });
     const res = await fetch(`${baseUrl}?${params.toString()}`, { method: 'GET', signal: AbortSignal.timeout(10_000) });
     const body = await res.text();
     if (!res.ok) throw new Error(`SMS Fortius returned ${res.status}`);
-    this.log.log(`OTP sent to ${mobile.slice(0, 2)}******${mobile.slice(-2)}: ${body.slice(0, 120)}`);
+    this.log.log(`SMS sent to ${mobile.slice(0, 2)}******${mobile.slice(-2)}: ${body.slice(0, 120)}`);
+    return true;
+  }
+
+  async sendOtp(mobile: string, otp: string): Promise<void> {
+    await this.send(mobile, env.sms.templateId, env.sms.otpTemplate.replace('{otp}', otp), `OTP for ${mobile} is ${otp}`);
+  }
+
+  /** The temporary password a Super Admin reset sends to the user. */
+  sendTempPassword(mobile: string, password: string): Promise<boolean> {
+    return this.send(mobile, env.sms.tempPasswordTemplateId, env.sms.tempPasswordTemplate.replace('{password}', password), `temporary password for ${mobile} is ${password}`);
   }
 }

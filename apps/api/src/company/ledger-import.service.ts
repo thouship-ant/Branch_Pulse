@@ -10,7 +10,8 @@ import { toDate } from '../common/dates';
 import { D, ZERO, sum } from '../common/money';
 import { PrismaService, Tx } from '../common/prisma.service';
 import { SettingsService } from '../common/settings.service';
-import { CompanyService } from './company.service';
+import * as argon2 from 'argon2';
+import { DEFAULT_PASSWORDS } from '../auth/passwords';
 import { parseLedger } from './ledger-parser';
 
 const bool = ({ value }: { value: unknown }) => value === true || value === 'true' || value === '1';
@@ -261,7 +262,7 @@ export class LedgerImportService {
     const manager = await tx.user.create({
       data: {
         company_id: companyId, username: dto.managerMobile!, mobile: dto.managerMobile!, full_name: dto.managerName!.trim(),
-        password_hash: await CompanyService.randomPasswordHash(), created_by: ctx.user.id, updated_by: ctx.user.id,
+        password_hash: await argon2.hash(DEFAULT_PASSWORDS.BRANCH_MANAGER), must_change_password: true, created_by: ctx.user.id, updated_by: ctx.user.id,
         roles: { create: [{ role_id: role.id }] }, locations: { create: [{ location_id: loc.id }] },
       },
     });

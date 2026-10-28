@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
-import { randomBytes } from 'node:crypto';
 import { provisionCompanyDefaults } from '../admin/company-defaults';
-import { assertStrongPassword } from '../admin/users.service';
+import { assertStrongPassword, DEFAULT_PASSWORDS } from '../auth/passwords';
 import { AppException, notFound } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { ReqCtx } from '../common/auth-user';
@@ -22,8 +21,8 @@ export class CreateCompanyDto {
   @IsString() @MinLength(5) @MaxLength(500) address: string;
   @IsOptional() @ValidateIf((o) => o.gstin) @Matches(GSTIN, { message: 'GSTIN must be 15 characters, e.g. 33ABCDE1234F1Z5' }) gstin?: string;
   @IsOptional() @ValidateIf((o) => o.fssai) @Matches(/^\d{14}$/, { message: 'FSSAI licence number must be 14 digits' }) fssai?: string;
-  /** the Admin signs in with password + OTP */
-  @IsString() @MaxLength(200) password: string;
+  /** the Admin signs in with password + OTP; blank = the default Admin password (Admin@1234), changed at the first sign-in */
+  @IsOptional() @IsString() @MaxLength(200) password?: string;
 }
 
 export class UpdateCompanyDto {
@@ -65,7 +64,7 @@ export class CompanyService {
   }
 
   async create(ctx: ReqCtx, dto: CreateCompanyDto) {
-    assertStrongPassword(dto.password);
+    if (dto.password) assertStrongPassword(dto.password);
     const name = dto.companyName.trim();
     return this.prisma.runScoped(ctx.user, async (tx) => {
       if (await tx.company.findFirst({ where: { name: { equals: name, mode: 'insensitive' } } })) {
@@ -94,7 +93,7 @@ export class CompanyService {
       const admin = await tx.user.create({
         data: {
           company_id: company.id, username: dto.mobile, mobile: dto.mobile, full_name: dto.adminName.trim(), email: dto.email.trim().toLowerCase(),
-          password_hash: await argon2.hash(dto.password), created_by: ctx.user.id, updated_by: ctx.user.id,
+          password_hash: await argon2.hash(dto.password || DEFAULT_PASSWORDS.ADMIN), must_change_password: true, created_by: ctx.user.id, updated_by: ctx.user.id,
           roles: { create: [{ role_id: roleId.get('ADMIN')! }] },
         },
       });
@@ -151,9 +150,5 @@ export class CompanyService {
     });
   }
 
-  /** A throwaway password for users who only sign in with OTP (kept so the column is never empty). */
-  static randomPasswordHash() {
-    return argon2.hash(randomBytes(24).toString('hex'));
-  }
 }
 

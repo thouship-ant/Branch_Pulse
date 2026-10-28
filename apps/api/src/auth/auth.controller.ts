@@ -8,6 +8,13 @@ import { Ctx, CurrentUser, AuthUser, Public, ReqCtx } from '../common/auth-user'
 import { env } from '../config/env';
 import { AuthService } from './auth.service';
 
+class ChangePasswordDto {
+  /** only needed once the default / temporary password has been replaced before */
+  @IsOptional() @IsString() @MaxLength(200) currentPassword?: string;
+  @IsString() @MaxLength(200) newPassword: string;
+  @IsString() @MaxLength(200) confirmPassword: string;
+}
+
 class IdentifyDto {
   @IsString() @MaxLength(50) identifier: string;
 }
@@ -113,6 +120,13 @@ export class AuthController {
     const r = await this.auth.refresh(req.cookies?.[COOKIE] ?? fromBody, { ip: rawIp && isIP(rawIp) ? rawIp : undefined });
     this.setCookie(res, r.refreshCookie);
     return { accessToken: r.accessToken, expiresIn: r.expiresIn, ...withRefresh(req, r.refreshCookie), user: await this.auth.me(r.user) };
+  }
+
+  /** The signed-in user replaces their password (the first-sign-in prompt posts here). */
+  @Post('change-password')
+  @HttpCode(200)
+  changePassword(@CurrentUser() user: AuthUser, @Body() dto: ChangePasswordDto) {
+    return this.auth.changePassword(user, dto);
   }
 
   @Post('logout')

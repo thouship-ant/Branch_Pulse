@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:default-passwords": "tsx prisma/set-default-passwords.ts",
     "test": "jest",
     "test:e2e": "jest --config jest.e2e.config.js --runInBand"
   },

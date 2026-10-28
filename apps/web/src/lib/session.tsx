@@ -17,6 +17,8 @@ export interface Me {
   allLocations: boolean;
   /** Super Admin: manages companies, has no company of its own */
   isSuper?: boolean;
+  /** still on the default / temporary password: the app asks for a new one */
+  mustChangePassword?: boolean;
   company?: { id: string; code: string; name: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
@@ -35,6 +37,8 @@ interface SessionCtx {
   requestOtp: (mobile: string) => Promise<void>;
   verifyOtp: (mobile: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** call after the password was changed so the prompt goes away */
+  passwordChanged: () => void;
 }
 
 const Ctx = createContext<SessionCtx>(null as unknown as SessionCtx);
@@ -78,10 +82,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try { await api.post('/auth/logout'); } catch (e) { if (!(e instanceof ApiError)) throw e; }
     setAccessToken(null);
+    try { Object.keys(sessionStorage).filter((k) => k.startsWith('bp_pw_later_')).forEach((k) => sessionStorage.removeItem(k)); } catch { /* private mode */ }
     await clearLocalData();
     navigator.serviceWorker?.controller?.postMessage({ type: 'clear-api-cache' });
     setMe(null);
   }, []);
+
+  const passwordChanged = useCallback(() => setMe((m) => (m ? { ...m, mustChangePassword: false } : m)), []);
 
   const value = useMemo<SessionCtx>(() => {
     const perms = new Set(me?.permissions ?? []);
@@ -95,8 +102,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       requestOtp,
       verifyOtp,
       logout,
+      passwordChanged,
     };
-  }, [me, loading, identify, loginWithPassword, requestOtp, verifyOtp, logout]);
+  }, [me, loading, identify, loginWithPassword, requestOtp, verifyOtp, logout, passwordChanged]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

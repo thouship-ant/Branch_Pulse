@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { SessionProvider } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
@@ -10,6 +11,7 @@ function Shell() {
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: th.bg } }} />
+      <ChangePasswordModal />
     </>
   );
 }

@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { PasswordChecklist } from '../PasswordChecklist';
 import { api, ApiError } from '@/lib/api';
+import { passwordOk } from '@/lib/password';
 import { useT } from '@/lib/i18n';
 import { ActiveChip, ErrorBox, Skeleton, TextField } from '../ui';
 
@@ -57,8 +59,8 @@ export function UsersManager() {
     setBusy(true); setFormError(null);
     try {
       const common = { fullName: draft.fullName.trim(), mobile: draft.mobile.trim(), email: draft.email.trim() || undefined, roleCodes: draft.roleCodes, locationIds: draft.locationIds };
-      // only an Admin has a password (and signs in with it plus an OTP); everyone else signs in with the OTP alone
-      const password = draft.roleCodes.includes('ADMIN') ? draft.password || undefined : undefined;
+      // blank = the role's default password (Admin@1234, Account@1234 ...); every user changes it at the first sign-in
+      const password = draft.password || undefined;
       if (draft.id) {
         await api.patch(`/users/${draft.id}`, { ...common, active: undefined, status: draft.active ? 'ACTIVE' : 'INACTIVE', password });
       } else {
@@ -123,9 +125,11 @@ export function UsersManager() {
                   <TextField id="umo" label={`${t('mobile')} *`} inputMode="numeric" value={draft.mobile} placeholder="10 digits" onChange={(e) => setDraft({ ...draft, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
                   <p className="mt-1 text-xs text-slate-500">This is the sign-in name; the OTP is sent to it.</p>
                 </div>
-                {draft.roleCodes.includes('ADMIN') && (
-                  <TextField id="upw" label={draft.id ? `${t('passwordNew')} (${t('useDefault')})` : `${t('passwordNew')} *`} type="password" autoComplete="new-password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
-                )}
+                <div>
+                  <TextField id="upw" label={draft.id ? `${t('passwordNew')} (${t('useDefault')})` : `${t('passwordNew')} (optional)`} type="password" autoComplete="new-password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
+                  <p className="mt-1 text-xs text-slate-500">{draft.id ? 'Leave blank to keep the current password.' : 'Leave blank to use the role default. The user must change it at the first sign-in.'}</p>
+                  {draft.password && <div className="mt-1"><PasswordChecklist value={draft.password} /></div>}
+                </div>
                 <TextField id="uem" label="Email" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
               </div>
               <div>
@@ -159,7 +163,7 @@ export function UsersManager() {
               <ErrorBox error={formError} />
               <div className="flex justify-end gap-2">
                 <button className="btn-secondary" onClick={() => setDraft(null)}>{t('cancel')}</button>
-                <button className="btn-primary" disabled={busy || !draft.fullName.trim() || !/^\d{10}$/.test(draft.mobile) || (!draft.id && draft.roleCodes.includes('ADMIN') && draft.password.length < 8) || draft.roleCodes.length === 0} onClick={save}>
+                <button className="btn-primary" disabled={busy || !draft.fullName.trim() || !/^\d{10}$/.test(draft.mobile) || (draft.password !== '' && !passwordOk(draft.password)) || draft.roleCodes.length === 0} onClick={save}>
                   {busy ? t('loading') : t('save')}
                 </button>
               </div>

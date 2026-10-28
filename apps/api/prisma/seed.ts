@@ -4,16 +4,17 @@
  *   npm run db:seed                 Super Admin + units + one demo company (Admin, Accountant, Stock Manager, branch managers)
  *   npm run db:seed -- --demo       + 30 days of consistent branch history for dashboards/tests
  *   SEED_MINIMAL=1 (or --minimal)   production bootstrap: units and ONE Super Admin (no company: the Super Admin creates them)
- *   SEED_PASSWORD=...               password for the Super Admin and the demo Admin (required in production)
+ *   SEED_PASSWORD=...               password for the Super Admin (required in production)
  *
  * Demo sign-ins (OTP is whatever OTP_FIXED_CODE says, 123456 in .env.example):
  *   Super Admin  username superadmin + password
- *   Admin        mobile 9000000001 + password, then OTP
+ *   Admin        mobile 9000000001 + password Admin@1234, then OTP
  *   others       mobile + OTP (Accountant 9000000002, Stock Manager 9000000003, branch managers 9000000011..)
+ *   Every user also has a role-based default password (Account@1234, StkMr@1234, Manager@1234 ...) and is asked to change it after the first sign-in.
  */
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'node:crypto';
+import { defaultPasswordFor } from '../src/auth/passwords';
 import { ensureSuperAdminRole, provisionCompanyDefaults } from '../src/admin/company-defaults';
 import { addDays, fmtDate, toDate, todayIST } from '../src/common/dates';
 
@@ -173,19 +174,18 @@ async function main() {
   }
 
   // ---- users: the mobile number is the sign-in name. Admin also has a password (then OTP); the others use OTP only.
-  const users: Array<{ mobile: string; name: string; role: string; locations: string[]; password: boolean }> = [
-    { mobile: '9000000001', name: 'Admin', role: 'ADMIN', locations: [], password: true },
-    { mobile: '9000000002', name: 'Accountant', role: 'ACCOUNTANT', locations: [], password: false },
-    { mobile: '9000000003', name: 'Stock Manager', role: 'STOCK_MANAGER', locations: ['GDN01', ...branches.map((b) => b.code)], password: false },
-    ...branches.map((b, i) => ({ mobile: `90000000${String(11 + i).padStart(2, '0')}`, name: `${b.name} Manager`, role: 'BRANCH_MANAGER', locations: [b.code], password: false })),
+  const users: Array<{ mobile: string; name: string; role: string; locations: string[] }> = [
+    { mobile: '9000000001', name: 'Admin', role: 'ADMIN', locations: [] },
+    { mobile: '9000000002', name: 'Accountant', role: 'ACCOUNTANT', locations: [] },
+    { mobile: '9000000003', name: 'Stock Manager', role: 'STOCK_MANAGER', locations: ['GDN01', ...branches.map((b) => b.code)] },
+    ...branches.map((b, i) => ({ mobile: `90000000${String(11 + i).padStart(2, '0')}`, name: `${b.name} Manager`, role: 'BRANCH_MANAGER', locations: [b.code] })),
   ];
-  const otpOnlyHash = await argon2.hash(randomBytes(24).toString('hex'));
   for (const u of users) {
     const existing = await prisma.user.findFirst({ where: { OR: [{ mobile: u.mobile }, { username: u.mobile }] } });
     if (existing) continue;
     await prisma.user.create({
       data: {
-        company_id: companyId, username: u.mobile, mobile: u.mobile, full_name: u.name, password_hash: u.password ? passwordHash : otpOnlyHash,
+        company_id: companyId, username: u.mobile, mobile: u.mobile, full_name: u.name, password_hash: await argon2.hash(defaultPasswordFor([u.role])), must_change_password: true,
         roles: { create: [{ role_id: roleId.get(u.role)! }] },
         locations: { create: u.locations.map((c) => ({ location_id: locId.get(c)! })) },
       },
@@ -196,8 +196,8 @@ async function main() {
     if (m && !b.manager_user_id) await prisma.location.update({ where: { id: b.id }, data: { manager_user_id: m.id } });
   }
 
-  console.log(`Seeded ${company.name} (${company.code}): ${users.length} users. Super Admin 'superadmin', Admin mobile 9000000001.`);
-  if (!process.env.SEED_PASSWORD) console.log('Password for superadmin and the Admin (dev only): ChangeMe@123. OTP: see OTP_FIXED_CODE in .env (123456 in .env.example).');
+  console.log(`Seeded ${company.name} (${company.code}): ${users.length} users. Super Admin 'superadmin', Admin mobile 9000000001 (password Admin@1234).`);
+  if (!process.env.SEED_PASSWORD) console.log('Password for superadmin (dev only): ChangeMe@123. OTP: see OTP_FIXED_CODE in .env (123456 in .env.example).');
 
   if (DEMO) {
     await seedDemoHistory(companyId, branches);

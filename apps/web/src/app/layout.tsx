@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans_Tamil } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { PwaRegister } from '@/components/PwaRegister';
 import { TopLoader } from '@/components/TopLoader';
 import { I18nProvider } from '@/lib/i18n';
@@ -35,7 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <ThemeProvider>
           <I18nProvider>
-            <SessionProvider>{children}</SessionProvider>
+            <SessionProvider>{children}<ChangePasswordModal /></SessionProvider>
           </I18nProvider>
         </ThemeProvider>
         <TopLoader />
