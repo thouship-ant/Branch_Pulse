@@ -109,7 +109,7 @@ scp -r dev-export deploy@server:~/branch-pulse/     # or any file transfer
 ./infra/import-dev-data.sh                    # backs up production, empties it, loads the dev data
 ```
 
-It is deliberately **not** part of `deploy.sh`: it replaces all production data, so run it only at go-live. It writes a backup first and asks you to type the database name. The dev data includes any test users and dummy history, and the dev Super Admin password and fixed-OTP mobiles come with it, so change the Super Admin password after signing in. `dev-export/` holds real data and is git-ignored; delete it after the import.
+It is deliberately **not** part of `deploy.sh`: it replaces all production data, so run it only at go-live. It writes a backup first and asks you to type the database name. The dev data includes any test users and dummy history. The Super Admin keeps the production password (from `SEED_PASSWORD`), not the dev one. The default company is `CMP000`; companies created later are `CMP001`, `CMP002` ... `dev-export/` holds real data and is git-ignored; delete it after the import.
 
 ## 6. Updating later
 

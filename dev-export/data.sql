@@ -71,8 +71,8 @@ ALTER TABLE public.alert_rules ENABLE TRIGGER ALL;
 ALTER TABLE public.companies DISABLE TRIGGER ALL;
 
 INSERT INTO public.companies (id, code, name, address, gstin, fssai, email, status, created_at, created_by, updated_at, updated_by, version) VALUES
-	('f2328b4f-e294-41ec-80a4-3d3c7645e3f5', 'CMP001', 'Default Company', NULL, NULL, NULL, NULL, 'ACTIVE', '2026-10-27 08:47:16.98302+00', NULL, '2026-10-27 08:47:16.98302+00', NULL, 1),
-	('01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1', 'CMP002', 'Chai Point', '12 Main Road, Coimbatore', '33ABCDE1234F1Z5', '12345678901234', 'ravi@chaipoint.test', 'ACTIVE', '2026-10-27 09:11:15.822+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:11:15.822+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1);
+	('f2328b4f-e294-41ec-80a4-3d3c7645e3f5', 'CMP000', 'Default Company', NULL, NULL, NULL, NULL, 'ACTIVE', '2026-10-27 08:47:16.98302+00', NULL, '2026-10-27 08:47:16.98302+00', NULL, 1),
+	('01a17ca0-ce6d-7651-b0cc-90a30ac0c1d1', 'CMP001', 'Chai Point', '12 Main Road, Coimbatore', '33ABCDE1234F1Z5', '12345678901234', 'ravi@chaipoint.test', 'ACTIVE', '2026-10-27 09:11:15.822+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', '2026-10-27 09:11:15.822+00', '01a17c9e-bdac-77a0-a906-dbc5e6161273', 1);
 
 
 ALTER TABLE public.companies ENABLE TRIGGER ALL;
@@ -7792,7 +7792,7 @@ SELECT pg_catalog.setval('public.seq_code_advance', 28, true);
 -- Name: seq_code_company; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.seq_code_company', 2, true);
+SELECT pg_catalog.setval('public.seq_code_company', 1, true);
 
 
 --

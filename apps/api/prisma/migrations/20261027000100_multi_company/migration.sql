@@ -36,7 +36,7 @@ CREATE INDEX otp_codes_mobile_created_at_idx ON otp_codes (mobile, created_at DE
 
 -- everything that exists today belongs to one company
 INSERT INTO companies (code, name)
-SELECT 'CMP001', coalesce((SELECT value #>> '{}' FROM settings WHERE key = 'business.name'), 'Default Company');
+SELECT 'CMP000', coalesce((SELECT value #>> '{}' FROM settings WHERE key = 'business.name'), 'Default Company');
 
 -- ------------------------------------------------------------------ company_id columns
 -- Nullable first, backfilled with the default company, then tightened. The column default reads the session variable
@@ -44,7 +44,7 @@ SELECT 'CMP001', coalesce((SELECT value #>> '{}' FROM settings WHERE key = 'busi
 DO $$
 DECLARE
   t text;
-  def uuid := (SELECT id FROM companies WHERE code = 'CMP001');
+  def uuid := (SELECT id FROM companies WHERE code = 'CMP000');
   expr text := $e$(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid$e$;
 BEGIN
   FOREACH t IN ARRAY ARRAY['roles','users','approval_limits','locations','inventory_items','suppliers','recipes',
