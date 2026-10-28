@@ -96,6 +96,21 @@ To load an existing ledger, the Super Admin opens **Company - Data Upload**, pic
 
 Changing a password later: the Super Admin's from the database seed (`SEED_PASSWORD`), an Admin's from **Users** (an Admin can reset another Admin's password).
 
+## 5b. Moving the dev data to production (once, at go-live)
+
+To carry everything in your dev database (companies, users, branches, sales, expenses, receipts) over to production:
+
+```bash
+# on your dev machine (Docker Desktop running)
+./infra/export-dev-data.sh                    # writes dev-export/data.sql (plain SQL) + uploads.tgz
+scp -r dev-export deploy@server:~/branch-pulse/     # or any file transfer
+
+# on the server, AFTER `run --rm migrate`
+./infra/import-dev-data.sh                    # backs up production, empties it, loads the dev data
+```
+
+It is deliberately **not** part of `deploy.sh`: it replaces all production data, so run it only at go-live. It writes a backup first and asks you to type the database name. The dev data includes any test users and dummy history, and the dev Super Admin password and fixed-OTP mobiles come with it, so change the Super Admin password after signing in. `dev-export/` holds real data and is git-ignored; delete it after the import.
+
 ## 6. Updating later
 
 ```bash
