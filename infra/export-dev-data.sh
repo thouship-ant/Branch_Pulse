@@ -47,13 +47,14 @@ echo "exporting: $(scratch -c "select count(*) from companies") company, $(scrat
 #    units are shared master data production already has (ids differ), so they are mapped, not copied. Sessions and
 #    OTPs are not carried over. A user whose mobile/username is already taken is renumbered to the next free one.
 COMPANY_ID=$(scratch -c "select id from companies where code='$COMPANY'")
+LATEST_MIGRATION=$(dev -c "select max(migration_name) from _prisma_migrations where finished_at is not null")
 MAPVALUES=$(dev -F'|' -c "select 'permissions', code, id from permissions union all select 'units', code, id from units" \
   | awk -F'|' '{ printf "%s('"'"'%s'"'"', '"'"'%s'"'"', '"'"'%s'"'"')", (NR>1?",\n":""), $1, $2, $3 }')
 PURGE=$(cat infra/purge-rows.sql)
 {
-  awk -v code="$COMPANY" -v id="$COMPANY_ID" -v map="$MAPVALUES" -v purge="$PURGE" '{
+  awk -v code="$COMPANY" -v id="$COMPANY_ID" -v mig="$LATEST_MIGRATION" -v map="$MAPVALUES" -v purge="$PURGE" '{
     if ($0 == "__PURGE__") print purge; else if ($0 == "__MAP__;") print map ";";
-    else { gsub(/__CODE__/, code); gsub(/__ID__/, id); print }
+    else { gsub(/__CODE__/, code); gsub(/__ID__/, id); gsub(/__MIGRATION__/, mig); print }
   }' infra/import-prelude.sql
   $PG pg_dump -U postgres -d "$SCRATCH" --data-only --no-owner --disable-triggers --column-inserts --rows-per-insert=200 \
     --exclude-table=_prisma_migrations --exclude-table-data=permissions --exclude-table-data=units \

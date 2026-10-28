@@ -106,7 +106,8 @@ Carries the **default company (`CMP000`)** over: its details, branches, users, r
 ./infra/export-dev-data.sh     # writes dev-export/data.sql (self-contained) and uploads.tgz
 # copy the whole dev-export/ folder to ~/branch-pulse/dev-export/ on the server (git, scp, WinSCP ...)
 
-# on the server, AFTER `run --rm migrate` (and `run --rm seed` for the Super Admin)
+# on the server: git pull, then rebuild and migrate FIRST (the data needs the newest migration), seed once for the Super Admin
+#   $C build && $C run --rm migrate && $C run --rm seed
 ./infra/import-dev-data.sh     # backs up production, replaces CMP000, leaves everything else alone
 ```
 

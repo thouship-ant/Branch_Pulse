@@ -4,9 +4,10 @@
 -- Re-running it replaces the company again. Other companies and the Super Admin are never touched.
 SET session_replication_role = replica; -- ordering of rows does not matter while loading
 
+-- the data was exported from a database at migration __MIGRATION__: production must be at least that far
 DO $chk$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public._prisma_migrations WHERE finished_at IS NOT NULL) THEN
-    RAISE EXCEPTION 'Run the database migrations first';
+  IF NOT EXISTS (SELECT 1 FROM public._prisma_migrations WHERE migration_name = '__MIGRATION__' AND finished_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'Production database is behind (missing migration __MIGRATION__). git pull, rebuild (docker compose ... build) and run: docker compose ... run --rm migrate  - then load this file again';
   END IF;
 END $chk$;
 
