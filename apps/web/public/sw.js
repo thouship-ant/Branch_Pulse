@@ -6,10 +6,10 @@
  *   Master data for offline entry is cached per user in IndexedDB by the app instead.
  * - Background Sync wakes the app to flush the outbox when connectivity returns.
  */
-const VERSION = 'bp-v1';
+const VERSION = 'bp-v2'; // bumped so installed apps pick up the new logo/icons
 const SHELL = `${VERSION}-shell`;
 const STATIC = `${VERSION}-static`;
-const PRECACHE = ['/login', '/offline.html', '/manifest.webmanifest', '/icons/icon-192.png'];
+const PRECACHE = ['/login', '/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/logo.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));

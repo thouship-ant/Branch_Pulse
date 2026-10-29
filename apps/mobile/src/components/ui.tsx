@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
+  ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
   View, type StyleProp, type TextInputProps, type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -253,9 +253,7 @@ export function AppBar({ title, subtitle, right }: { title: string; subtitle?: s
   const insets = useSafeAreaInsets();
   return (
     <View style={{ backgroundColor: th.brand, paddingTop: insets.top + 8, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-        <Feather name="activity" size={20} color="#fff" />
-      </View>
+      <Image source={require('../../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff' }} />
       <View style={{ flex: 1 }}>
         <Text numberOfLines={1} style={{ color: '#fff', fontSize: 17, fontWeight: '800' }}>{title}</Text>
         {subtitle ? <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>{subtitle}</Text> : null}

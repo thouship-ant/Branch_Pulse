@@ -1,23 +1,14 @@
-import { useId } from 'react';
-
-/** The Branch Pulse mark: a rounded square with a heartbeat line, on a blue-to-indigo gradient. */
+/**
+ * The Branch Pulse mark (public/logo.png): the green B and red P linked together. The artwork has a white background,
+ * so it sits in a white rounded tile and reads the same on the light pages, the dark theme and the navy login banner.
+ */
 export function LogoMark({ size = 36, className = '' }: { size?: number; className?: string }) {
-  const id = useId();
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" className={className} aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id={`${id}g`} x1="4" y1="2" x2="36" y2="38" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#3b82f6" />
-          <stop offset="1" stopColor="#4f46e5" />
-        </linearGradient>
-        <linearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#fff" stopOpacity="0.32" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <rect width="40" height="40" rx="11" fill={`url(#${id}g)`} />
-      <rect width="40" height="40" rx="11" fill={`url(#${id}s)`} />
-      <path d="M6.5 21h6.2l3.1-8.6 5 16.4 3.7-10.4 1.6 2.6h6.4" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo.png" alt="" width={size} height={size} aria-hidden="true"
+      className={`shrink-0 rounded-xl bg-white object-contain shadow-sm ring-1 ring-black/5 ${className}`}
+      style={{ width: size, height: size }}
+    />
   );
 }

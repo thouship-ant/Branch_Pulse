@@ -1,7 +1,6 @@
-import { Feather } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ErrorBox, Field, Muted } from '@/components/ui';
 import { ApiError } from '@/lib/api';
@@ -95,9 +94,7 @@ export default function LoginScreen() {
         {/* brand banner */}
         <View style={{ backgroundColor: th.brandDark === '#18236f' ? '#1e2a8a' : '#18236f', paddingTop: insets.top + 32, paddingBottom: 56, paddingHorizontal: 24, gap: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name="activity" size={26} color="#fff" />
-            </View>
+            <Image source={require('../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: '#fff' }} />
             <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800' }}>Branch Pulse</Text>
           </View>
           <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16 }}>Every branch, every rupee, in one place.</Text>
