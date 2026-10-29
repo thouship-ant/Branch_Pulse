@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { prettyDate } from '@/lib/dates';
 import { useTheme } from '@/lib/theme';
 import { Button, Muted } from './ui';

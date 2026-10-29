@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { HeaderProvider } from '@/components/HeaderContext';
 import { IconButton } from '@/components/ui';
+import { tr } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
@@ -44,7 +45,7 @@ export default function BranchLayout() {
       {TABS.map((t) => (
         <Tabs.Screen
           key={t.name} name={t.name}
-          options={{ title: t.title, tabBarIcon: ({ color, size }) => <Feather name={t.icon} size={size} color={color} /> }}
+          options={{ title: tr(t.title), tabBarIcon: ({ color, size }) => <Feather name={t.icon} size={size} color={color} /> }}
         />
       ))}
       {/* reachable from the Today checklist, not tabs of their own */}

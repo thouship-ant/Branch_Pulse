@@ -1,8 +1,9 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, ErrorBox, Field, Muted } from '@/components/ui';
+import { Button, ErrorBox, Field, LanguageSwitch, Muted } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { useSession, type SignInMethod } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
@@ -153,6 +154,7 @@ export default function LoginScreen() {
               </>
             )}
           </View>
+          <View style={{ marginTop: 16 }}><LanguageSwitch /></View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

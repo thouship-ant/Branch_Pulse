@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
 import { MODE_LABEL } from '@/lib/labels';

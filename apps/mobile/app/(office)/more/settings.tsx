@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import { Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { Banner, Button, Card, Chips, ErrorBox, Field, Heading, ListRow, Loading, Muted, MultiChips, MoneyField, Screen, SectionTitle, SegTabs, Sheet, ToggleRow } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { amt } from '@/lib/money';

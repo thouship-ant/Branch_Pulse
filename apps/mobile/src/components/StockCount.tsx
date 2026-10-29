@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { api, ApiError } from '@/lib/api';
 import { dec, formatINR } from '@/lib/money';
 import { cleanQty, COUNT_REASONS, fmtQty, toBase, toDisplay } from '@/lib/qty';

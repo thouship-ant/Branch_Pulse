@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import { Switch, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { api, ApiError, fieldErrors } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
 import { Banner, Button, Chip, ErrorBox, Field, Loading, Muted } from '../ui';

@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { PERIOD_OPTIONS, periodLabel, resolvePeriod, type Period, type PeriodId } from '@/lib/period';
 import { TOUCH, useTheme } from '@/lib/theme';
 import { RangeCalendar } from './RangeCalendar';

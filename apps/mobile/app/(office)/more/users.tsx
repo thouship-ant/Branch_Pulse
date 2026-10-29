@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { tAlert } from '@/lib/i18n';
+import { Text } from '@/components/Text';
 import { PasswordChecklist } from '@/components/PasswordChecklist';
 import { Banner, Button, Chip, ErrorBox, Field, ListRow, Loading, Muted, MultiChips, Screen, Sheet, ToggleRow } from '@/components/ui';
 import { api, ApiError, fieldErrors } from '@/lib/api';
@@ -55,7 +57,7 @@ export default function UsersScreen() {
 
   function signOutEverywhere() {
     if (!draft?.id) return;
-    Alert.alert('Sign out everywhere?', `${draft.fullName} will have to sign in again on every device.`, [
+    tAlert('Sign out everywhere?', `${draft.fullName} will have to sign in again on every device.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: async () => {
         try { await api.post(`/users/${draft.id}/sessions/revoke`); setNotice('Signed out everywhere'); setDraft(null); } catch (e) { setFormError(e instanceof ApiError ? e.message : 'Failed'); }

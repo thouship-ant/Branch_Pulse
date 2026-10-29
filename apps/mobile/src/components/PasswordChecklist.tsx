@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { PASSWORD_RULES } from '@/lib/password';
 import { useTheme } from '@/lib/theme';
 

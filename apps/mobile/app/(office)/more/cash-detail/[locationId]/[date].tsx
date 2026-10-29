@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Linking, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { Banner, Button, Card, Chip, ErrorBox, Field, H3, Heading, Loading, Muted, Row, Screen, Sheet, StatusPill } from '@/components/ui';
 import { api, ApiError, API_ORIGIN } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';

@@ -1,5 +1,6 @@
-import { Text, View } from 'react-native';
-import { Button, Card, Heading, Muted, Row, Screen } from '@/components/ui';
+import { View } from 'react-native';
+import { Text } from './Text';
+import { Button, Card, Heading, LanguageSwitch, Muted, Row, Screen } from '@/components/ui';
 import { API_ORIGIN } from '@/lib/api';
 import { roleLabel } from '@/lib/labels';
 import { useSession } from '@/lib/session';
@@ -22,6 +23,7 @@ export function Account() {
         {me.company ? <Row label="Company" value={`${me.company.name} (${me.company.code})`} /> : null}
         {!me.isSuper && me.locations.length > 0 ? <Row label="Branches" value={me.allLocations ? 'All' : String(me.locations.length)} /> : null}
       </Card>
+      <Card><Text style={{ color: th.ink, fontWeight: '700' }}>Language</Text><LanguageSwitch /></Card>
       <Button title="Sign out" variant="danger" icon="log-out" onPress={() => void logout()} />
       <Text style={{ color: th.faint, fontSize: 11, textAlign: 'center' }}>Server: {API_ORIGIN}</Text>
     </Screen>

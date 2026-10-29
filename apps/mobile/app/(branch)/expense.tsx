@@ -1,6 +1,8 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { tAlert } from '@/lib/i18n';
+import { Text } from '@/components/Text';
 import { Banner, Button, Card, Chips, ErrorBox, Field, H3, Heading, Loading, Muted, MoneyField, Screen, Warnings } from '@/components/ui';
 import { api, ApiError, uploadAttachment, type Warning } from '@/lib/api';
 import { prettyDate, todayIST, uuid } from '@/lib/dates';
@@ -56,7 +58,7 @@ export default function ExpenseScreen() {
   const canSave = !!categoryId && !!amount && !dec(amount).isZero() && !missingReceipt && !missingSupplier;
 
   async function attach(source: 'camera' | 'library') {
-    try { const p = await pickPhoto(source); if (p) setPhoto(p); } catch (e) { Alert.alert('Photo', e instanceof Error ? e.message : 'Could not add the photo'); }
+    try { const p = await pickPhoto(source); if (p) setPhoto(p); } catch (e) { tAlert('Photo', e instanceof Error ? e.message : 'Could not add the photo'); }
   }
 
   async function save(another: boolean) {

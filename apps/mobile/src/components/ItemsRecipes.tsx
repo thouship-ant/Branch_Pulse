@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { api, ApiError } from '@/lib/api';
 import { todayIST } from '@/lib/dates';
 import { dec, formatINR } from '@/lib/money';
@@ -34,7 +35,7 @@ export function ItemsPanel() {
   const baseUnits = units.filter((u) => !u.baseUnitId);
   const blank = (): IDraft => ({ nameEn: '', nameTa: '', category: 'RAW_MATERIAL', baseUnitId: baseUnits.find((u) => u.code === 'PCS')?.id ?? baseUnits[0]?.id ?? '', purchaseUnitId: '', perishable: false, daily: false, pct: '', qty: '', active: true, mins: {} });
   const fromItem = (i: any): IDraft => ({
-    id: i.id, nameEn: i.nameEn, nameTa: i.nameTa ?? '', category: i.category, baseUnitId: i.baseUnitId, purchaseUnitId: i.purchaseUnitId ?? '', perishable: i.isPerishable, daily: i.dailyCountRequired,
+    id: i.id, nameEn: i.nameEnOrig ?? i.nameEn, nameTa: i.nameTa ?? '', category: i.category, baseUnitId: i.baseUnitId, purchaseUnitId: i.purchaseUnitId ?? '', perishable: i.isPerishable, daily: i.dailyCountRequired,
     pct: i.varianceThresholdPct ? String(i.varianceThresholdPct) : '', qty: i.varianceThresholdQty ? toDisplay(String(i.varianceThresholdQty), i.displayFactor) : '', active: i.status === 'ACTIVE',
     mins: Object.fromEntries((i.settings as any[]).map((s) => [s.locationId, toDisplay(String(s.minStock), i.displayFactor)])),
   });
@@ -140,7 +141,7 @@ export function RecipesPanel() {
   }
   function edit(d: any) {
     setView(null);
-    setDraft({ id: d.id, nameEn: d.nameEn, yieldQty: String(d.yieldQty), sellingPrice: d.sellingPrice ? String(d.sellingPrice) : '', active: d.status === 'ACTIVE', lines: (d.items as any[]).map((i) => ({ itemId: i.itemId, unitId: i.unitId, qty: String(i.quantity) })) });
+    setDraft({ id: d.id, nameEn: d.nameEnOrig ?? d.nameEn, yieldQty: String(d.yieldQty), sellingPrice: d.sellingPrice ? String(d.sellingPrice) : '', active: d.status === 'ACTIVE', lines: (d.items as any[]).map((i) => ({ itemId: i.itemId, unitId: i.unitId, qty: String(i.quantity) })) });
   }
 
   async function save() {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Linking, Text, View } from 'react-native';
+import { Image, Linking, View } from 'react-native';
+import { Text } from './Text';
 import { api, ApiError, API_ORIGIN, uploadAttachment } from '@/lib/api';
 import { prettyDate, todayIST, uuid } from '@/lib/dates';
 import { approvalTone, STATUS_LABEL } from '@/lib/labels';

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { api, ApiError } from '@/lib/api';
 import { passwordOk } from '@/lib/password';
 import { useSession } from '@/lib/session';

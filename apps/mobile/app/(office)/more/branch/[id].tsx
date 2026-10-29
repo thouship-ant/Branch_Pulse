@@ -1,6 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { tAlert } from '@/lib/i18n';
+import { Text } from '@/components/Text';
 import { BranchForm } from '@/components/BranchForm';
 import { PeriodPill } from '@/components/PeriodPill';
 import { BarList, Button, Card, Chip, ErrorBox, H3, Heading, Loading, Muted, Row, Screen, SegTabs, SelectField, Sheet, StatCard } from '@/components/ui';
@@ -38,7 +40,7 @@ export default function BranchDetail() {
 
   function toggle() {
     const next = branch.status === 'ACTIVE' ? 'deactivate' : 'activate';
-    Alert.alert(`${next === 'deactivate' ? 'Deactivate' : 'Activate'} ${branch.name}?`, next === 'deactivate' ? 'It will no longer appear for daily entries.' : 'It will be available again.', [
+    tAlert(`${next === 'deactivate' ? 'Deactivate' : 'Activate'} ${branch.name}?`, next === 'deactivate' ? 'It will no longer appear for daily entries.' : 'It will be available again.', [
       { text: 'Cancel', style: 'cancel' },
       { text: next === 'deactivate' ? 'Deactivate' : 'Activate', style: next === 'deactivate' ? 'destructive' : 'default', onPress: async () => {
         try { await api.post(`/locations/${id}/${next}`); await load(); } catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }

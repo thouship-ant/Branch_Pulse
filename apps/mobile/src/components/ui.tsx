@@ -1,13 +1,13 @@
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput,
-  View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
+import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STATUS_LABEL } from '@/lib/labels';
 import { useHeader } from './HeaderContext';
+import { useLang } from '@/lib/language';
+import { tr } from '@/lib/i18n';
 import { cleanAmount } from '@/lib/money';
 import { RADIUS, TOUCH, useTheme, type Theme } from '@/lib/theme';
 
@@ -205,6 +205,7 @@ export function Field({ label, required, error, style, multiline, ...rest }: { l
           color: th.ink, paddingHorizontal: 12, paddingVertical: multiline ? 10 : 8, fontSize: 16, textAlignVertical: multiline ? 'top' : 'center',
         }, style]}
         {...rest}
+        placeholder={typeof rest.placeholder === 'string' ? tr(rest.placeholder) : rest.placeholder}
       />
       {error ? <Text style={{ color: th.bad.text, fontSize: 13, marginTop: 4 }}>{error}</Text> : null}
     </View>
@@ -543,6 +544,27 @@ export function ToggleRow({ label, value, onChange }: { label: string; value: bo
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: TOUCH }}>
       <Text style={{ color: th.ink, fontSize: 16, flex: 1 }}>{label}</Text>
       <Switch value={value} onValueChange={onChange} trackColor={{ true: th.brand }} />
+    </View>
+  );
+}
+
+/** English | தமிழ் switch (the choice is remembered on the phone). */
+export function LanguageSwitch() {
+  const { lang, setLang } = useLang();
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {([['en', 'English'], ['ta', 'தமிழ்']] as const).map(([code, label]) => {
+        const on = lang === code;
+        return (
+          <Pressable
+            key={code} onPress={() => setLang(code)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={label}
+            style={{ flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brand : th.surface }}
+          >
+            <Text style={{ color: on ? th.onBrand : th.ink, fontWeight: '700' }}>{on ? '✓ ' : ''}{label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

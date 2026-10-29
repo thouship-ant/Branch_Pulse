@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/Text';
 import { Chip, DateStepper, Empty, ErrorBox, ListRow, Loading, Screen, SectionTitle, SegTabs, SelectField, StatCard, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';

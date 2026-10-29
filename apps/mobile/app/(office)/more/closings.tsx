@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/components/Text';
 import { DateStepper, Empty, ErrorBox, ListRow, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyTime } from '@/lib/dates';

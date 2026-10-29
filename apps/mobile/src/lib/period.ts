@@ -1,4 +1,4 @@
-import { addDays, prettyDate } from './dates';
+import { addDays, prettyDate, prettyDay } from './dates';
 
 export type PeriodId = 'today' | 'yesterday' | 'week' | 'month' | 'all' | 'custom';
 
@@ -35,7 +35,7 @@ export function resolvePeriod(id: PeriodId, today: string, custom?: { from: stri
 export function periodLabel(p: Period): string {
   const base = PERIOD_OPTIONS.find((o) => o.id === p.id && p.id !== 'custom')?.label;
   if (base) return base;
-  return p.from === p.to ? prettyDate(p.from) : `${prettyDate(p.from).slice(0, 6)} – ${prettyDate(p.to)}`;
+  return p.from === p.to ? prettyDate(p.from) : `${prettyDay(p.from)} – ${prettyDate(p.to)}`;
 }
 
 /** Query string for /dashboard/summary: one day uses `date`, anything longer uses `from` and `to`. */

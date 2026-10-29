@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/Text';
 import { PeriodPill } from '@/components/PeriodPill';
 import { Card, ErrorBox, Loading, Muted, Row, Screen, SegTabs, SelectField, StatCard } from '@/components/ui';
 import { api } from '@/lib/api';

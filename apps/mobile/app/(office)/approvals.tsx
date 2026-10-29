@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/Text';
 import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, Screen, Sheet } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';

@@ -8,7 +8,7 @@ export const TYPES = [{ value: 'BRANCH', label: 'Branch' }, { value: 'GODOWN', l
 /** Add a branch / godown / office, or edit one. The code is issued by the server. */
 export function BranchForm({ branch, onDone }: { branch?: any; onDone: (b: any) => void }) {
   const [v, setV] = useState({
-    type: (branch?.type ?? 'BRANCH') as string, code: branch?.code ?? '', name: branch?.name ?? '', address: branch?.address ?? '', phone: branch?.phone ?? '',
+    type: (branch?.type ?? 'BRANCH') as string, code: branch?.code ?? '', name: branch?.nameOrig ?? branch?.name ?? '', address: branch?.address ?? '', phone: branch?.phone ?? '',
     notes: branch?.notes ?? '', openingCash: branch?.defaultOpeningCash ?? '', monthlyRent: branch?.monthlyRent ?? '', cardEnabled: branch?.cardEnabled ?? true,
   });
   const [busy, setBusy] = useState(false);

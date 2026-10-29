@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/Text';
 import { Empty, LinkCard, Screen } from '@/components/ui';
 import { MENU } from '@/lib/menu';
 import { useSession } from '@/lib/session';

@@ -4,10 +4,28 @@ import * as SecureStore from 'expo-secure-store';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { uuid } from './dates';
+import { getLang } from './i18n';
 
 /** API origin: EXPO_PUBLIC_API_URL, else production. (Android emulators reach the host PC at 10.0.2.2.) */
 export const API_ORIGIN = (process.env.EXPO_PUBLIC_API_URL || 'https://api-branchpulse.antstockpulse.pro').replace(/\/$/, '');
 const BASE = `${API_ORIGIN}/api/v1`;
+
+// master data comes as { name, nameTa }; in Tamil the Tamil form replaces the plain one (the English stays under <key>Orig)
+const NAME_PAIRS: Array<[string, string]> = [
+  ['name', 'nameTa'], ['nameEn', 'nameTa'], ['locationName', 'locationNameTa'], ['categoryName', 'categoryNameTa'], ['subCategoryName', 'subCategoryNameTa'],
+  ['itemName', 'itemNameTa'], ['fromLocationName', 'fromLocationNameTa'], ['toLocationName', 'toLocationNameTa'],
+];
+function localize<T>(v: T): T {
+  if (Array.isArray(v)) { v.forEach(localize); return v; }
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, any>;
+    for (const [en, ta] of NAME_PAIRS) {
+      if (typeof o[ta] === 'string' && o[ta] && typeof o[en] === 'string') { o[`${en}Orig`] = o[en]; o[en] = o[ta]; }
+    }
+    for (const k of Object.keys(o)) if (o[k] && typeof o[k] === 'object') localize(o[k]);
+  }
+  return v;
+}
 
 export interface Warning { code: string; message: string; field?: string }
 export interface Envelope<T> { data: T; warnings?: Warning[]; meta?: Record<string, any> }
@@ -111,6 +129,7 @@ async function request(method: string, path: string, opts: Options = {}, retried
     const e = json.error ?? {};
     throw new ApiError(res.status, e.code ?? 'ERROR', e.message ?? res.statusText, e.details);
   }
+  if (getLang() === 'ta') localize(json.data);
   return opts.raw ? json : json.data;
 }
 

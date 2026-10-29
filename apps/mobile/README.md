@@ -33,7 +33,7 @@ npm run start            # scan the QR code with Expo Go, or press a for the And
 
 - The web keeps the refresh token in an HttpOnly cookie. The app sends `X-Client: native`, gets the refresh token in the response body and keeps it in the device keystore (`expo-secure-store`); the access token stays in memory.
 - Every save goes to the server straight away. There is **no offline queue** yet (the web's outbox), so entries need a connection.
-- English only for now (the web also has Tamil).
+- **English and Tamil**, like the web: switch under Account (or at the bottom of the sign-in screen); the choice is remembered on the phone. Screens are written in English and `tr()` (`src/lib/i18n.ts`) translates them from `src/lib/ta-web.ts` (generated from the web table) and `src/lib/ta-extra.ts` (mobile-only text: add new strings there). Branch / category / item names show their Tamil form when the server has one. Server error messages and anything people type stay as they are. Tamil wording should be reviewed by a native speaker.
 - On first sign-in with a default / temporary password the app asks for a new one (same rules as the web).
 - Not in the app yet: CSV exports, charts (bars and tables are used instead), Tamil, and the stock / supplier analytics tables beyond the summaries above.
 

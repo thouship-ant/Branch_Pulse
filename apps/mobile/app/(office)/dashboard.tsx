@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/Text';
 import { PeriodPill } from '@/components/PeriodPill';
 import { Banner, Card, Chip, ErrorBox, H3, HeroCard, Loading, Muted, Screen, StatCard, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { api, ApiError, fieldErrors } from '@/lib/api';
 import { passwordOk } from '@/lib/password';
 import { useTheme } from '@/lib/theme';

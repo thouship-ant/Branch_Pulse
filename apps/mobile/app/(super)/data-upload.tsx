@@ -1,6 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, Muted, Screen, SelectField } from '@/components/ui';
 import { api, ApiError, downloadAndShare } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';

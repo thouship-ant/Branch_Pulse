@@ -1,6 +1,8 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { tAlert } from '@/lib/i18n';
+import { Text } from '@/components/Text';
 import { CreateCompanyForm, EditCompanyForm, type Company } from '@/components/super/CompanyForms';
 import { CompanyUsers } from '@/components/super/CompanyUsers';
 import { Button, Card, Chip, ErrorBox, Heading, Loading, Muted, Screen, Sheet } from '@/components/ui';
@@ -24,7 +26,7 @@ export default function CompaniesScreen() {
 
   function toggle(c: Company) {
     const next = c.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    Alert.alert(
+    tAlert(
       `${next === 'INACTIVE' ? 'Deactivate' : 'Activate'} ${c.name}?`,
       next === 'INACTIVE' ? 'Nobody in this company will be able to sign in until it is activated again. Their data is kept.' : 'Its users will be able to sign in again.',
       [

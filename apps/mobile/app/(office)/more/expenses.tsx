@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Linking, View } from 'react-native';
+import { Text } from '@/components/Text';
 import { PeriodPill } from '@/components/PeriodPill';
 import {
   BarList, Button, Card, Chip, Chips, ErrorBox, Field, Heading, ListRow, Loading, Muted, MoneyField, Screen, SectionTitle, SegTabs, SelectField, Sheet, StatCard,
@@ -224,7 +225,7 @@ function Categories() {
   }
 
   const top = (cats ?? []).filter((c) => !c.parentId);
-  const edit = (c: any) => setDraft({ id: c.id, parentId: c.parentId ?? '', nameEn: c.nameEn, plBucket: c.plBucket, receipt: c.requiresReceiptAbove ?? '', requiresSupplier: c.requiresSupplier, active: c.status === 'ACTIVE' });
+  const edit = (c: any) => setDraft({ id: c.id, parentId: c.parentId ?? '', nameEn: c.nameEnOrig ?? c.nameEn, plBucket: c.plBucket, receipt: c.requiresReceiptAbove ?? '', requiresSupplier: c.requiresSupplier, active: c.status === 'ACTIVE' });
 
   return (
     <>

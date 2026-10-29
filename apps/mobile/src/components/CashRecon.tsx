@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, TextInput, View } from 'react-native';
+import { tAlert } from '@/lib/i18n';
+import { Text } from './Text';
 import { addDays, prettyDate } from '@/lib/dates';
 import { api, ApiError, uploadAttachment, type Warning } from '@/lib/api';
 import { MOVEMENT_LABEL, REASON_LABEL } from '@/lib/labels';
@@ -119,7 +121,7 @@ export function CashRecon({ locationId, date, onContinue }: { locationId: string
 
   async function addPhoto(source: 'camera' | 'library') {
     if (photoCount >= MAX_PHOTOS) return;
-    try { const p = await pickPhoto(source); if (p) setPhotos((x) => [...x, p]); } catch (e) { Alert.alert('Photo', e instanceof Error ? e.message : 'Could not add the photo'); }
+    try { const p = await pickPhoto(source); if (p) setPhotos((x) => [...x, p]); } catch (e) { tAlert('Photo', e instanceof Error ? e.message : 'Could not add the photo'); }
   }
 
   if (!cash || !closing) return error ? <ErrorBox error={error} /> : <Loading />;

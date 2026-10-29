@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { HeaderProvider } from '@/components/HeaderContext';
+import { tr } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
@@ -35,7 +36,7 @@ export default function OfficeLayout() {
       {TABS.map((t) => (
         <Tabs.Screen
           key={t.name} name={t.name}
-          options={{ title: t.title, href: !t.perm || can(t.perm) ? undefined : null, tabBarIcon: ({ color, size }) => <Feather name={t.icon} size={size} color={color} /> }}
+          options={{ title: tr(t.title), href: !t.perm || can(t.perm) ? undefined : null, tabBarIcon: ({ color, size }) => <Feather name={t.icon} size={size} color={color} /> }}
         />
       ))}
     </Tabs>

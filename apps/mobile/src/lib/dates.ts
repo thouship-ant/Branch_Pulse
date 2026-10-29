@@ -10,12 +10,20 @@ export function addDays(date: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+import { getLang, TA_MONTHS } from './i18n';
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** 26 Sep 2026 */
 export function prettyDate(date: string): string {
   const [y, m, d] = date.split('-').map(Number);
-  return `${String(d).padStart(2, '0')} ${MONTHS[m - 1]} ${y}`;
+  return `${String(d).padStart(2, '0')} ${(getLang() === 'ta' ? TA_MONTHS : MONTHS)[m - 1]} ${y}`;
+}
+
+/** 26 Sep (no year) */
+export function prettyDay(date: string): string {
+  const [, m, d] = date.split('-').map(Number);
+  return `${String(d).padStart(2, '0')} ${(getLang() === 'ta' ? TA_MONTHS : MONTHS)[m - 1]}`;
 }
 
 export function prettyTime(iso: string | null | undefined): string {

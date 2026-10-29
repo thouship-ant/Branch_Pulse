@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/Text';
 import { CashRecon } from '@/components/CashRecon';
 import { Button, Card, Chip, ErrorBox, Field, H3, Heading, Loading, Row, Screen, StatusPill } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
