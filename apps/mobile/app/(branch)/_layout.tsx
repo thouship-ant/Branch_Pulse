@@ -10,7 +10,7 @@ const TABS: Array<{ name: string; title: string; icon: FeatherName }> = [
   { name: 'home', title: 'Today', icon: 'home' },
   { name: 'sales', title: 'Sales', icon: 'trending-up' },
   { name: 'expense', title: 'Expense', icon: 'credit-card' },
-  { name: 'cash', title: 'Cash', icon: 'dollar-sign' },
+  { name: 'stock', title: 'Stock', icon: 'box' },
   { name: 'closing', title: 'Closing', icon: 'check-square' },
 ];
 
@@ -47,6 +47,9 @@ export default function BranchLayout() {
           options={{ title: t.title, tabBarIcon: ({ color, size }) => <Feather name={t.icon} size={size} color={color} /> }}
         />
       ))}
+      {/* reachable from the Today checklist, not tabs of their own */}
+      <Tabs.Screen name="cash" options={{ href: null }} />
+      <Tabs.Screen name="staff" options={{ href: null }} />
     </Tabs>
     </HeaderProvider>
   );

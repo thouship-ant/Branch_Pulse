@@ -1,9 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
-  ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
+  ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput,
   View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STATUS_LABEL } from '@/lib/labels';
 import { useHeader } from './HeaderContext';
@@ -19,7 +20,7 @@ type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
  * `hero`: the header stays fixed behind the page and the first card (HeroCard) sits over it - scrolling up, the cards
  * slide over the header. Without it the header is a normal bar above the page.
  */
-export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode }) {
+export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight, title }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode; title?: string }) {
   const th = useTheme();
   const header = useHeader();
   const [headerH, setHeaderH] = useState(190);
@@ -28,8 +29,8 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight 
     setRefreshing(true);
     try { await onRefresh?.(); } finally { setRefreshing(false); }
   }, [onRefresh]);
-  const overlap = !!hero && !!header;
-  const bar = header ? <AppBar {...header} right={headerRight ?? header.right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
+  const overlap = !!hero && !!header && !title;
+  const bar = title ? <SubHeader title={title} right={headerRight} /> : header ? <AppBar {...header} right={headerRight ?? header.right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
   return (
     <View style={{ flex: 1, backgroundColor: th.bg }}>
       {bar && !overlap ? bar : null}
@@ -408,6 +409,140 @@ export function SelectField<T extends string>({
           );
         })}
       </Sheet>
+    </View>
+  );
+}
+
+// ------------------------------------------------------------------ sub-pages
+/** Slim brand bar for sub-pages: back arrow, title, optional action on the right. */
+export function SubHeader({ title, right }: { title: string; right?: ReactNode }) {
+  const th = useTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{ backgroundColor: th.brand, paddingTop: insets.top + 6, paddingBottom: 14, paddingHorizontal: 8, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Back" hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name="arrow-left" size={24} color="#fff" />
+      </Pressable>
+      <Text numberOfLines={1} style={{ color: '#fff', fontSize: 20, fontWeight: '800', flex: 1 }}>{title}</Text>
+      {right}
+    </View>
+  );
+}
+
+/** Horizontal pill tabs for pages with several sections (Daily | Variance report ...). */
+export function SegTabs<T extends string>({ value, onChange, tabs }: { value: T; onChange: (v: T) => void; tabs: Array<{ key: T; label: string }> }) {
+  const th = useTheme();
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ flexGrow: 0 }}>
+      {tabs.map((t) => {
+        const on = t.key === value;
+        return (
+          <Pressable
+            key={t.key} onPress={() => onChange(t.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
+            style={{ minHeight: 40, paddingHorizontal: 16, borderRadius: 999, justifyContent: 'center', backgroundColor: on ? th.brand : th.surface, ...(on ? {} : cardLook(th)) }}
+          >
+            <Text style={{ color: on ? th.onBrand : th.ink, fontWeight: '700', fontSize: 14 }}>{t.label}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/** A tappable list card: title + lines on the left, value / status on the right. */
+export function ListRow({ title, lines, right, onPress, tone }: { title: string; lines?: Array<string | null | undefined | false>; right?: ReactNode; onPress?: () => void; tone?: ToneName }) {
+  const th = useTheme();
+  const body = (
+    <Card tone={tone} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14 }}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ color: th.ink, fontWeight: '700', fontSize: 16 }}>{title}</Text>
+        {lines?.filter(Boolean).map((l, i) => <Text key={i} style={{ color: th.muted, fontSize: 13 }}>{l}</Text>)}
+      </View>
+      {right ? <View style={{ alignItems: 'flex-end', gap: 4 }}>{right}</View> : null}
+      {onPress ? <Feather name="chevron-right" size={18} color={th.faint} /> : null}
+    </Card>
+  );
+  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>{body}</Pressable> : body;
+}
+
+export const SectionTitle = ({ children }: { children: ReactNode }) => {
+  const th = useTheme();
+  return <Text style={{ color: th.ink, fontSize: 18, fontWeight: '800' }}>{children}</Text>;
+};
+
+/** Label + value summary line used in detail cards. */
+export function KV({ label, value, bold }: { label: string; value: string; bold?: boolean }) { return <Row label={label} value={value} bold={bold} />; }
+
+/** Date row with previous / next arrows (the web DateNav). */
+export function DateStepper({ label, onPrev, onNext, nextDisabled }: { date?: string; label: string; onPrev: () => void; onNext: () => void; nextDisabled?: boolean }) {
+  const th = useTheme();
+  return (
+    <View style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: th.surface, borderRadius: 18 }, cardLook(th)]}>
+      <Pressable onPress={onPrev} accessibilityLabel="Previous day" style={{ width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name="chevron-left" size={22} color={th.ink} />
+      </Pressable>
+      <Text style={{ color: th.ink, fontWeight: '700', fontSize: 16 }}>{label}</Text>
+      <Pressable onPress={onNext} disabled={nextDisabled} accessibilityLabel="Next day" style={{ width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center', opacity: nextDisabled ? 0.3 : 1 }}>
+        <Feather name="chevron-right" size={22} color={th.ink} />
+      </Pressable>
+    </View>
+  );
+}
+
+/** Horizontal bars with a label, an amount and an optional detail line (branch-wise / category-wise breakdowns). */
+export function BarList({ rows, format, color }: { rows: Array<{ key: string; label: string; value: number; detail?: string }>; format: (n: number) => string; color?: string }) {
+  const th = useTheme();
+  const max = Math.max(1, ...rows.map((r) => r.value));
+  if (rows.length === 0) return <Muted>No data for this period.</Muted>;
+  return (
+    <View style={{ gap: 12 }}>
+      {rows.map((r) => (
+        <View key={r.key} style={{ gap: 4 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+            <Text numberOfLines={1} style={{ color: th.ink, fontWeight: '600', flex: 1 }}>{r.label}</Text>
+            <Text style={{ color: th.ink, fontVariant: ['tabular-nums'], fontWeight: '700' }}>{format(r.value)}</Text>
+          </View>
+          <View style={{ height: 8, borderRadius: 4, backgroundColor: th.brandLight, overflow: 'hidden' }}>
+            <View style={{ width: `${Math.max(2, (r.value / max) * 100)}%`, height: '100%', borderRadius: 4, backgroundColor: color ?? th.series[1] }} />
+          </View>
+          {r.detail ? <Text style={{ color: th.faint, fontSize: 12 }}>{r.detail}</Text> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Multi-choice pills (roles, branches ...). */
+export function MultiChips({ label, values, onChange, options }: { label?: string; values: string[]; onChange: (v: string[]) => void; options: Array<{ value: string; label: string }> }) {
+  const th = useTheme();
+  return (
+    <View>
+      {label ? labelEl(th, label) : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {options.map((o) => {
+          const on = values.includes(o.value);
+          return (
+            <Pressable
+              key={o.value} onPress={() => onChange(on ? values.filter((v) => v !== o.value) : [...values, o.value])} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+              style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, justifyContent: 'center', borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brand : th.surface }}
+            >
+              <Text style={{ color: on ? th.onBrand : th.ink, fontWeight: '500' }}>{on ? '✓ ' : ''}{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+/** A labelled on/off switch row. */
+export function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: TOUCH }}>
+      <Text style={{ color: th.ink, fontSize: 16, flex: 1 }}>{label}</Text>
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: th.brand }} />
     </View>
   );
 }

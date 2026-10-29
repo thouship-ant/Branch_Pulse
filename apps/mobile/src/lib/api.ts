@@ -125,6 +125,7 @@ export const api = {
   full: {
     get: <T = any>(path: string): Promise<Envelope<T>> => request('GET', path, { raw: true }),
     put: <T = any>(path: string, body: unknown): Promise<Envelope<T>> => request('PUT', path, { body, raw: true }),
+    post: <T = any>(path: string, body: unknown): Promise<Envelope<T>> => request('POST', path, { body, raw: true }),
   },
 };
 

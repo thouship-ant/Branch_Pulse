@@ -10,3 +10,6 @@ export const MOVEMENT_LABEL: Record<string, string> = {
   EXPENSE: 'Expense', PURCHASE: 'Purchase', SUPPLIER_PAYMENT: 'Supplier payment', ADVANCE_PAYMENT: 'Advance',
 };
 export const roleLabel = (code: string) => code.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' ');
+
+/** Chip tone for an approval status. */
+export const approvalTone = (s: string | null | undefined) => (s === 'APPROVED' ? 'ok' : s === 'REJECTED' ? 'bad' : s === 'SUBMITTED' ? 'warn' : 'neutral') as 'ok' | 'bad' | 'warn' | 'neutral';

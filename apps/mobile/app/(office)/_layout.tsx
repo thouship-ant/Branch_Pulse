@@ -8,6 +8,7 @@ type FeatherName = React.ComponentProps<typeof Feather>['name'];
 const TABS: Array<{ name: string; title: string; icon: FeatherName; perm?: string }> = [
   { name: 'dashboard', title: 'Dashboard', icon: 'bar-chart-2', perm: 'dashboard:view' },
   { name: 'approvals', title: 'Approvals', icon: 'check-circle', perm: 'expense:approve' },
+  { name: 'more', title: 'More', icon: 'grid' },
   { name: 'account', title: 'Account', icon: 'user' },
 ];
 

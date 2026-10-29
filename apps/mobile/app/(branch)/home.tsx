@@ -5,7 +5,7 @@ import { Banner, Card, Chip, ErrorBox, HeroCard, LinkCard, Loading, Screen, Stat
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime, todayIST } from '@/lib/dates';
 import { formatINR } from '@/lib/money';
-import { useBranch } from '@/lib/session';
+import { useBranch, useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
 /** Today's checklist for the branch: sales, expenses, cash count, closing. */
@@ -13,6 +13,7 @@ export default function BranchHome() {
   const th = useTheme();
   const router = useRouter();
   const { locationId } = useBranch();
+  const { can } = useSession();
   const date = todayIST();
   const [screen, setScreen] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -78,6 +79,8 @@ export default function BranchHome() {
           right={<Chip text={c.done ? 'Done' : 'Not done'} tone={c.done ? 'ok' : 'neutral'} icon={c.done ? '✓' : '○'} />}
         />
       ))}
+      <LinkCard icon="box" title="Stock" detail="Count, wastage, purchases" onPress={() => router.push('/stock')} />
+      {can('staff:view') ? <LinkCard icon="users" title="Staff" detail="Attendance, advances" onPress={() => router.push('/staff')} /> : null}
       <LinkCard
         icon="check-square" title="Closing" onPress={() => router.push('/closing')}
         detail={closing?.submittedAt ? prettyTime(closing.submittedAt) : undefined} right={<StatusPill status={status} />}
