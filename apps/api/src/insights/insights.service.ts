@@ -52,10 +52,19 @@ export class InsightsService {
     private readonly settings: SettingsService,
   ) {}
 
-  /** KPI tiles + branch table for one date (LLD s17 bands 2 and 3). */
-  async summary(ctx: ReqCtx, dateStr: string | undefined, locationIds?: string) {
-    const date = toDate(dateStr ?? todayIST(), 'date');
-    const prev = addDays(date, -7);
+  /**
+   * KPI tiles + branch table (LLD s17 bands 2 and 3) for one date, or - with `from` and `to` - for a whole period
+   * (this week, this month, all time, a custom range). A period is compared with the period of the same length just before it.
+   */
+  async summary(ctx: ReqCtx, dateStr: string | undefined, locationIds?: string, fromStr?: string, toStr?: string) {
+    const ranged = !!(fromStr && toStr);
+    const date = toDate((ranged ? toStr : dateStr) ?? todayIST(), ranged ? 'to' : 'date');
+    const from = ranged ? toDate(fromStr!, 'from') : date;
+    if (from.getTime() > date.getTime()) throw validation('INVALID_RANGE', 'The start date is after the end date', 'from');
+    const spanDays = Math.round((date.getTime() - from.getTime()) / 86_400_000) + 1;
+    // one day: the same weekday last week; a period: the period of equal length right before it
+    const prevFrom = ranged ? addDays(from, -spanDays) : addDays(date, -7);
+    const prevTo = ranged ? addDays(from, -1) : addDays(date, -7);
     const filter = locationIds?.split(',').filter(Boolean);
 
     return this.prisma.runScoped(ctx.user, async (tx) => {
@@ -64,35 +73,39 @@ export class InsightsService {
         orderBy: { code: 'asc' },
       });
       const ids = branches.map((b) => b.id);
-      const live = { location_id: { in: ids }, business_date: date, status: 'ACTIVE' as const };
+      const inRange = ranged ? { gte: from, lte: date } : date;
+      const live = { location_id: { in: ids }, business_date: inRange, status: 'ACTIVE' as const };
 
       const [sales, prevSales, exp, pur, was, recons, closings, stockVal, countVariances, unpaidSalary, suppliers] = await Promise.all([
         tx.dailySales.findMany({ where: live }),
         tx.dailySales.aggregate({
-          where: { location_id: { in: ids }, business_date: prev, status: 'ACTIVE' },
+          where: { location_id: { in: ids }, business_date: ranged ? { gte: prevFrom, lte: prevTo } : prevFrom, status: 'ACTIVE' },
           _sum: { total_sales: true },
         }),
         tx.expense.groupBy({ by: ['location_id'], where: { ...live, approval_status: IN_FLIGHT }, _sum: { amount: true } }),
         tx.purchase.groupBy({ by: ['location_id'], where: { ...live, approval_status: IN_FLIGHT }, _sum: { total_amount: true } }),
         tx.wastage.groupBy({ by: ['location_id'], where: { ...live, approval_status: IN_FLIGHT }, _sum: { estimated_value: true } }),
-        tx.cashReconciliation.findMany({ where: { location_id: { in: ids }, business_date: date } }),
-        tx.dailyClosing.findMany({ where: { location_id: { in: ids }, business_date: date } }),
+        tx.cashReconciliation.findMany({ where: { location_id: { in: ids }, business_date: inRange } }),
+        tx.dailyClosing.findMany({ where: { location_id: { in: ids }, business_date: inRange } }),
         // stock on hand right now, salary still owed, and supplier dues are point-in-time balances, not tied to this one date
         tx.stockBalance.aggregate({ where: { location_id: { in: ids } }, _sum: { value: true } }),
-        tx.stockCountItem.findMany({ where: { count: { location_id: { in: ids }, business_date: date } }, select: { variance_value: true } }),
+        tx.stockCountItem.findMany({ where: { count: { location_id: { in: ids }, business_date: inRange } }, select: { variance_value: true } }),
         tx.salary.findMany({ where: { location_id: { in: ids }, payment_status: { in: ['UNPAID', 'PARTIAL'] } }, select: { payable: true, paid_amount: true } }),
         tx.supplier.findMany({ where: { status: 'ACTIVE' }, select: { id: true, opening_balance: true } }),
       ]);
       const supTotals = await supplierTotals(tx, suppliers);
 
       const rows = branches.map((b) => {
-        const s = sales.find((x) => x.location_id === b.id);
+        const mine = sales.filter((x) => x.location_id === b.id);
+        const sumOf = (pick: (x: (typeof sales)[number]) => Dec) => sum(mine.map(pick));
         const e = exp.find((x) => x.location_id === b.id)?._sum.amount ?? ZERO;
         const p = pur.find((x) => x.location_id === b.id)?._sum.total_amount ?? ZERO;
         const w = was.find((x) => x.location_id === b.id)?._sum.estimated_value ?? ZERO;
-        const r = recons.find((x) => x.location_id === b.id);
-        const c = closings.find((x) => x.location_id === b.id);
-        const total = s?.total_sales ?? ZERO;
+        const rs = recons.filter((x) => x.location_id === b.id && x.variance !== null);
+        const cs = closings.filter((x) => x.location_id === b.id);
+        const total = sumOf((x) => x.total_sales);
+        // a day: its closing status (no record yet = PENDING). A period: PENDING while any of its closings is still open.
+        const closingStatus = ranged ? (cs.some((c) => OPEN.includes(c.status)) || cs.length === 0 ? 'PENDING' : 'APPROVED') : (cs[0]?.status ?? 'PENDING');
         return {
           locationId: b.id,
           code: b.code,
@@ -101,13 +114,13 @@ export class InsightsService {
           sales: total,
           expenses: e,
           net: total.minus(e),
-          cash: s?.cash_sales ?? ZERO,
-          upi: s?.upi_sales ?? ZERO,
-          card: s?.card_sales ?? ZERO,
+          cash: sumOf((x) => x.cash_sales),
+          upi: sumOf((x) => x.upi_sales),
+          card: sumOf((x) => x.card_sales),
           purchases: p,
           wastage: w,
-          cashVariance: r?.variance ?? null,
-          closingStatus: c?.status ?? 'PENDING',
+          cashVariance: rs.length ? sum(rs.map((r) => r.variance as Dec)) : null,
+          closingStatus,
         };
       });
 
@@ -119,6 +132,8 @@ export class InsightsService {
 
       return {
         date,
+        from,
+        ranged,
         tiles: {
           totalSales,
           totalExpenses,
@@ -137,7 +152,7 @@ export class InsightsService {
           salaryPayable: sum(unpaidSalary.map((s) => s.payable.minus(s.paid_amount))),
           supplierOutstanding: sum([...supTotals.values()].map((t) => t.outstanding)),
         },
-        vsLastWeek: { salesPrevious: previous, salesChangePct: change },
+        vsLastWeek: { salesPrevious: previous, salesChangePct: change, comparedWith: ranged ? 'PREVIOUS_PERIOD' : 'LAST_WEEK' },
         branches: rows,
       };
     });

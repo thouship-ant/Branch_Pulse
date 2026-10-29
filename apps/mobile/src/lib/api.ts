@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
+import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { uuid } from './dates';
 
@@ -83,13 +85,15 @@ interface Options { body?: unknown; raw?: boolean }
 async function request(method: string, path: string, opts: Options = {}, retried = false): Promise<any> {
   const headers: Record<string, string> = { 'X-Client': 'native', 'X-Device-Id': await deviceId() };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-  if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
+  const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData; // fetch sets the multipart boundary itself
+  if (opts.body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
 
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, { method, headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
-  } catch {
-    throw new ApiError(0, 'NETWORK', 'No internet connection');
+    res = await fetch(`${BASE}${path}`, { method, headers, body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body) });
+  } catch (e) {
+    // the address is part of the message so a wrong EXPO_PUBLIC_API_URL (or a phone that cannot see the PC) is obvious
+    throw new ApiError(0, 'NETWORK', `Cannot reach the server at ${API_ORIGIN}. Check your connection (${e instanceof Error ? e.message : 'network error'}).`);
   }
 
   if (res.status === 401 && !retried && !path.startsWith('/auth/')) {
@@ -115,6 +119,8 @@ export const api = {
   post: <T = any>(path: string, body?: unknown): Promise<T> => request('POST', path, { body: body ?? {} }),
   put: <T = any>(path: string, body?: unknown): Promise<T> => request('PUT', path, { body }),
   patch: <T = any>(path: string, body?: unknown): Promise<T> => request('PATCH', path, { body }),
+  /** multipart/form-data upload (a file plus fields) */
+  postForm: <T = any>(path: string, form: FormData): Promise<T> => request('POST', path, { body: form }),
   /** Same as get but returns { data, warnings, meta }. */
   full: {
     get: <T = any>(path: string): Promise<Envelope<T>> => request('GET', path, { raw: true }),
@@ -140,3 +146,26 @@ export async function uploadAttachment(uri: string, fileName: string, locationId
 }
 
 export const errMessage = (e: unknown, fallback = 'Something went wrong') => (e instanceof Error ? e.message : fallback);
+
+/** Server field errors ([{field,message}]) -> { field: message } so each shows under its own box. */
+export const fieldErrors = (e: unknown): Record<string, string> =>
+  e instanceof ApiError && Array.isArray(e.details) ? Object.fromEntries(e.details.filter((d: any) => d?.field).map((d: any) => [d.field, d.message])) : {};
+
+/** Download a file the API serves behind the bearer token (a plain link could not send it) and hand it to the share sheet. */
+export async function downloadAndShare(path: string, fileName: string, mimeType: string): Promise<void> {
+  const headers: Record<string, string> = { 'X-Client': 'native', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) };
+  if (Platform.OS === 'web') {
+    const res = await fetch(`${BASE}${path}`, { headers });
+    if (!res.ok) throw new ApiError(res.status, 'DOWNLOAD_FAILED', 'Could not download the file');
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+  const target = `${FileSystem.cacheDirectory}${fileName}`;
+  const res = await FileSystem.downloadAsync(`${BASE}${path}`, target, { headers });
+  if (res.status !== 200) throw new ApiError(res.status, 'DOWNLOAD_FAILED', 'Could not download the file');
+  if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device');
+  await Sharing.shareAsync(res.uri, { mimeType, dialogTitle: fileName });
+}

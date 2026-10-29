@@ -12,7 +12,7 @@ const RESEND_SECONDS = 30;
 
 const friendly = (err: unknown) =>
   err instanceof ApiError
-    ? err.isNetwork ? 'No internet connection' : err.code === 'ACCOUNT_LOCKED' ? 'Too many attempts. Try again in 15 minutes.' : err.message
+    ? err.code === 'ACCOUNT_LOCKED' ? 'Too many attempts. Try again in 15 minutes.' : err.message
     : err instanceof Error ? err.message : 'Could not sign in';
 
 /**

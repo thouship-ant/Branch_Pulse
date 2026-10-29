@@ -2,10 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
-  View, type StyleProp, type TextInputProps, type ViewStyle,
+  View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STATUS_LABEL } from '@/lib/labels';
+import { useHeader } from './HeaderContext';
 import { cleanAmount } from '@/lib/money';
 import { RADIUS, TOUCH, useTheme, type Theme } from '@/lib/theme';
 
@@ -13,32 +14,108 @@ export type IconName = keyof typeof Feather.glyphMap;
 type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
 
 // ------------------------------------------------------------------ layout
-/** A scrolling page with the app background, pull-to-refresh and keyboard handling. */
-export function Screen({ children, onRefresh, padBottom = 24 }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number }) {
+/**
+ * A scrolling page with the app background, the curved header, pull-to-refresh and keyboard handling.
+ * `hero`: the header stays fixed behind the page and the first card (HeroCard) sits over it - scrolling up, the cards
+ * slide over the header. Without it the header is a normal bar above the page.
+ */
+export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode }) {
   const th = useTheme();
+  const header = useHeader();
+  const [headerH, setHeaderH] = useState(190);
   const [refreshing, setRefreshing] = useState(false);
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try { await onRefresh?.(); } finally { setRefreshing(false); }
   }, [onRefresh]);
+  const overlap = !!hero && !!header;
+  const bar = header ? <AppBar {...header} right={headerRight ?? header.right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: th.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: padBottom, gap: 16 }}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={th.brand} /> : undefined}
-      >
-        {children}
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <View style={{ flex: 1, backgroundColor: th.bg }}>
+      {bar && !overlap ? bar : null}
+      {bar && overlap ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>{bar}</View> : null}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingTop: overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap ? '#fff' : th.brand} progressViewOffset={overlap ? headerH - 60 : 0} /> : undefined}
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
+/** Soft card look: a shadow in light mode, a hairline in dark mode. */
+export function cardLook(th: Theme): ViewStyle {
+  return th.dark
+    ? { borderWidth: 1, borderColor: th.border }
+    : { shadowColor: '#1e2a8a', shadowOpacity: 0.09, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3 };
+}
+
+/** A soft white card. `tone` tints it (alerts). */
 export function Card({ children, style, tone }: { children: ReactNode; style?: StyleProp<ViewStyle>; tone?: ToneName }) {
   const th = useTheme();
   const t = tone ? th[tone] : null;
   return (
-    <View style={[{ backgroundColor: t?.bg ?? th.surface, borderColor: t?.border ?? th.border, borderWidth: 1, borderRadius: RADIUS, padding: 16, gap: 12 }, style]}>
+    <View style={[{ backgroundColor: t?.bg ?? th.surface, borderRadius: 20, padding: 16, gap: 12 }, t ? { borderWidth: 1, borderColor: t.border } : cardLook(th), style]}>
+      {children}
+    </View>
+  );
+}
+
+/** Rounded tinted square holding an icon (the coloured tile on every stat card). */
+export function IconTile({ icon, tone = 'brand', size = 48 }: { icon: IconName; tone?: ToneName | 'brand'; size?: number }) {
+  const th = useTheme();
+  const c = tone === 'brand' ? { bg: th.brandLight, fg: th.brandDark } : { bg: th[tone].bg, fg: th[tone].text };
+  return (
+    <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
+      <Feather name={icon} size={size * 0.46} color={c.fg} />
+    </View>
+  );
+}
+
+/** Half-width stat card: icon tile, big number, label (the "Overview" grid). */
+export function StatCard({ icon, tone = 'brand', value, label, sub, alert }: { icon: IconName; tone?: ToneName | 'brand'; value: string; label: string; sub?: string; alert?: boolean }) {
+  const th = useTheme();
+  return (
+    <View style={[{ width: '47.8%', backgroundColor: th.surface, borderRadius: 20, padding: 16, gap: 10 }, cardLook(th)]}>
+      <IconTile icon={icon} tone={tone} />
+      <View>
+        <Text style={{ color: alert ? th.bad.text : th.ink, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
+        <Text style={{ color: th.muted, fontSize: 14 }}>{label}</Text>
+        {sub ? <Text style={{ color: th.faint, fontSize: 12, marginTop: 2 }}>{sub}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+/** The big headline card that overlaps the header: icon + label, huge value, then figures side by side. */
+export function HeroCard({
+  icon, label, value, sub, columns, children,
+}: { icon: IconName; label: string; value: string; sub?: string; columns?: Array<{ label: string; value: string; color?: string }>; children?: ReactNode }) {
+  const th = useTheme();
+  return (
+    <View style={[{ backgroundColor: th.surface, borderRadius: 24, padding: 20, gap: 14 }, cardLook(th)]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <IconTile icon={icon} tone="bad" size={50} />
+        <Text style={{ color: th.muted, fontSize: 17, fontWeight: '500', flex: 1 }}>{label}</Text>
+      </View>
+      <View>
+        <Text style={{ color: th.ink, fontSize: 38, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
+        {sub ? <Text style={{ color: th.faint, fontSize: 12 }}>{sub}</Text> : null}
+      </View>
+      {columns?.length ? (
+        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: th.border, paddingTop: 14 }}>
+          {columns.map((c, i) => (
+            <View key={c.label} style={{ flex: 1, paddingLeft: i ? 16 : 0, borderLeftWidth: i ? 1 : 0, borderLeftColor: th.border }}>
+              <Text style={{ color: th.muted, fontSize: 14 }}>{c.label}</Text>
+              <Text style={{ color: c.color ?? th.ink, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{c.value}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
       {children}
     </View>
   );
@@ -247,16 +324,25 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
 }
 
 // ------------------------------------------------------------------ app bar
-/** Branch + user header shown above every tab (mirrors the web app's top bar). */
-export function AppBar({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
+const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good Morning,' : h < 17 ? 'Good Afternoon,' : 'Good Evening,'; };
+
+/**
+ * Curved brand header: logo, greeting, the user's name and the company (and branch) under it. The bottom padding leaves
+ * room for the first card to overlap it (HeroCard).
+ */
+export function AppBar({ title, subtitle, right, onLayout }: { title: string; subtitle?: string; right?: ReactNode; onLayout?: ViewProps['onLayout'] }) {
   const th = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ backgroundColor: th.brand, paddingTop: insets.top + 8, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <Image source={require('../../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff' }} />
+    <View
+      onLayout={onLayout}
+      style={{ backgroundColor: th.brand, paddingTop: insets.top + 14, paddingBottom: 62, paddingHorizontal: 20, borderBottomLeftRadius: 34, borderBottomRightRadius: 34, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+    >
+      <Image source={require('../../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#fff' }} />
       <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ color: '#fff', fontSize: 17, fontWeight: '800' }}>{title}</Text>
-        {subtitle ? <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>{subtitle}</Text> : null}
+        <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>{greeting()}</Text>
+        <Text numberOfLines={1} style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{title}</Text>
+        {subtitle ? <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '500' }}>{subtitle}</Text> : null}
       </View>
       {right}
     </View>
@@ -268,23 +354,6 @@ export function IconButton({ icon, onPress, label }: { icon: IconName; onPress: 
     <Pressable onPress={onPress} accessibilityLabel={label} hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
       <Feather name={icon} size={22} color="#fff" />
     </Pressable>
-  );
-}
-
-/** Date row with previous / next arrows (the web DateNav). */
-export function DateStepper({ date, label, onPrev, onNext, nextDisabled }: { date: string; label: string; onPrev: () => void; onNext: () => void; nextDisabled?: boolean }) {
-  const th = useTheme();
-  void date;
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: th.surface, borderWidth: 1, borderColor: th.border, borderRadius: 14 }}>
-      <Pressable onPress={onPrev} accessibilityLabel="Previous day" style={{ width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' }}>
-        <Feather name="chevron-left" size={22} color={th.ink} />
-      </Pressable>
-      <Text style={{ color: th.ink, fontWeight: '700', fontSize: 16 }}>{label}</Text>
-      <Pressable onPress={onNext} disabled={nextDisabled} accessibilityLabel="Next day" style={{ width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center', opacity: nextDisabled ? 0.3 : 1 }}>
-        <Feather name="chevron-right" size={22} color={th.ink} />
-      </Pressable>
-    </View>
   );
 }
 
@@ -305,5 +374,40 @@ export function LinkCard({ icon, title, detail, right, onPress, done }: { icon: 
         <Feather name="chevron-right" size={18} color={th.faint} />
       </Card>
     </Pressable>
+  );
+}
+
+/** A dropdown: shows the chosen option and opens a list in a sheet (the phone version of a <select>). */
+export function SelectField<T extends string>({
+  label, value, onChange, options, placeholder = 'Select…', required, disabled,
+}: { label: string; value: T | ''; onChange: (v: T) => void; options: Array<{ value: T; label: string }>; placeholder?: string; required?: boolean; disabled?: boolean }) {
+  const th = useTheme();
+  const [open, setOpen] = useState(false);
+  const chosen = options.find((o) => o.value === value);
+  return (
+    <View>
+      {labelEl(th, label, required)}
+      <Pressable
+        accessibilityRole="button" accessibilityState={{ disabled: !!disabled, expanded: open }} disabled={disabled} onPress={() => setOpen(true)}
+        style={{ minHeight: TOUCH, borderRadius: 12, borderWidth: 1, borderColor: th.border, backgroundColor: th.fieldBg, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', opacity: disabled ? 0.5 : 1 }}
+      >
+        <Text numberOfLines={1} style={{ color: chosen ? th.ink : th.faint, fontSize: 16, flex: 1 }}>{chosen?.label ?? placeholder}</Text>
+        <Feather name="chevron-down" size={20} color={th.muted} />
+      </Pressable>
+      <Sheet open={open} onClose={() => setOpen(false)} title={label}>
+        {options.map((o) => {
+          const on = o.value === value;
+          return (
+            <Pressable
+              key={o.value} accessibilityRole="button" accessibilityState={{ selected: on }}
+              onPress={() => { onChange(o.value); setOpen(false); }}
+              style={{ minHeight: TOUCH, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, justifyContent: 'center', borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brandLight : th.surface }}
+            >
+              <Text style={{ color: th.ink, fontWeight: on ? '700' : '400' }}>{on ? '✓ ' : ''}{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </Sheet>
+    </View>
   );
 }

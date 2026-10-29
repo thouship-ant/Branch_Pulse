@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { api, ApiError } from '@/lib/api';
-import { PASSWORD_RULES, passwordOk } from '@/lib/password';
+import { passwordOk } from '@/lib/password';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
+import { PasswordChecklist } from './PasswordChecklist';
 import { Banner, Button, ErrorBox, Field, Muted } from './ui';
 
 /**
@@ -52,12 +53,7 @@ export function ChangePasswordModal() {
             <>
               <Muted>You are using a default password. Choose your own to keep your account safe.</Muted>
               <Field label="New Password" value={pw} onChangeText={setPw} secureTextEntry={!show} autoCapitalize="none" autoCorrect={false} textContentType="newPassword" />
-              <View style={{ gap: 2 }}>
-                {PASSWORD_RULES.map((r) => {
-                  const ok = r.test(pw);
-                  return <Text key={r.key} style={{ color: ok ? th.ok.text : th.muted, fontSize: 13 }}>{ok ? '✓' : '○'} {r.label}</Text>;
-                })}
-              </View>
+              <PasswordChecklist value={pw} />
               <Field
                 label="Confirm Password" value={confirm} onChangeText={setConfirm} secureTextEntry={!show} autoCapitalize="none" autoCorrect={false}
                 error={confirm.length > 0 && pw !== confirm ? 'Passwords do not match' : null}

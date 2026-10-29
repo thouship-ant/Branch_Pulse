@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import { AppBar } from '@/components/ui';
+import { HeaderProvider } from '@/components/HeaderContext';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
@@ -20,12 +20,14 @@ export default function OfficeLayout() {
   if (me.isSuper || isBranchUser) return <Redirect href="/" />;
 
   return (
+    <HeaderProvider value={{ title: me.fullName, subtitle: me.company?.name }}>
     <Tabs
       screenOptions={{
-        header: () => <AppBar title={me.company?.name ?? 'Branch Pulse'} subtitle={me.fullName} />,
+        headerShown: false,
+        sceneStyle: { backgroundColor: th.bg },
         tabBarActiveTintColor: th.brand,
         tabBarInactiveTintColor: th.faint,
-        tabBarStyle: { backgroundColor: th.surface, borderTopColor: th.border },
+        tabBarStyle: { backgroundColor: th.surface, borderTopWidth: 0, elevation: 14, shadowColor: '#1e2a8a', shadowOpacity: 0.08, shadowRadius: 12 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
@@ -36,5 +38,6 @@ export default function OfficeLayout() {
         />
       ))}
     </Tabs>
+    </HeaderProvider>
   );
 }

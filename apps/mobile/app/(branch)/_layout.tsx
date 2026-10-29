@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import { AppBar, IconButton } from '@/components/ui';
+import { HeaderProvider } from '@/components/HeaderContext';
+import { IconButton } from '@/components/ui';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
@@ -23,18 +24,20 @@ export default function BranchLayout() {
   const branch = me.locations[0];
 
   return (
+    <HeaderProvider
+      value={{
+        title: me.fullName,
+        subtitle: [me.company?.name, branch?.name].filter(Boolean).join(' · '),
+        right: <IconButton icon="log-out" label="Sign out" onPress={() => void logout()} />,
+      }}
+    >
     <Tabs
       screenOptions={{
-        header: () => (
-          <AppBar
-            title={branch?.name ?? 'Branch Pulse'}
-            subtitle={`${me.company?.name ?? ''} · ${me.fullName}`}
-            right={<IconButton icon="log-out" label="Sign out" onPress={() => void logout()} />}
-          />
-        ),
+        headerShown: false,
+        sceneStyle: { backgroundColor: th.bg },
         tabBarActiveTintColor: th.brand,
         tabBarInactiveTintColor: th.faint,
-        tabBarStyle: { backgroundColor: th.surface, borderTopColor: th.border },
+        tabBarStyle: { backgroundColor: th.surface, borderTopWidth: 0, elevation: 14, shadowColor: '#1e2a8a', shadowOpacity: 0.08, shadowRadius: 12 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
@@ -45,5 +48,6 @@ export default function BranchLayout() {
         />
       ))}
     </Tabs>
+    </HeaderProvider>
   );
 }

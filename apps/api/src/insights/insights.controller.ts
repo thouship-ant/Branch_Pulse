@@ -7,8 +7,11 @@ export class InsightsController {
   constructor(private readonly insights: InsightsService) {}
 
   @Get('dashboard/summary') @RequirePermissions('dashboard:view')
-  summary(@Ctx() ctx: ReqCtx, @Query('date') date?: string, @Query('locationIds') locationIds?: string) {
-    return this.insights.summary(ctx, date, locationIds);
+  summary(
+    @Ctx() ctx: ReqCtx, @Query('date') date?: string, @Query('locationIds') locationIds?: string,
+    @Query('from') from?: string, @Query('to') to?: string,
+  ) {
+    return this.insights.summary(ctx, date, locationIds, from, to);
   }
 
   @Get('dashboard/charts/:code') @RequirePermissions('dashboard:view')

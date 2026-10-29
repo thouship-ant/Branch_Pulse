@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
-import { Banner, Card, Chip, ErrorBox, LinkCard, Loading, Screen, StatusPill } from '@/components/ui';
+import { Banner, Card, Chip, ErrorBox, HeroCard, LinkCard, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime, todayIST } from '@/lib/dates';
 import { formatINR } from '@/lib/money';
@@ -31,7 +31,7 @@ export default function BranchHome() {
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  if (!screen && !error) return <Screen><Loading /></Screen>;
+  if (!screen && !error) return <Screen hero><Card><Loading /></Card></Screen>;
 
   const closing = screen?.closing;
   const sales = screen?.sales;
@@ -51,23 +51,27 @@ export default function BranchHome() {
   const stepsTotal = cards.length + 1;
 
   return (
-    <Screen onRefresh={load}>
-      <View style={{ backgroundColor: th.brandLight, borderRadius: 16, padding: 16, gap: 8 }}>
-        <Text style={{ color: th.muted, fontSize: 13, fontWeight: '500' }}>Today · {prettyDate(date)}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <Text style={{ color: th.ink, fontSize: 22, fontWeight: '800' }}>Checklist</Text>
-          <Text style={{ color: th.brandDark, fontWeight: '700' }}>{stepsDone}/{stepsTotal} <Text style={{ color: th.muted, fontWeight: '500' }}>steps done</Text></Text>
+    <Screen hero onRefresh={load}>
+      <HeroCard
+        icon="check-square" label={`Today · ${prettyDate(date)}`} value={`${stepsDone}/${stepsTotal}`} sub="steps done"
+        columns={[
+          { label: 'Sales', value: sales ? formatINR(sales.totalSales, { decimals: false }) : '—', color: th.ok.text },
+          { label: 'Expenses', value: formatINR(String(total), { decimals: false }), color: th.warn.text },
+        ]}
+      >
+        <View style={{ gap: 6 }}>
+          <View style={{ height: 8, borderRadius: 4, backgroundColor: th.brandLight, overflow: 'hidden' }}>
+            <View style={{ width: `${(stepsDone / stepsTotal) * 100}%`, height: '100%', backgroundColor: th.brand, borderRadius: 4 }} />
+          </View>
+          <Text style={{ color: th.muted, fontSize: 12, fontWeight: '500' }}>{stepsDone === stepsTotal ? '✓ All done for today' : 'Keep going'}</Text>
         </View>
-        <View style={{ height: 8, borderRadius: 4, backgroundColor: th.dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.75)', overflow: 'hidden' }}>
-          <View style={{ width: `${(stepsDone / stepsTotal) * 100}%`, height: '100%', backgroundColor: th.brand, borderRadius: 4 }} />
-        </View>
-        <Text style={{ color: th.muted, fontSize: 12, fontWeight: '500' }}>{stepsDone === stepsTotal ? '✓ All done for today' : 'Keep going'}</Text>
-      </View>
+      </HeroCard>
 
       <ErrorBox error={error} />
       {status === 'REJECTED' && <Banner tone="bad">✕ Closing rejected{closing?.reviewComment ? `: ${closing.reviewComment}` : ''}</Banner>}
       {status === 'REOPENED' && <Banner tone="violet">↺ Closing reopened{closing?.reviewComment ? `: ${closing.reviewComment}` : ''}</Banner>}
 
+      <Text style={{ color: th.ink, fontSize: 20, fontWeight: '800' }}>Checklist</Text>
       {cards.map((c) => (
         <LinkCard
           key={c.path} icon={c.icon} title={c.title} detail={c.detail} done={c.done} onPress={() => router.push(c.path)}
@@ -78,7 +82,7 @@ export default function BranchHome() {
         icon="check-square" title="Closing" onPress={() => router.push('/closing')}
         detail={closing?.submittedAt ? prettyTime(closing.submittedAt) : undefined} right={<StatusPill status={status} />}
       />
-      <Card><Text style={{ color: th.muted, fontSize: 12 }}>Pull down to refresh. Entries save to the server straight away, so you need a connection.</Text></Card>
+      <Text style={{ color: th.faint, fontSize: 12, textAlign: 'center' }}>Pull down to refresh. Entries save to the server straight away, so you need a connection.</Text>
     </Screen>
   );
 }
