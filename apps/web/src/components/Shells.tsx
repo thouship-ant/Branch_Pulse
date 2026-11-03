@@ -179,6 +179,8 @@ export function OfficeShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [more, setMore] = useState(false);
+  // the top bar stays put for every role except Admin and Super Admin (they work on larger screens with the sidebar)
+  const pinnedHeader = !!me && !me.isSuper && !me.roles.includes('ADMIN');
 
   useEffect(() => {
     try { setCollapsed(localStorage.getItem('bp_sidebar') === 'collapsed'); } catch { /* ignore */ }
@@ -242,7 +244,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className={`min-w-0 flex-1 transition-[margin] duration-200 ${collapsed ? 'md:ml-[76px]' : 'md:ml-[264px]'}`}>
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-4 py-2 text-white shadow-[0_8px_24px_-12px_rgba(30,42,138,0.55)]">
+        <header className={`${pinnedHeader ? 'sticky top-0 z-30' : 'relative z-30'} flex items-center justify-between gap-3 overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-4 py-2 text-white shadow-[0_8px_24px_-12px_rgba(30,42,138,0.55)]`}>
           <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
           <div className="relative flex items-center gap-2">
             <button className="hidden h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15 md:flex" onClick={toggleSidebar} aria-label="Toggle sidebar" aria-expanded={!collapsed}>
