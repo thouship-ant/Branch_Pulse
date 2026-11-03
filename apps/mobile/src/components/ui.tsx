@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,8 +29,12 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
     setRefreshing(true);
     try { await onRefresh?.(); } finally { setRefreshing(false); }
   }, [onRefresh]);
+  const insets = useSafeAreaInsets();
   const overlap = !!hero && !!header && !title;
-  const bar = title ? <SubHeader title={title} right={headerRight} /> : header ? <AppBar {...header} right={headerRight ?? header.right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
+  const right = headerRight ?? header?.right;
+  // when the page scrolls over the header, the scroll view covers it and would swallow taps: the header's own buttons are drawn
+  // again above the scroll view instead (same spot), and the header underneath is drawn without them
+  const bar = title ? <SubHeader title={title} right={headerRight} /> : header ? <AppBar {...header} right={overlap ? undefined : right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
   return (
     <View style={{ flex: 1, backgroundColor: th.bg }}>
       {bar && !overlap ? bar : null}
@@ -44,6 +48,9 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
           {children}
         </ScrollView>
       </KeyboardAvoidingView>
+      {overlap && right ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 14, right: 20, height: Math.max(48, headerH - insets.top - 76), justifyContent: 'center', zIndex: 20, elevation: 20 }}>{right}</View>
+      ) : null}
     </View>
   );
 }
@@ -561,7 +568,8 @@ export function LanguageSwitch() {
             key={code} onPress={() => setLang(code)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={label}
             style={{ flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brand : th.surface }}
           >
-            <Text style={{ color: on ? th.onBrand : th.ink, fontWeight: '700' }}>{on ? '✓ ' : ''}{label}</Text>
+            {/* language names are never translated: each shows in its own language */}
+            <PlainText style={{ color: on ? th.onBrand : th.ink, fontWeight: '700' }}>{on ? '✓ ' : ''}{label}</PlainText>
           </Pressable>
         );
       })}

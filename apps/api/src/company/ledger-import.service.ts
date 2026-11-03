@@ -262,7 +262,7 @@ export class LedgerImportService {
     const manager = await tx.user.create({
       data: {
         company_id: companyId, username: dto.managerMobile!, mobile: dto.managerMobile!, full_name: dto.managerName!.trim(),
-        password_hash: await argon2.hash(DEFAULT_PASSWORDS.BRANCH_MANAGER), must_change_password: true, created_by: ctx.user.id, updated_by: ctx.user.id,
+        password_hash: await argon2.hash(DEFAULT_PASSWORDS.BRANCH_MANAGER), created_by: ctx.user.id, updated_by: ctx.user.id,
         roles: { create: [{ role_id: role.id }] }, locations: { create: [{ location_id: loc.id }] },
       },
     });

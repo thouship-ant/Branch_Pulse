@@ -83,7 +83,7 @@ export class UsersService {
           email: dto.email,
           // role default unless one is given; either way the user must pick their own after the first sign-in
           password_hash: await argon2.hash(dto.password ?? defaultPasswordFor(roles.map((r) => r.code))),
-          must_change_password: true,
+          must_change_password: roles.some((r) => r.code === 'ADMIN'), // only Admins sign in with the password
           preferred_language: dto.preferredLanguage ?? 'en',
           created_by: ctx.user.id,
           updated_by: ctx.user.id,
@@ -141,7 +141,7 @@ export class UsersService {
           preferred_language: dto.preferredLanguage,
           status: dto.status,
           password_hash: dto.password ? await argon2.hash(dto.password) : undefined,
-          must_change_password: dto.password ? true : undefined,
+          must_change_password: dto.password ? roles.some((r) => r.code === 'ADMIN') : undefined,
           failed_logins: dto.password ? 0 : undefined,
           locked_until: dto.password ? null : undefined,
           updated_by: ctx.user.id,

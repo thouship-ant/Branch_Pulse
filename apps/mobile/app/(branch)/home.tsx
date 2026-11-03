@@ -86,6 +86,7 @@ export default function BranchHome() {
         icon="check-square" title="Closing" onPress={() => router.push('/closing')}
         detail={closing?.submittedAt ? prettyTime(closing.submittedAt) : undefined} right={<StatusPill status={status} />}
       />
+      <LinkCard icon="user" title="Account" detail="Language, sign out" onPress={() => router.push('/account')} />
       <Text style={{ color: th.faint, fontSize: 12, textAlign: 'center' }}>Pull down to refresh. Entries save to the server straight away, so you need a connection.</Text>
     </Screen>
   );

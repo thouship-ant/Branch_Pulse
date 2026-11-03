@@ -27,7 +27,7 @@ async function main() {
     if (!cache.has(pw)) cache.set(pw, await argon2.hash(pw));
     await prisma.user.update({
       where: { id: u.id },
-      data: { password_hash: cache.get(pw)!, must_change_password: true, password_changed_at: null, failed_logins: 0, locked_until: null },
+      data: { password_hash: cache.get(pw)!, must_change_password: u.roles.some((r) => r.role.code === 'ADMIN'), password_changed_at: null, failed_logins: 0, locked_until: null },
     });
     n++;
   }

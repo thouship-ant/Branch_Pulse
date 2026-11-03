@@ -130,7 +130,7 @@ export const TA_EXTRA: Record<string, string> = {
   "Manager's mobile number ": "மேலாளரின் மொபைல் எண்", "The manager signs in with this number and an OTP. The default password is Manager@1234 (changed at the first sign-in).": "மேலாளர் இந்த எண்ணையும் OTP யையும் கொண்டு உள்நுழைவார். இயல்புநிலை கடவுச்சொல் Manager@1234 (முதல் உள்நுழைவில் மாற்றப்படும்).",
   "Server": "சேவையகம்", "Mobile": "மொபைல்", "Username": "பயனர் பெயர்", "Branches ": "கிளைகள்", "Cannot reach the server at": "சேவையகத்தை அடைய முடியவில்லை:",
   // ---- sentence fragments
-  "of": "இல்", "shown": "காட்டப்படுகிறது", "total": "மொத்தம்", "Edit ": "திருத்து", "Reset the password of": "கடவுச்சொல்லை மீட்டமைக்கவா:", "? A temporary password is sent by SMS to": "? தற்காலிக கடவுச்சொல் SMS மூலம் அனுப்பப்படும்:",
+  "Language, sign out": "மொழி, வெளியேறு", "of": "இல்", "shown": "காட்டப்படுகிறது", "total": "மொத்தம்", "Edit ": "திருத்து", "Reset the password of": "கடவுச்சொல்லை மீட்டமைக்கவா:", "? A temporary password is sent by SMS to": "? தற்காலிக கடவுச்சொல் SMS மூலம் அனுப்பப்படும்:",
   "and they must change it at the next sign-in. They are signed out everywhere now.": "அடுத்த உள்நுழைவில் அவர்கள் அதை மாற்ற வேண்டும். அவர்கள் இப்போது எல்லா இடங்களிலும் வெளியேற்றப்படுவார்கள்.",
   "Reject": "நிராகரி",
   "Variance": "வித்தியாசம்",

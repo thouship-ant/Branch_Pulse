@@ -185,7 +185,7 @@ async function main() {
     if (existing) continue;
     await prisma.user.create({
       data: {
-        company_id: companyId, username: u.mobile, mobile: u.mobile, full_name: u.name, password_hash: await argon2.hash(defaultPasswordFor([u.role])), must_change_password: true,
+        company_id: companyId, username: u.mobile, mobile: u.mobile, full_name: u.name, password_hash: await argon2.hash(defaultPasswordFor([u.role])), must_change_password: u.role === 'ADMIN',
         roles: { create: [{ role_id: roleId.get(u.role)! }] },
         locations: { create: u.locations.map((c) => ({ location_id: locId.get(c)! })) },
       },

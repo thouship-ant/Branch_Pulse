@@ -72,7 +72,7 @@ const TEMPLATES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
 
 /** Translate English UI text to the current language (identity when English). Surrounding spaces are kept. */
 export function tr(text: string): string {
-  if (current === 'en' || !text) return text;
+  if (current === 'en' || !text || /[஀-௿]/.test(text)) return text; // already Tamil
   const lead = text.match(/^\s*/)![0];
   const trail = text.match(/\s*$/)![0];
   const body = text.trim();

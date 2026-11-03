@@ -315,7 +315,7 @@ export class AuthService {
       allLocations: user.allLocations,
       isSuper: user.isSuper,
       /** true until the user replaces the default / temporary password: the app shows the change-password prompt */
-      mustChangePassword: profile.must_change_password,
+      mustChangePassword: profile.must_change_password && user.roles.includes('ADMIN'),
       company,
       locations,
     };

@@ -51,6 +51,7 @@ export default function BranchLayout() {
       {/* reachable from the Today checklist, not tabs of their own */}
       <Tabs.Screen name="cash" options={{ href: null }} />
       <Tabs.Screen name="staff" options={{ href: null }} />
+      <Tabs.Screen name="account" options={{ href: null }} />
     </Tabs>
     </HeaderProvider>
   );

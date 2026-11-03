@@ -29,7 +29,7 @@ export class SuperUsersService {
   private view(u: any) {
     return {
       id: u.id, fullName: u.full_name, username: u.username, mobile: u.mobile, email: u.email, status: u.status,
-      roles: u.roles.map((r: any) => r.role.code), lastLoginAt: u.last_login_at, mustChangePassword: u.must_change_password,
+      roles: u.roles.map((r: any) => r.role.code), lastLoginAt: u.last_login_at, mustChangePassword: u.must_change_password && u.roles.some((r: any) => r.role.code === 'ADMIN'),
       locations: u.locations?.map((l: any) => l.location?.name).filter(Boolean) ?? [],
     };
   }
@@ -97,7 +97,7 @@ export class SuperUsersService {
       if (!u.mobile) throw new AppException(422, 'NO_MOBILE', 'This user has no mobile number to send the password to. Add one first.');
       await tx.user.update({
         where: { id },
-        data: { password_hash: hash, must_change_password: true, failed_logins: 0, locked_until: null, updated_by: ctx.user.id, version: { increment: 1 } },
+        data: { password_hash: hash, must_change_password: u.roles.some((r) => r.role.code === 'ADMIN'), failed_logins: 0, locked_until: null, updated_by: ctx.user.id, version: { increment: 1 } },
       });
       await tx.session.updateMany({ where: { user_id: id, revoked_at: null }, data: { revoked_at: new Date() } });
       await this.audit.log(tx, ctx, {
