@@ -60,6 +60,9 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env.prod}
       BANK_DETAILS_KEY: ${BANK_DETAILS_KEY:?set BANK_DETAILS_KEY in .env.prod}
       # OTP sign-in by SMS (SMS Fortius). Without these the OTP is only written to the API log, so nobody can receive it.
+      # test accounts that sign in with a fixed OTP instead of an SMS (comma-separated mobiles; empty = none)
+      OTP_TEST_MOBILES: ${OTP_TEST_MOBILES:-}
+      OTP_TEST_CODE: ${OTP_TEST_CODE:-123456}
       SMS_FORTIUS_API_KEY: ${SMS_FORTIUS_API_KEY:-}
       SMS_FORTIUS_SENDER_ID: ${SMS_FORTIUS_SENDER_ID:-}
       SMS_FORTIUS_TEMPLATE_ID: ${SMS_FORTIUS_TEMPLATE_ID:-}

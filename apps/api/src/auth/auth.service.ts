@@ -141,13 +141,15 @@ export class AuthService {
     if (last && Date.now() - last.created_at.getTime() < env.otpResendSeconds * 1000) {
       throw new AppException(429, 'OTP_TOO_SOON', `Please wait ${env.otpResendSeconds} seconds before asking for another OTP`);
     }
-    const code = env.otpFixedCode ?? String(randomInt(100000, 1000000));
+    // a test account (OTP_TEST_MOBILES) or development (OTP_FIXED_CODE) uses a known code and no SMS is sent
+    const fixed = env.otpFixedCode ?? (env.otpTestMobiles.has(mobile) ? env.otpTestCode : undefined);
+    const code = fixed ?? String(randomInt(100000, 1000000));
     await this.prisma.runAuth((tx) =>
       tx.otpCode.create({
         data: { mobile, code_hash: otpHash(mobile, code), password_ok: passwordOk, expires_at: new Date(Date.now() + env.otpTtlMinutes * 60_000), ip: ip ?? null },
       }),
     );
-    if (!env.otpFixedCode) {
+    if (!fixed) {
       await this.sms.sendOtp(mobile, code, label).catch(() => {
         throw new AppException(502, 'SMS_FAILED', 'Could not send the OTP right now. Please try again.');
       });

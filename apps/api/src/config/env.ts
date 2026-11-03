@@ -19,6 +19,10 @@ export const env = {
   uploadDir: process.env.UPLOAD_DIR ?? './uploads',
   // ---- OTP sign-in (company users). OTP_FIXED_CODE is for development only: every OTP is that code and no SMS is sent.
   otpFixedCode: process.env.OTP_FIXED_CODE || undefined,
+  // Safe for production: ONLY these mobile numbers (comma-separated 10-digit list) get OTP_TEST_CODE instead of an SMS - for a
+  // demo / test account such as the default company's Admin. Everyone else still gets a real OTP by SMS.
+  otpTestMobiles: new Set((process.env.OTP_TEST_MOBILES ?? '').split(',').map((m) => m.trim()).filter((m) => /^\d{10}$/.test(m))),
+  otpTestCode: /^\d{6}$/.test(process.env.OTP_TEST_CODE ?? '') ? (process.env.OTP_TEST_CODE as string) : '123456',
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES ?? 10),
   otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS ?? 5),
   otpResendSeconds: Number(process.env.OTP_RESEND_SECONDS ?? 30),
