@@ -65,6 +65,20 @@ export class ClosingsService {
 
   // ------------------------------------------------------------ reads
   /** Closing board: one row per in-scope active branch for the date. */
+  /** Every closing a branch has submitted that is still waiting for approval, newest day first (the Approvals > Closing tab). */
+  async awaiting(ctx: ReqCtx) {
+    return this.prisma.runScoped(ctx.user, async (tx) => {
+      const rows = await tx.dailyClosing.findMany({ where: { status: 'SUBMITTED' }, orderBy: [{ business_date: 'desc' }, { submitted_at: 'desc' }], take: 200 });
+      const locs = await tx.location.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.location_id))] } }, select: { id: true, code: true, name: true, name_ta: true } });
+      const byId = new Map(locs.map((l) => [l.id, l]));
+      return rows.map((c) => ({
+        closingId: c.id, locationId: c.location_id, locationCode: byId.get(c.location_id)?.code, locationName: byId.get(c.location_id)?.name,
+        locationNameTa: byId.get(c.location_id)?.name_ta, businessDate: c.business_date, status: c.status, totalSales: c.total_sales,
+        cashVariance: c.cash_variance, submittedAt: c.submitted_at,
+      }));
+    });
+  }
+
   async board(ctx: ReqCtx, dateStr: string, status?: string) {
     const date = toDate(dateStr, 'date');
     return this.prisma.runScoped(ctx.user, async (tx) => {

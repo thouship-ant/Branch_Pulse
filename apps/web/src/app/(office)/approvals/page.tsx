@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Sheet, Skeleton } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
@@ -17,14 +18,19 @@ function age(iso: string) {
 export default function Approvals() {
   const { t, pick } = useT();
   const { me } = useSession();
+  const [tab, setTab] = useState<'expenses' | 'closing'>('expenses');
   const [rows, setRows] = useState<any[] | null>(null);
+  const [closings, setClosings] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    try { setRows(await api.get('/expenses?status=SUBMITTED&pageSize=100')); setError(null); } catch (e: any) { setError(e.message); }
+    try {
+      const [ex, cl] = await Promise.all([api.get('/expenses?status=SUBMITTED&pageSize=100'), api.get('/closings/awaiting').catch(() => [])]);
+      setRows(ex); setClosings(cl); setError(null);
+    } catch (e: any) { setError(e.message); }
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -40,10 +46,19 @@ export default function Approvals() {
     finally { setBusy(null); }
   }
 
+  async function approveClosing(id: string) {
+    setBusy(id);
+    try { await api.post(`/closings/${id}/approve`, {}); await load(); }
+    catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
+    finally { setBusy(null); }
+  }
+
   async function reject() {
     if (!rejecting) return;
     setBusy(rejecting.id);
-    try { await api.post(`/expenses/${rejecting.id}/reject`, { reason }); setRejecting(null); setReason(''); await load(); }
+    try {
+      if (rejecting.closingId) await api.post(`/closings/${rejecting.closingId}/reject`, { comment: reason });
+      else await api.post(`/expenses/${rejecting.id}/reject`, { reason }); setRejecting(null); setReason(''); await load(); }
     catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
     finally { setBusy(null); }
   }
@@ -60,14 +75,45 @@ export default function Approvals() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">{t('approvals')} · {t('expenses')}</h2>
+      <h2 className="text-2xl font-bold">{t('approvals')} · {tab === 'expenses' ? t('expenses') : t('closings')}</h2>
+      <div role="tablist" className="flex gap-2">
+        {([['expenses', t('expenses'), rows?.length ?? 0], ['closing', t('closings'), closings?.length ?? 0]] as const).map(([k, label, n]) => (
+          <button
+            key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+            className={`min-h-[44px] rounded-full px-5 text-sm font-bold ${tab === k ? 'bg-brand text-white' : 'bg-white text-slate-700 shadow-sm'}`}
+          >
+            {label}{n > 0 ? <span className="ml-2 rounded-full bg-white/25 px-2 py-0.5 text-xs">{n}</span> : null}
+          </button>
+        ))}
+      </div>
       <Sheet open={!!error} onClose={() => setError(null)} title={t('errorTitle')}>
         <p role="alert" className="text-sm text-slate-700">{error}</p>
         <div className="mt-4 flex justify-end">
           <button className="btn-primary min-h-[44px] px-6" autoFocus onClick={() => setError(null)}>{t('ok')}</button>
         </div>
       </Sheet>
-      {!rows ? <Skeleton className="h-64" /> : rows.length === 0 ? (
+      {tab === 'closing' ? (
+        !closings ? <Skeleton className="h-64" /> : closings.length === 0 ? (
+          <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-4 py-3 font-medium text-emerald-900">✓ {t('noExceptions')}</p>
+        ) : (
+          <ul className="space-y-3">
+            {closings.map((c) => (
+              <li key={c.closingId} className="card flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{pick(c.locationName, c.locationNameTa)} · {prettyDate(c.businessDate)}</p>
+                  <p className="text-sm text-slate-600"><span className="tabular-nums">{c.totalSales != null ? formatINR(c.totalSales) : '—'}</span>{c.cashVariance != null && Number(c.cashVariance) !== 0 ? <> · {t('difference')} <span className="tabular-nums">{formatINR(c.cashVariance)}</span></> : null}</p>
+                  {c.submittedAt && <p className="text-xs text-slate-500">⏱ {age(c.submittedAt)}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <Link href={`/closings/${c.locationId}/${String(c.businessDate).slice(0, 10)}`} className="btn-secondary flex min-h-[44px] items-center px-4">{t('view')}</Link>
+                  <button className="btn-primary min-h-[44px] px-4" disabled={busy === c.closingId} onClick={() => approveClosing(c.closingId)}>✓ {t('approve')}</button>
+                  <button className="btn-danger min-h-[44px] px-4" disabled={busy === c.closingId} onClick={() => { setReason(''); setRejecting({ ...c, id: c.closingId, code: `${c.locationCode} ${String(c.businessDate).slice(0, 10)}` }); }}>✕ {t('reject')}</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : !rows ? <Skeleton className="h-64" /> : rows.length === 0 ? (
         <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-4 py-3 font-medium text-emerald-900">✓ {t('noExceptions')}</p>
       ) : (
         <ul className="space-y-3">

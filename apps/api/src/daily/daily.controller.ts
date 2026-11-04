@@ -100,6 +100,11 @@ export class ClosingsController {
     return this.closings.board(ctx, date, status);
   }
 
+  @Get('awaiting') @RequirePermissions('closing:approve')
+  awaiting(@Ctx() ctx: ReqCtx) {
+    return this.closings.awaiting(ctx);
+  }
+
   // literal ":id/events" must be declared before the two-segment ":locationId/:date"
   @Get(':id/events') @RequirePermissions('closing:view')
   events(@Ctx() ctx: ReqCtx, @Param('id', ParseUUIDPipe) id: string) {

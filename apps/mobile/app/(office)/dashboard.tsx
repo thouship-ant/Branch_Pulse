@@ -1,9 +1,9 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { PeriodPill } from '@/components/PeriodPill';
-import { Banner, Card, Chip, ErrorBox, H3, HeroCard, Loading, Muted, Screen, StatCard, StatusPill } from '@/components/ui';
+import { Banner, Button, Card, Chip, ErrorBox, H3, HeroCard, Loading, Muted, Screen, Sheet, StatCard, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
 import { periodLabel, periodQuery, resolvePeriod, type Period } from '@/lib/period';
@@ -24,6 +24,9 @@ export default function DashboardScreen() {
   const [exceptions, setExceptions] = useState<Exc[]>([]);
   const [pending, setPending] = useState<PendingClosing[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [pendingOpen, setPendingOpen] = useState(false);
+  const [pendingPage, setPendingPage] = useState(1);
 
   const load = useCallback(async () => {
     try {
@@ -63,8 +66,35 @@ export default function DashboardScreen() {
       <ErrorBox error={error} />
 
       {pendingDates.length > 0 && (
-        <Banner tone="bad">⛔ Closing pending — {pendingDates.slice(0, 6).map(prettyDate).join(', ')}{pendingDates.length > 6 ? ', …' : ''}</Banner>
+        <Pressable onPress={() => { setPendingPage(1); setPendingOpen(true); }} accessibilityRole="button" accessibilityLabel="Closing pending" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+          <Banner tone="bad">⛔ Closing pending — {pendingDates.slice(0, 6).map(prettyDate).join(', ')}{pendingDates.length > 6 ? ', …' : ''}</Banner>
+        </Pressable>
       )}
+      <Sheet open={pendingOpen} onClose={() => setPendingOpen(false)} title={`Closing pending (${pending.length})`}>
+        {pendingDates.slice((pendingPage - 1) * 10, pendingPage * 10).map((d) => (
+          <View key={d} style={{ gap: 8 }}>
+            <Text style={{ color: th.ink, fontWeight: '700' }}>{prettyDate(d)}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {pending.filter((p) => p.businessDate === d).map((p) => (
+                <Pressable
+                  key={p.locationId} accessibilityRole="button"
+                  onPress={() => { setPendingOpen(false); router.push(`/more/closing/${p.locationId}/${d}` as any); }}
+                  style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, justifyContent: 'center', borderColor: th.bad.border, backgroundColor: th.bad.bg }}
+                >
+                  <Text style={{ color: th.bad.text, fontWeight: '600' }}>⛔ {p.locationName}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ))}
+        {pendingDates.length > 10 ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Button title="Previous" variant="secondary" style={{ flex: 1 }} disabled={pendingPage <= 1} onPress={() => setPendingPage((p) => p - 1)} />
+            <Text style={{ color: th.muted }}>{pendingPage} / {Math.ceil(pendingDates.length / 10)}</Text>
+            <Button title="Next" variant="secondary" style={{ flex: 1 }} disabled={pendingPage >= Math.ceil(pendingDates.length / 10)} onPress={() => setPendingPage((p) => p + 1)} />
+          </View>
+        ) : null}
+      </Sheet>
 
       {tl ? (
         <>

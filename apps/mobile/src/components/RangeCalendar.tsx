@@ -42,7 +42,7 @@ export function RangeCalendar({ from, to, max, onApply, onCancel }: { from: stri
   const ready = !!start;
 
   return (
-    <View style={{ gap: 14 }}>
+    <View style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable onPress={() => shift(-1)} accessibilityLabel="Previous month" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
           <Feather name="chevron-left" size={22} color={th.ink} />
@@ -60,7 +60,7 @@ export function RangeCalendar({ from, to, max, onApply, onCancel }: { from: stri
       {Array.from({ length: cells.length / 7 }, (_, r) => (
         <View key={r} style={{ flexDirection: 'row' }}>
           {cells.slice(r * 7, r * 7 + 7).map((d, i) => {
-            if (d === null) return <View key={i} style={{ flex: 1, height: 42 }} />;
+            if (d === null) return <View key={i} style={{ flex: 1, height: 44 }} />;
             const day = iso(view.y, view.m, d);
             const off = day > max;
             const isEnd = day === lo || day === hi;
@@ -68,9 +68,9 @@ export function RangeCalendar({ from, to, max, onApply, onCancel }: { from: stri
             return (
               <Pressable
                 key={i} disabled={off} onPress={() => pick(day)} accessibilityLabel={prettyDate(day)} accessibilityState={{ selected: isEnd, disabled: off }}
-                style={{ flex: 1, height: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: inside ? th.brandLight : 'transparent', opacity: off ? 0.3 : 1 }}
+                style={{ flex: 1, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: inside ? th.brandLight : 'transparent', opacity: off ? 0.3 : 1 }}
               >
-                <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: isEnd ? th.brand : 'transparent' }}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: isEnd ? th.brand : 'transparent' }}>
                   <Text style={{ color: isEnd ? th.onBrand : th.ink, fontWeight: isEnd ? '800' : '500', fontSize: 15 }}>{d}</Text>
                 </View>
               </Pressable>

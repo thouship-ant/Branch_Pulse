@@ -111,7 +111,7 @@ async function request(method: string, path: string, opts: Options = {}, retried
     res = await fetch(`${BASE}${path}`, { method, headers, body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body) });
   } catch (e) {
     // the address is part of the message so a wrong EXPO_PUBLIC_API_URL (or a phone that cannot see the PC) is obvious
-    throw new ApiError(0, 'NETWORK', `Cannot reach the server at ${API_ORIGIN}. Check your connection (${e instanceof Error ? e.message : 'network error'}).`);
+    throw new ApiError(0, 'NETWORK', 'Something went wrong. Please check your connection and try again.');
   }
 
   if (res.status === 401 && !retried && !path.startsWith('/auth/')) {

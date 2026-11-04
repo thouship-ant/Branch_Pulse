@@ -1,7 +1,6 @@
 import { View } from 'react-native';
 import { Text } from './Text';
 import { Button, Card, Heading, LanguageSwitch, Muted, Row, Screen } from '@/components/ui';
-import { API_ORIGIN } from '@/lib/api';
 import { roleLabel } from '@/lib/labels';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
@@ -25,7 +24,6 @@ export function Account() {
       </Card>
       <Card><Text style={{ color: th.ink, fontWeight: '700' }}>Language</Text><LanguageSwitch /></Card>
       <Button title="Sign out" variant="danger" icon="log-out" onPress={() => void logout()} />
-      <Text style={{ color: th.faint, fontSize: 11, textAlign: 'center' }}>Server: {API_ORIGIN}</Text>
     </Screen>
   );
 }
