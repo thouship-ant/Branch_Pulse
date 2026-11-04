@@ -95,7 +95,9 @@ The company's **Admin** then signs in with the mobile number, the password and a
 
 To load an existing ledger, the Super Admin opens **Company - Data Upload**, picks the company and a branch (or **New Branch** and its manager's details) and uploads the Excel; **Download sample Excel** shows the layout. **Check file** previews the rows, **Import** saves them as pending records for the company's Admin to approve.
 
-Changing a password later: the Super Admin's from the database seed (`SEED_PASSWORD`), an Admin's from **Users** (an Admin can reset another Admin's password).
+The seed creates the Super Admin only if none exists, so changing `SEED_PASSWORD` later (or re-running the seed) does **not** change an existing password. To set it: put the new value in `.env.prod`, then `$C run --rm seed npx tsx prisma/set-superadmin-password.ts` (quote the value in `.env.prod` if it contains `#` or `$`: `SEED_PASSWORD='...'`).
+
+Changing a password later: the Super Admin's with the command above, an Admin's from **Users** (an Admin can reset another Admin's password).
 
 ## 5b. Moving the default company from dev to production (once, at go-live)
 
