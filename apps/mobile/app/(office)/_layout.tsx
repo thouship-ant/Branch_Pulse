@@ -37,7 +37,7 @@ export default function OfficeLayout() {
       {TABS.map((t) => (
         <Tabs.Screen
           key={t.name} name={t.name}
-          options={{ title: tr(t.title), href: !t.perm || can(t.perm) ? undefined : null, tabBarIcon: ({ color }) => <Feather name={t.icon} size={20} color={color} /> }}
+          options={{ title: tr(t.title), href: !t.perm || can(t.perm) ? undefined : null, tabBarIcon: ({ color }) => <Feather name={t.icon} size={22} color={color} /> }}
         />
       ))}
     </Tabs>

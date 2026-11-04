@@ -54,10 +54,10 @@ export function PurchaseOverview({ locations, fixedLocationId, refreshKey = 0, o
     const inner = (
       <>
         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${tone === 'bad' ? 'bg-red-50 text-red-800' : 'bg-brand-light text-brand-dark'}`}><Icon name={icon} size={22} /></span>
-        <div className="min-w-0 text-left"><p className="text-sm leading-tight text-slate-600">{title}</p><p className="text-xl font-bold tabular-nums">{value}</p>{sub && <p className="text-xs text-slate-600">{sub}</p>}</div>
+        <div className="min-w-0 max-w-full text-left"><p className="text-sm leading-tight text-slate-600">{title}</p><p className="whitespace-nowrap text-[clamp(1.1rem,5.6vw,1.375rem)] font-bold tabular-nums sm:text-xl">{value}</p>{sub && <p className="text-xs text-slate-600">{sub}</p>}</div>
       </>
     );
-    const cls = `card flex items-center gap-3 ${tone === 'bad' ? 'border-red-300' : tone === 'warn' ? 'border-amber-300' : ''}`;
+    const cls = `card flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3 ${tone === 'bad' ? 'border-red-300' : tone === 'warn' ? 'border-amber-300' : ''}`;
     return onClick ? <button className={`${cls} w-full hover:bg-slate-50`} onClick={onClick}>{inner}</button> : <div className={cls}>{inner}</div>;
   };
 

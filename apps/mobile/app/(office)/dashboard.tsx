@@ -100,12 +100,12 @@ export default function DashboardScreen() {
         <>
           <Text style={{ color: th.ink, fontSize: 20, fontWeight: '800' }}>Overview</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
-            <StatCard icon="dollar-sign" tone="ok" value={whole(tl.cash)} label="Cash" />
-            <StatCard icon="smartphone" tone="violet" value={whole(tl.upi)} label="UPI" />
-            <StatCard icon="shopping-bag" tone="sky" value={whole(tl.totalPurchases)} label="Purchases" />
-            <StatCard icon="trash-2" tone="warn" value={whole(tl.wastage)} label="Wastage" />
-            <StatCard icon="alert-triangle" tone={tl.hasCashShortage ? 'bad' : 'neutral'} alert={tl.hasCashShortage} value={whole(tl.cashVariance)} label="Cash variance" />
-            <StatCard icon="clock" tone={tl.pendingClosings > 0 ? 'bad' : 'ok'} value={String(tl.pendingClosings)} label="Closings open" sub={`of ${tl.branchCount} branches`} />
+            <StatCard icon="dollar-sign" mdi="purse-outline" tone="ok" value={whole(tl.cash)} label="Cash" />
+            <StatCard icon="smartphone" mdi="qrcode-scan" tone="violet" value={whole(tl.upi)} label="UPI" />
+            <StatCard icon="shopping-bag" mdi="cart-outline" tone="sky" value={whole(tl.totalPurchases)} label="Purchases" />
+            <StatCard icon="trash-2" mdi="delete-outline" tone="warn" value={whole(tl.wastage)} label="Wastage" />
+            <StatCard icon="alert-triangle" mdi="scale-balance" tone={tl.hasCashShortage ? 'bad' : 'neutral'} alert={tl.hasCashShortage} value={whole(tl.cashVariance)} label="Cash variance" />
+            <StatCard icon="clock" mdi="clock-outline" tone={tl.pendingClosings > 0 ? 'bad' : 'ok'} value={String(tl.pendingClosings)} label="Closings open" sub={`of ${tl.branchCount} branches`} />
           </View>
 
           <Text style={{ color: th.ink, fontSize: 20, fontWeight: '800' }}>Branches</Text>

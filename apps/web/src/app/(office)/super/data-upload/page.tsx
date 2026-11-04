@@ -141,8 +141,8 @@ export default function DataUploadPage() {
             <TextField id="nbm" label="Manager's name *" value={nb.manager} onChange={(e) => { setNb({ ...nb, manager: e.target.value }); touch(); }} maxLength={100} />
             <div className="md:col-span-2"><TextField id="nba" label="Branch address *" value={nb.address} onChange={(e) => { setNb({ ...nb, address: e.target.value }); touch(); }} maxLength={500} /></div>
             <div>
-              <TextField id="nbp" label="Manager's mobile number *" inputMode="numeric" value={nb.mobile} placeholder="10 digits" onChange={(e) => { setNb({ ...nb, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }); touch(); }} />
-              <p className="mt-1 text-xs text-slate-500">The manager signs in with this number and an OTP.</p>
+              <TextField id="nbp" hint="The manager signs in with this number and an OTP." label="Manager's mobile number *" inputMode="numeric" value={nb.mobile} placeholder="10 digits" onChange={(e) => { setNb({ ...nb, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }); touch(); }} />
+              
             </div>
           </div>
         )}

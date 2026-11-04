@@ -26,9 +26,9 @@ export default function SuperLayout() {
         ...tabBar,
       }}
     >
-      <Tabs.Screen name="companies" options={{ title: tr('Companies'), tabBarIcon: ({ color }) => <Feather name="briefcase" size={20} color={color} /> }} />
-      <Tabs.Screen name="data-upload" options={{ title: tr('Data Upload'), tabBarIcon: ({ color }) => <Feather name="upload" size={20} color={color} /> }} />
-      <Tabs.Screen name="super-account" options={{ title: tr('Account'), tabBarIcon: ({ color }) => <Feather name="user" size={20} color={color} /> }} />
+      <Tabs.Screen name="companies" options={{ title: tr('Companies'), tabBarIcon: ({ color }) => <Feather name="briefcase" size={22} color={color} /> }} />
+      <Tabs.Screen name="data-upload" options={{ title: tr('Data Upload'), tabBarIcon: ({ color }) => <Feather name="upload" size={22} color={color} /> }} />
+      <Tabs.Screen name="super-account" options={{ title: tr('Account'), tabBarIcon: ({ color }) => <Feather name="user" size={22} color={color} /> }} />
     </Tabs>
     </HeaderProvider>
   );

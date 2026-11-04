@@ -37,13 +37,13 @@ export function PeriodPicker({ period, label, presets: presetsOverride }: { peri
   const presets: Array<[Preset, string]> = order.map((id) => [id, labels[id]]);
   return (
     <div className="flex flex-wrap items-end gap-2">
-      <div className="flex flex-wrap overflow-hidden rounded-card border border-slate-300" role="radiogroup" aria-label={label}>
+      <div className="seg" role="radiogroup" aria-label={label}>
         {presets.map(([id, text]) => (
           <button
             key={id} role="radio" aria-checked={preset === id} onClick={() => setPreset(id)}
-            className={`min-h-touch px-3 text-sm font-medium ${preset === id ? 'bg-brand text-white' : 'bg-surface text-slate-700 hover:bg-slate-100'}`}
+            className="px-4"
           >
-            {preset === id && <span aria-hidden>✓ </span>}{text}
+            {text}
           </button>
         ))}
       </div>

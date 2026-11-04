@@ -21,6 +21,11 @@ export default {
         violet: v('violet', [50, 300, 800, 900]),
         sky: v('sky', [50, 300, 900]),
       },
+      // one type scale for the whole app (size / line-height): labels 13, body 15, card values 22, page titles 28
+      fontSize: {
+        xs: ['0.8125rem', '1.25rem'], sm: ['0.9375rem', '1.45rem'], base: ['1rem', '1.55rem'], lg: ['1.125rem', '1.65rem'],
+        xl: ['1.375rem', '1.8rem'], '2xl': ['1.75rem', '2.15rem'], '3xl': ['2rem', '2.4rem'],
+      },
       borderRadius: { card: '16px' },
       minHeight: { touch: '48px' }, // >= 48 px touch targets
       minWidth: { touch: '48px' },

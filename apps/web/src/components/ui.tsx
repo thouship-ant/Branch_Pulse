@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
 import { cleanAmount } from '@/lib/money';
 import { useT, type MessageKey } from '@/lib/i18n';
@@ -33,7 +33,7 @@ export function ActiveChip({ active }: { active: boolean }) {
   const { t } = useT();
   return (
     <span className={`chip ${active ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-slate-100 text-slate-600'}`}>
-      <span aria-hidden>{active ? '●' : '○'}</span>{active ? t('active') : t('inactive')}
+      <Icon name={active ? 'checkCircle' : 'banCircle'} size={15} />{active ? t('active') : t('inactive')}
     </span>
   );
 }
@@ -48,9 +48,9 @@ export function MoneyInput({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="label">
+      <LabelRow htmlFor={id} hint={hint}>
         {label}{required && <span className="text-red-600"> *</span>}
-      </label>
+      </LabelRow>
       <div className="relative">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
         <input
@@ -68,15 +68,64 @@ export function MoneyInput({
           onChange={(e) => onChange(cleanAmount(e.target.value))}
         />
       </div>
-      {error ? <p id={`${id}-err`} role="alert" className="mt-1 text-sm text-red-700">{error}</p> : hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      {error && <p id={`${id}-err`} role="alert" className="mt-1 text-sm text-red-700">{error}</p>}
     </div>
   );
 }
 
-export function TextField({ label, id, className = '', ...rest }: { label: string; id: string } & InputHTMLAttributes<HTMLInputElement>) {
+/** A small round "?" next to a field name: click it to read the hint (instead of a line of grey text under the box). */
+export function HintTip({ text }: { text: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  // a hint in the left column opens to the right of its "?", one in the right column opens to the left, so it never runs off the dialog / screen
+  const toggle = () => {
+    if (!open && ref.current) {
+      const r = ref.current.getBoundingClientRect();
+      const box = ref.current.closest('[role="dialog"]')?.getBoundingClientRect();
+      const edge = Math.min(box ? box.right : Infinity, document.documentElement.clientWidth) - 12;
+      setAlignRight(r.left + 270 > edge);
+    }
+    setOpen((o) => !o);
+  };
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', away);
+    window.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', away); window.removeEventListener('keydown', esc); };
+  }, [open]);
+  return (
+    <span ref={ref} className="relative inline-flex">
+      <button
+        type="button" aria-label="Help" aria-expanded={open} onClick={toggle}
+        className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold leading-none transition ${open ? 'bg-brand text-white' : 'bg-slate-200 text-slate-600 hover:bg-brand hover:text-white'}`}
+      >?</button>
+      {open && (
+        <span role="note" className={`anim-fade absolute top-full z-30 mt-2 w-max max-w-[min(260px,70vw)] rounded-xl ${alignRight ? 'right-0' : 'left-0'} border border-slate-200 bg-surface p-3 text-left text-xs font-normal leading-relaxed text-slate-700 shadow-lg`}>
+          <span aria-hidden className={`absolute -top-1.5 h-3 w-3 rotate-45 border-l border-t border-slate-200 bg-surface ${alignRight ? 'right-2' : 'left-2'}`} />
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+/** Field name with its "?" hint beside it. */
+export function LabelRow({ htmlFor, hint, children }: { htmlFor?: string; hint?: ReactNode; children: ReactNode }) {
+  if (!hint) return <label htmlFor={htmlFor} className="label">{children}</label>;
+  return (
+    <div className="mb-1.5 flex items-center gap-1.5">
+      <label htmlFor={htmlFor} className="label !mb-0">{children}</label>
+      <HintTip text={hint} />
+    </div>
+  );
+}
+
+export function TextField({ label, id, className = '', hint, ...rest }: { label: string; id: string; hint?: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
-      <label htmlFor={id} className="label">{label}</label>
+      <LabelRow htmlFor={id} hint={hint}>{label}</LabelRow>
       {/* read-only values look different from editable ones (and are announced as read-only) */}
       <input
         id={id} aria-readonly={rest.readOnly || undefined}
@@ -120,8 +169,7 @@ export function Chips<T extends string>({
           <button
             key={o.value} type="button" role="radio" aria-checked={value === o.value}
             onClick={() => onChange(o.value)}
-            className={`min-h-[44px] rounded-full border px-4 text-[15px] font-semibold transition duration-150 active:scale-[0.97] ${value === o.value ? 'border-transparent text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)]' : 'border-slate-300 bg-surface text-ink shadow-sm hover:border-slate-400 hover:bg-slate-50'}`}
-            style={value === o.value ? { backgroundColor: '#1e2a8a' } : undefined}
+            className="pill active:scale-[0.97]"
           >
             {value === o.value && <span aria-hidden>✓ </span>}{o.label}
           </button>
@@ -159,6 +207,13 @@ export function ErrorBox({ error }: { error: string | null }) {
 }
 
 /** Bottom sheet on phones, centred dialog on desktop. */
+/** Draws its children on <body>, above the header and every page layer (a dialog inside the page would be trapped under them). */
+export function Overlay({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  return ready ? createPortal(children, document.body) : null;
+}
+
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const { t } = useT();
   const ref = useRef<HTMLDivElement>(null);

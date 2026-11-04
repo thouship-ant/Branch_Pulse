@@ -8,7 +8,7 @@ import { useT } from '@/lib/i18n';
 import { MODE_KEY } from '@/lib/labels';
 import { amt, dec, formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
-import { Chips, ErrorBox, MoneyInput, Sheet, Skeleton, TextField } from '../ui';
+import { Chips, ErrorBox, LabelRow, MoneyInput, Sheet, Skeleton, TextField } from '../ui';
 import type { LocationOption } from './PurchaseForm';
 
 const day = (d: unknown) => String(d).slice(0, 10);
@@ -134,11 +134,10 @@ export function PaySheet({ supplier, payLocations, onClose, onPaid }: { supplier
           <MoneyInput id="pa" label={`${t('amount')} *`} value={amount} onChange={setAmount} />
           <Chips label={t('paymentMode')} value={mode} onChange={setMode} options={PAY_MODES.map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
           <div>
-            <label htmlFor="pal" className="label">{t('payFrom')} *</label>
+            <LabelRow htmlFor="pal" hint={mode === 'CASH' ? t('cashRecon') : undefined}>{t('payFrom')} *</LabelRow>
             <Select id="pal" className="field" value={loc} onChange={(e) => setLoc(e.target.value)}>
               {payLocations.map((l) => <option key={l.id} value={l.id}>{l.code} · {pick(l.name, l.nameTa)}</option>)}
             </Select>
-            {mode === 'CASH' && <p className="mt-1 text-xs text-slate-500">{t('cashRecon')}</p>}
           </div>
           <div>
             <label htmlFor="pap" className="label">{t('settlePurchase')}</label>

@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Icon } from '../Icon';
 import { PasswordChecklist } from '../PasswordChecklist';
 import { api, ApiError } from '@/lib/api';
+import { prettyDate } from '@/lib/dates';
 import { passwordOk } from '@/lib/password';
 import { useT } from '@/lib/i18n';
-import { ActiveChip, ErrorBox, Skeleton, TextField } from '../ui';
+import { ActiveChip, ErrorBox, Sheet, Skeleton, TextField } from '../ui';
 
 interface UserRow {
   id: string; username: string; fullName: string; mobile: string | null; email: string | null;
@@ -54,13 +56,15 @@ export function UsersManager() {
     setDraft({ ...draft, locationIds: draft.locationIds.includes(id) ? draft.locationIds.filter((l) => l !== id) : [...draft.locationIds, id] });
   }
 
+  const [nameTouched, setNameTouched] = useState(false);
+
   async function save() {
     if (!draft) return;
     setBusy(true); setFormError(null);
     try {
       const common = { fullName: draft.fullName.trim(), mobile: draft.mobile.trim(), email: draft.email.trim() || undefined, roleCodes: draft.roleCodes, locationIds: draft.locationIds };
       // blank = the role's default password (Admin@1234, Account@1234 ...); every user changes it at the first sign-in
-      const password = draft.password || undefined;
+      const password = draft.roleCodes.includes('ADMIN') ? draft.password || undefined : undefined; // only Admins sign in with a password
       if (draft.id) {
         await api.patch(`/users/${draft.id}`, { ...common, active: undefined, status: draft.active ? 'ACTIVE' : 'INACTIVE', password });
       } else {
@@ -86,50 +90,60 @@ export function UsersManager() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-slate-600">{t('roleCodesLabel')} · {t('branchesAssignedLabel')}</p>
-        <button className="btn-primary" onClick={() => { setFormError(null); setDraft({ ...emptyDraft }); }}>+ {t('addUser')}</button>
+        <button className="btn-primary" onClick={() => { setFormError(null); setNameTouched(false); setDraft({ ...emptyDraft }); }}>+ {t('addUser')}</button>
       </div>
       <ErrorBox error={error} />
       {notice && <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
 
       {users.length === 0 ? <p className="card text-sm text-slate-500">{t('noUsers')}</p> : (
-        <ul className="space-y-2">
-          {users.map((u) => (
-            <li key={u.id} className={`card space-y-2 ${u.status !== 'ACTIVE' ? 'opacity-70' : ''}`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-semibold">{u.fullName} <span className="font-normal tabular-nums text-slate-500">· {u.mobile ?? u.username}</span></p>
-                  <p className="text-xs text-slate-500">
-                    {u.roles.map((c) => roles.find((r) => r.code === c)?.name ?? c).join(', ')}
-                    {u.locationIds.length > 0 && ` · ${u.locationIds.map((id) => { const l = locs.find((x) => x.id === id); return l ? pick(l.name, l.nameTa) : id; }).join(', ')}`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ActiveChip active={u.status === 'ACTIVE'} />
-                  <button className="btn-secondary min-h-[36px] px-3 text-sm" onClick={() => revoke(u.id)} disabled={busy}>{t('revokeSessions')}</button>
-                  <button className="btn-secondary min-h-[36px] px-3 text-sm" onClick={() => { setFormError(null); setDraft(fromUser(u)); }}>{t('edit')}</button>
-                </div>
-              </div>
-            </li>
-          ))}
+        <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+          {users.map((u) => {
+            const where = u.locationIds.map((id) => { const l = locs.find((x) => x.id === id); return l ? pick(l.name, l.nameTa) : id; }).join(', ');
+            return (
+              <li key={u.id} className="flex">
+                {/* the whole card opens the user (edit, sign out everywhere) - same as the mobile app's list */}
+                <button
+                  type="button" onClick={() => { setFormError(null); setNameTouched(false); setDraft(fromUser(u)); }}
+                  className={`card flex h-full w-full items-stretch gap-3 text-left transition duration-200 hover:-translate-y-px hover:border-brand/40 hover:shadow-lg ${u.status !== 'ACTIVE' ? 'opacity-70' : ''}`}
+                >
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="block truncate text-base font-bold">{u.fullName}</span>
+                    <span className="block text-sm text-slate-600">{u.roles.map((c) => roles.find((r) => r.code === c)?.name ?? c).join(', ')} · <span className="tabular-nums">{u.mobile ?? u.username}</span></span>
+                    {where && <span className="block text-sm text-slate-600">{where}</span>}
+                    <span className="mt-auto block pt-1 text-sm text-slate-500">{u.lastLoginAt ? `${t('lastSignIn')} ${prettyDate(u.lastLoginAt.slice(0, 10))}` : t('neverSignedIn')}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-3 self-center">
+                    <ActiveChip active={u.status === 'ACTIVE'} />
+                    <Icon name="chevronRight" size={20} className="text-slate-400" />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
 
       {draft && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={() => setDraft(null)}>
-          <div className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-[24px] border border-slate-200/70 bg-surface p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="mb-4 text-lg font-bold">{draft.id ? t('editUser') : t('addUser')}</h2>
+        <Sheet open onClose={() => setDraft(null)} title={draft.id ? t('editUser') : t('addUser')}>
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <TextField id="ufn" label={t('fullName')} value={draft.fullName} onChange={(e) => setDraft({ ...draft, fullName: e.target.value })} maxLength={100} />
+              <div className="grid items-end gap-3 sm:grid-cols-2">
                 <div>
-                  <TextField id="umo" label={`${t('mobile')} *`} inputMode="numeric" value={draft.mobile} placeholder="10 digits" onChange={(e) => setDraft({ ...draft, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
-                  <p className="mt-1 text-xs text-slate-500">This is the sign-in name; the OTP is sent to it.</p>
+                  <TextField id="ufn" label={`${t('fullName')} *`} required aria-required="true" aria-invalid={nameTouched && !draft.fullName.trim()} value={draft.fullName} onBlur={() => setNameTouched(true)} onChange={(e) => setDraft({ ...draft, fullName: e.target.value })} maxLength={100} className={nameTouched && !draft.fullName.trim() ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : ''} />
+                  {nameTouched && !draft.fullName.trim() && <p role="alert" className="mt-1 text-xs font-medium text-red-700">Full name is required</p>}
                 </div>
+                <TextField
+                  id="umo" label={`${t('mobile')} *`} hint="This is the sign-in name; the OTP is sent to it." inputMode="numeric" value={draft.mobile} placeholder="10 digits"
+                  onChange={(e) => setDraft({ ...draft, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                />
+                {draft.roleCodes.includes('ADMIN') && (
                 <div>
-                  <TextField id="upw" label={draft.id ? `${t('passwordNew')} (${t('useDefault')})` : `${t('passwordNew')} (optional)`} type="password" autoComplete="new-password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
-                  <p className="mt-1 text-xs text-slate-500">{draft.id ? 'Leave blank to keep the current password.' : 'Leave blank to use the role default. The user must change it at the first sign-in.'}</p>
+                  <TextField
+                    id="upw" label={t('passwordNew')} type="password" autoComplete="new-password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })}
+                    hint={draft.id ? `Leave blank to keep the current password (${t('useDefault')}).` : 'Optional. Leave blank to use the role default; the user must change it at the first sign-in.'}
+                  />
                   {draft.password && <div className="mt-1"><PasswordChecklist value={draft.password} /></div>}
                 </div>
+                )}
                 <TextField id="uem" label="Email" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
               </div>
               <div>
@@ -161,15 +175,19 @@ export function UsersManager() {
                 </label>
               )}
               <ErrorBox error={formError} />
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {draft.id && (
+                  <button type="button" className="btn-secondary mr-auto gap-1.5" disabled={busy} onClick={async () => { const id = draft.id!; setDraft(null); await revoke(id); }}>
+                    <Icon name="logout" size={16} />{t('revokeSessions')}
+                  </button>
+                )}
                 <button className="btn-secondary" onClick={() => setDraft(null)}>{t('cancel')}</button>
-                <button className="btn-primary" disabled={busy || !draft.fullName.trim() || !/^\d{10}$/.test(draft.mobile) || (draft.password !== '' && !passwordOk(draft.password)) || draft.roleCodes.length === 0} onClick={save}>
+                <button className="btn-primary" disabled={busy || !draft.fullName.trim() || !/^\d{10}$/.test(draft.mobile) || (draft.roleCodes.includes('ADMIN') && draft.password !== '' && !passwordOk(draft.password)) || draft.roleCodes.length === 0} onClick={save}>
                   {busy ? t('loading') : t('save')}
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </Sheet>
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { Inter, Noto_Sans_Tamil } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { PwaRegister } from '@/components/PwaRegister';
+import { TableLabels } from '@/components/TableLabels';
 import { TopLoader } from '@/components/TopLoader';
 import { I18nProvider } from '@/lib/i18n';
 import { SessionProvider } from '@/lib/session';
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </ThemeProvider>
         <TopLoader />
         <PwaRegister />
+        <TableLabels />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, useWindowDimensions, View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
 import { Text } from './Text';
@@ -78,22 +78,23 @@ export function Card({ children, style, tone }: { children: ReactNode; style?: S
 }
 
 /** Rounded tinted square holding an icon (the coloured tile on every stat card). */
-export function IconTile({ icon, tone = 'brand', size = 48 }: { icon: IconName; tone?: ToneName | 'brand'; size?: number }) {
+export type MdiName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+export function IconTile({ icon, mdi, tone = 'brand', size = 48 }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; size?: number }) {
   const th = useTheme();
   const c = tone === 'brand' ? { bg: th.brandLight, fg: th.brandDark } : { bg: th[tone].bg, fg: th[tone].text };
   return (
     <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
-      <Feather name={icon} size={size * 0.46} color={c.fg} />
+      {mdi ? <MaterialCommunityIcons name={mdi} size={size * 0.52} color={c.fg} /> : <Feather name={icon} size={size * 0.46} color={c.fg} />}
     </View>
   );
 }
 
 /** Half-width stat card: icon tile, big number, label (the "Overview" grid). */
-export function StatCard({ icon, tone = 'brand', value, label, sub, alert }: { icon: IconName; tone?: ToneName | 'brand'; value: string; label: string; sub?: string; alert?: boolean }) {
+export function StatCard({ icon, mdi, tone = 'brand', value, label, sub, alert }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; value: string; label: string; sub?: string; alert?: boolean }) {
   const th = useTheme();
   return (
     <View style={[{ width: '47.8%', backgroundColor: th.surface, borderRadius: 20, padding: 16, gap: 10 }, cardLook(th)]}>
-      <IconTile icon={icon} tone={tone} />
+      <IconTile icon={icon} mdi={mdi} tone={tone} />
       <View>
         <Text style={{ color: alert ? th.bad.text : th.ink, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
         <Text style={{ color: th.muted, fontSize: 14 }}>{label}</Text>

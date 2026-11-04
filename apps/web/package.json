@@ -10,6 +10,7 @@
     "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
+    "@mdi/js": "^7.4.47",
     "decimal.js": "^10.5.0",
     "dexie": "^4.0.11",
     "next": "^15.3.3",

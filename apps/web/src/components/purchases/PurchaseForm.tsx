@@ -10,7 +10,7 @@ import { compressImage } from '@/lib/image';
 import { MODE_KEY } from '@/lib/labels';
 import { cleanAmount, dec, formatINR } from '@/lib/money';
 import { cacheMaster, readMaster, submitOffline } from '@/lib/outbox';
-import { Chips, ErrorBox, MoneyInput, Skeleton, TextField, Warnings } from '../ui';
+import { Chips, ErrorBox, LabelRow, MoneyInput, Skeleton, TextField, Warnings } from '../ui';
 
 interface Unit { id: string; code: string; name: string; baseUnitId: string | null; factorToBase: string }
 interface Item { id: string; code: string; nameEn: string; nameTa?: string | null; baseUnitId: string; purchaseUnitId?: string | null; lastPurchaseRate?: string | null; status: string }
@@ -247,9 +247,8 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
       )}
       {calc.credit.greaterThan(0) && (
         <div>
-          <label htmlFor="pdue" className="label">{t('dueDate')} *</label>
+          <LabelRow htmlFor="pdue" hint={supplier?.paymentTermsDays ? `${supplier.name}: ${supplier.paymentTermsDays} ${t('creditDays')}` : undefined}>{t('dueDate')} *</LabelRow>
           <DateInput id="pdue" value={due} min={date} onChange={(v) => setDue(v)} />
-          {supplier?.paymentTermsDays ? <p className="mt-1 text-xs text-slate-500">{supplier.name}: {supplier.paymentTermsDays} {t('creditDays')}</p> : null}
         </div>
       )}
 

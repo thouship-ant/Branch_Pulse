@@ -46,7 +46,7 @@ export default function BranchLayout() {
       {TABS.map((t) => (
         <Tabs.Screen
           key={t.name} name={t.name}
-          options={{ title: tr(t.title), tabBarIcon: ({ color }) => <Feather name={t.icon} size={20} color={color} /> }}
+          options={{ title: tr(t.title), tabBarIcon: ({ color }) => <Feather name={t.icon} size={22} color={color} /> }}
         />
       ))}
       {/* reachable from the Today checklist, not tabs of their own */}

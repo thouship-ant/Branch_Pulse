@@ -122,15 +122,15 @@ export function Select({ value, onChange, children, className = '', id, disabled
       <button
         ref={btn} id={id} type="button" role="combobox" aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onKeyDown={onKey}
         onClick={() => { setActive(Math.max(0, current)); setOpen((o) => !o); }}
-        className={`field flex items-center justify-between gap-2 text-left ${className}`}
+        className={`field select-btn flex items-center justify-between gap-2 text-left ${className}`}
       >
         <span className={`truncate ${label ? '' : 'text-slate-400'}`}>{label || '—'}</span>
-        <svg className={`shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+        <span className="select-chev" aria-hidden><svg className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></span>
       </button>
       {open && createPortal(
         <div
           ref={list} role="listbox" onClick={(e) => e.stopPropagation()}
-          className="anim-sheet fixed z-[80] overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-surface p-2"
+          className="anim-sheet fixed z-[80] overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-surface p-2 ring-1 ring-black/5"
           style={{ boxShadow: 'var(--shadow-pop)', left: pos?.left ?? 0, top: pos?.top ?? 0, width: pos?.width, maxHeight: pos?.maxH, visibility: pos ? 'visible' : 'hidden' }}
         >
           {options.map((o, i) => {
@@ -139,12 +139,12 @@ export function Select({ value, onChange, children, className = '', id, disabled
               <div
                 key={`${o.value}-${i}`} data-i={i} role="option" aria-selected={selected} aria-disabled={o.disabled}
                 onMouseEnter={() => !o.disabled && setActive(i)} onClick={() => choose(i)}
-                className={`flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-xl px-3 text-[15px] transition-colors ${
+                className={`select-menu-item flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 text-[15px] transition-colors ${
                   o.disabled ? 'cursor-not-allowed text-slate-300' : selected ? 'bg-brand-light font-semibold text-brand' : 'text-slate-700'
-                } ${i === active && !o.disabled && !selected ? 'bg-slate-100' : ''}`}
+                } ${i === active && !o.disabled && !selected ? 'bg-slate-100 text-ink' : ''}`}
               >
                 <span className="truncate">{o.label || '—'}</span>
-                {selected && <svg className="shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+                {selected && <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand text-white" aria-hidden><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>}
               </div>
             );
           })}

@@ -4,7 +4,7 @@ import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
-import { ActiveChip, ErrorBox, Skeleton, TextField } from '../ui';
+import { Overlay, ActiveChip, ErrorBox, Skeleton, TextField } from '../ui';
 
 interface RoleRow { id: string; code: string; name: string; scopeMode: string; isSystem: boolean; status: string; userCount: number; permissions: string[] }
 interface Perm { code: string; module: string; description: string | null }
@@ -107,6 +107,7 @@ export function RolesManager() {
       </ul>
 
       {openRole && (
+        <Overlay>
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={() => setOpenId(null)}>
           <div className="max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-t-[24px] border border-slate-200/70 bg-surface p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-1 text-lg font-bold">{openRole.name}</h2>
@@ -133,9 +134,11 @@ export function RolesManager() {
             </div>
           </div>
         </div>
+        </Overlay>
       )}
 
       {newRole && (
+        <Overlay>
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={() => setNewRole(null)}>
           <div className="w-full max-w-md rounded-t-[24px] border border-slate-200/70 bg-surface p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-4 text-lg font-bold">{t('addRole')}</h2>
@@ -157,6 +160,7 @@ export function RolesManager() {
             </div>
           </div>
         </div>
+        </Overlay>
       )}
     </div>
   );

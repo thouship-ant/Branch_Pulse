@@ -4,7 +4,7 @@ import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
-import { ErrorBox, Skeleton, TextField } from '../ui';
+import { Overlay, ErrorBox, Skeleton, TextField } from '../ui';
 
 interface UnitRow { id: string; code: string; name: string; baseUnitId: string | null; factorToBase: string }
 interface Draft { id?: string; code: string; name: string; baseUnitId: string; factorToBase: string }
@@ -69,6 +69,7 @@ export function UnitsManager() {
       )}
 
       {draft && (
+        <Overlay>
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center" onClick={() => setDraft(null)}>
           <div className="w-full max-w-md rounded-t-[24px] border border-slate-200/70 bg-surface p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-4 text-lg font-bold">{draft.id ? t('editUnit') : t('addUnit')}</h2>
@@ -95,6 +96,7 @@ export function UnitsManager() {
             </div>
           </div>
         </div>
+        </Overlay>
       )}
     </div>
   );

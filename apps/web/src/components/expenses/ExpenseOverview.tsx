@@ -58,9 +58,9 @@ export function ExpenseOverview({ fixedLocationId }: { fixedLocationId?: string 
   const change: number | null = tot?.changePct ?? null;
 
   const Tile = ({ icon, title, value, sub, warn }: { icon: IconName; title: string; value: string; sub?: string; warn?: boolean }) => (
-    <div className={`card flex items-center gap-3 ${warn ? 'border-amber-300' : ''}`}>
+    <div className={`card flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3 ${warn ? 'border-amber-300' : ''}`}>
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand-dark"><Icon name={icon} size={22} /></span>
-      <div className="min-w-0"><p className="truncate text-sm text-slate-600">{title}</p><p className="text-xl font-bold tabular-nums">{value}</p>{sub && <p className="text-xs text-slate-600">{sub}</p>}</div>
+      <div className="min-w-0 max-w-full"><p className="text-sm leading-tight text-slate-600">{title}</p><p className="whitespace-nowrap text-[clamp(1.1rem,5.6vw,1.375rem)] font-bold tabular-nums sm:text-xl">{value}</p>{sub && <p className="text-xs text-slate-600">{sub}</p>}</div>
     </div>
   );
 

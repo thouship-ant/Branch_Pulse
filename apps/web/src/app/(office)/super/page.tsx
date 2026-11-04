@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Icon } from '@/components/Icon';
 import { PasswordChecklist } from '@/components/PasswordChecklist';
-import { AutoTextarea, ErrorBox, Sheet, Skeleton, TextField } from '@/components/ui';
+import { AutoTextarea, ErrorBox, LabelRow, Sheet, Skeleton, TextField } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { passwordOk } from '@/lib/password';
@@ -177,7 +177,7 @@ function CompanyForm({ onSaved }: { onSaved: () => void }) {
         <div><TextField id="fs" label="FSSAI licence no. (optional)" inputMode="numeric" value={f.fssai} onChange={(e) => set('fssai', e.target.value.replace(/\D/g, '').slice(0, 14))} placeholder="14 digits" />{err('fssai')}</div>
       </div>
       <div>
-        <label htmlFor="pw" className="label">Admin password <span className="font-normal text-slate-500">(optional: leave blank to use the default Admin@1234)</span></label>
+        <LabelRow htmlFor="pw" hint="The Admin signs in with this and an OTP, and is asked to change it at the first sign-in.">Admin password <span className="font-normal text-slate-500">(optional: leave blank to use the default Admin@1234)</span></LabelRow>
         <div className="relative">
           <input id="pw" className="field pr-12" type={show ? 'text' : 'password'} autoComplete="new-password" value={f.password} onChange={(e) => set('password', e.target.value)} />
           <button
@@ -189,7 +189,6 @@ function CompanyForm({ onSaved }: { onSaved: () => void }) {
         </div>
         {err('password')}
         {f.password && <div className="mt-2"><PasswordChecklist value={f.password} /></div>}
-        <p className="mt-1 text-xs text-slate-500">The Admin signs in with this and an OTP, and is asked to change it at the first sign-in.</p>
       </div>
       <ErrorBox error={error} />
       <button className="btn-primary w-full" disabled={busy || !ready}>{busy ? t('loading') : 'Create company'}</button>

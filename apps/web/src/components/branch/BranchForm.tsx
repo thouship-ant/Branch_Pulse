@@ -109,10 +109,9 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
           <div>
             {/* the ID is assigned for you and cannot be edited; it only opens up if the server could not suggest one */}
             <TextField
-              id="code" label={t('branchCode')} value={v.code} readOnly={!idFailed} maxLength={10} autoCapitalize="characters"
+              id="code" label={t('branchCode')} hint={idFailed ? t('idFailed') : t('idAuto')} value={v.code} readOnly={!idFailed} maxLength={10} autoCapitalize="characters"
               onChange={(e) => set('code', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} aria-invalid={idFailed && !codeOk && v.code !== ''}
             />
-            <p className="mt-1 text-xs text-slate-500">{idFailed ? t('idFailed') : t('idAuto')}</p>
           </div>
         </>
       )}
@@ -122,10 +121,9 @@ export function BranchForm({ mode, branch, onDone }: { mode: 'add' | 'edit'; bra
         <TextField id="bn" label={t('branchNameEn')} value={v.name} onChange={(e) => set('name', e.target.value)} onBlur={fillTamil} required />
         <div>
           <TextField
-            id="bnt" label={t('branchNameTa')} value={tamilBusy ? '' : v.nameTa} placeholder={tamilBusy ? '…' : undefined}
+            id="bnt" label={t('branchNameTa')} hint={mode === 'add' ? (tamilApprox ? t('tamilApprox') : t('tamilAuto')) : undefined} value={tamilBusy ? '' : v.nameTa} placeholder={tamilBusy ? '…' : undefined}
             onChange={(e) => { set('nameTa', e.target.value); setTamilEdited(e.target.value.trim() !== ''); setTamilApprox(false); }} aria-busy={tamilBusy}
           />
-          {mode === 'add' && <p className="mt-1 text-xs text-slate-500">{tamilApprox ? t('tamilApprox') : t('tamilAuto')}</p>}
         </div>
 
         {/* address is multi-line like notes: it grows to show every line and spans both columns */}

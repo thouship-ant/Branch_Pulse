@@ -12,6 +12,14 @@ const PATHS: Record<string, string[]> = {
   shield: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'M9 12l2 2 4-4'],
   moon: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'],
   sun: ['M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z', 'M12 1v2', 'M12 21v2', 'M4.2 4.2l1.4 1.4', 'M18.4 18.4l1.4 1.4', 'M1 12h2', 'M21 12h2', 'M4.2 19.8l1.4-1.4', 'M18.4 5.6l1.4-1.4'],
+  calendar: ['M3 4h18v18H3z', 'M16 2v4', 'M8 2v4', 'M3 10h18'],
+  chevronLeft: ['M15 18l-6-6 6-6'],
+  chevronRight: ['M9 18l6-6-6-6'],
+  chevronDown: ['M6 9l6 6 6-6'],
+  tick: ['M20 6L9 17l-5-5'],
+  pencil: ['M12 20h9', 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z'],
+  checkCircle: ['M22 11.08V12a10 10 0 1 1-5.93-9.14', 'M22 4L12 14.01l-3-3'],
+  banCircle: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M4.9 4.9l14.2 14.2'],
   logout: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'M16 17l5-5-5-5', 'M21 12H9'],
   trash: ['M3 6h18', 'M8 6V4h8v2', 'M19 6l-1 14H6L5 6'],
   clock: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M12 6v6l4 2'],
@@ -38,6 +46,15 @@ const PATHS: Record<string, string[]> = {
 };
 
 export type IconName = keyof typeof PATHS;
+
+/** A Material Design Icons glyph (same set as the mobile app's MaterialCommunityIcons), drawn from its `@mdi/js` path. */
+export function MdiIcon({ path, size = 20, ...rest }: { path: string; size?: number } & SVGProps<SVGSVGElement>) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" {...rest}>
+      <path d={path} />
+    </svg>
+  );
+}
 
 export function Icon({ name, size = 20, ...rest }: { name: IconName; size?: number } & SVGProps<SVGSVGElement>) {
   return (

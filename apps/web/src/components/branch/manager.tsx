@@ -102,8 +102,7 @@ export function ManagerChooser({
         <div className="grid gap-3 sm:grid-cols-2">
           <TextField id="mfn" label={t('fullName')} value={value.fullName} onChange={(e) => set({ fullName: e.target.value })} />
           <div>
-            <TextField id="mmo" label={`${t('mobile')} *`} inputMode="numeric" placeholder="10 digits" value={value.mobile} onChange={(e) => set({ mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
-            <p className="mt-1 text-xs text-slate-500">Signs in with this number and an OTP.</p>
+            <TextField id="mmo" hint="Signs in with this number and an OTP." label={`${t('mobile')} *`} inputMode="numeric" placeholder="10 digits" value={value.mobile} onChange={(e) => set({ mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
           </div>
         </div>
       )}

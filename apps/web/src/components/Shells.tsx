@@ -202,21 +202,23 @@ export function OfficeShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh md:flex">
       {/* sidebar: fixed to the viewport so it never scrolls with the page; only its own menu area scrolls if the window is very short */}
-      <aside className={`fixed inset-y-0 left-0 z-20 hidden h-dvh flex-col border-r border-slate-200/80 bg-surface transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px] p-3' : 'w-[264px] p-4'}`}>
-        <div className={`mb-5 flex h-11 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-1'}`}><Logo compact={collapsed} /></div>
-        <nav className="scroll-hover min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5" aria-label="Main">
+      <aside className={`${collapsed ? 'side-collapsed ' : ''}fixed inset-y-0 left-0 z-20 hidden h-dvh flex-col overflow-hidden bg-gradient-to-b from-[#121a58] via-[#18236f] to-[#1e2a8a] shadow-[8px_0_30px_-18px_rgba(18,26,88,0.8)] transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px] p-3' : 'w-[264px] p-4'}`}>
+        {/* soft glow in the corner */}
+        <div aria-hidden className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-[#4b5df0]/30 blur-3xl" />
+        <div className={`relative mb-5 flex h-11 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-1'}`}><Logo compact={collapsed} onDark /></div>
+        <nav className="scroll-hover relative min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5 [scrollbar-color:rgba(255,255,255,0.25)_transparent]" aria-label="Main">
           {GROUPS.map((g) => {
             const items = links.filter((l) => l.group === g.id);
             if (!items.length) return null;
             return (
               <div key={g.id} className="space-y-1">
-                {collapsed ? <div className="mx-3 my-1 h-px bg-slate-200" aria-hidden /> : <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400">{t(g.key)}</p>}
+                {collapsed ? <div className="mx-3 my-1 h-px bg-white/15" aria-hidden /> : <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-white/40">{t(g.key)}</p>}
                 {items.map((l) => (
                   <Link
                     key={l.href} href={l.href} aria-current={isActive(l.href) ? 'page' : undefined} title={collapsed ? t(l.key) : undefined}
-                    className={`nav-item ${isActive(l.href) ? 'nav-item-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
+                    className={`side-item ${isActive(l.href) ? 'side-item-active' : ''}`}
                   >
-                    <Icon name={l.icon} size={19} />
+                    <span className="side-ico"><Icon name={l.icon} size={18} strokeWidth={isActive(l.href) ? 2.3 : 1.9} /></span>
                     {collapsed ? <span className="sr-only">{t(l.key)}</span> : t(l.key)}
                   </Link>
                 ))}
@@ -224,17 +226,17 @@ export function OfficeShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className={`mt-3 shrink-0 rounded-card border border-slate-200/80 bg-slate-50 ${collapsed ? 'p-1.5' : 'p-2.5'}`}>
+        <div className={`relative mt-3 shrink-0 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md ${collapsed ? 'p-1.5' : 'p-2.5'}`}>
           {/* collapsed rail is only ~52px wide: stack the avatar over the logout button, both centred */}
           <div className={`flex items-center ${collapsed ? 'flex-col gap-1.5' : 'gap-3'}`}>
             <Avatar name={me.fullName} />
             {!collapsed && (
               <div className="min-w-0 flex-1 text-sm">
-                <p className="truncate font-semibold">{me.fullName}</p>
-                <p className="truncate text-xs text-slate-500">{[me.company?.name, me.roles.map(roleLabel).join(', ')].filter(Boolean).join(' · ')}</p>
+                <p className="truncate font-semibold text-white">{me.fullName}</p>
+                <p className="truncate text-xs text-white/60">{[me.company?.name, me.roles.map(roleLabel).join(', ')].filter(Boolean).join(' · ')}</p>
               </div>
             )}
-            <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-ink" onClick={() => logout()} title={t('logout')} aria-label={t('logout')}>
+            <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white" onClick={() => logout()} title={t('logout')} aria-label={t('logout')}>
               <Icon name="logout" size={18} />
             </button>
           </div>
