@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { unregisterPush } from './push';
 import { api, ApiError, clientInfo, endSession, loadStoredRefresh, refreshSession, setAuthLostHandler, startSession } from './api';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
@@ -59,6 +60,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const requestOtp = useCallback(async (mobile: string) => { await api.post('/auth/otp/request', { mobile }); }, []);
   const verifyOtp = useCallback(async (mobile: string, otp: string) => { await start(await api.post('/auth/otp/verify', { mobile, otp, ...clientInfo() })); }, []);
   const logout = useCallback(async () => {
+    await unregisterPush(); // while the session is still valid
     try { await api.post('/auth/logout'); } catch (e) { if (!(e instanceof ApiError)) throw e; }
     await endSession();
     setMe(null);

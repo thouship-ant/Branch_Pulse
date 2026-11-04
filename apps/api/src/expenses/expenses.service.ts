@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
 import { AppException, notFound, staleVersion, validation } from '../common/app-exception';
 import { AttachmentsService } from '../attachments/attachments.service';
+import { PushService } from '../push/push.service';
 import { AuditService } from '../common/audit.service';
 import { can, isAdmin, ReqCtx } from '../common/auth-user';
 import { addDays, toDate, todayIST } from '../common/dates';
@@ -72,6 +73,7 @@ export class ExpensesService {
     private readonly settings: SettingsService,
     private readonly codes: CodesService,
     private readonly attachments: AttachmentsService,
+    private readonly push: PushService,
   ) {}
 
   // ------------------------------------------------------------ create
@@ -84,7 +86,7 @@ export class ExpensesService {
       throw validation('INVALID_DATE', 'periodTo cannot be before periodFrom', 'periodTo');
     }
 
-    return this.prisma.runScoped(ctx.user, async (tx) => {
+    const result = await this.prisma.runScoped(ctx.user, async (tx) => {
       // replay of an offline operation returns the original row
       if (dto.clientUuid) {
         const dup = await tx.expense.findUnique({ where: { client_uuid: dto.clientUuid } });
@@ -165,6 +167,10 @@ export class ExpensesService {
       await this.audit.log(tx, ctx, { action: 'CREATE', entityType: 'EXPENSE', entityId: row.id, entityCode: row.code, locationId: row.location_id, after: row });
       return new Envelope(row, warnings);
     });
+    const saved = result.data as { approval_status?: string; created_at?: Date } & Parameters<PushService['expenseSubmitted']>[1];
+    // an offline replay returns the row saved earlier: only a row created just now is news
+    if (saved.approval_status === 'SUBMITTED' && Date.now() - new Date(saved.created_at ?? 0).getTime() < 15_000) this.push.expenseSubmitted(ctx, saved);
+    return result;
   }
 
   /** V13 unusual amount, V14 possible duplicate: warnings only, the entry still saves. */
@@ -346,7 +352,7 @@ export class ExpensesService {
       });
       await this.audit.log(tx, ctx, { action: 'APPROVE', entityType: 'EXPENSE', entityId: id, entityCode: e.code, locationId: e.location_id, before: e, after });
       return after;
-    });
+    }).then((after) => { this.push.expenseDecided(ctx, after); return after; });
   }
 
   async reject(ctx: ReqCtx, id: string, dto: ExpenseActionDto) {
@@ -365,7 +371,7 @@ export class ExpensesService {
       await tx.cashTransaction.updateMany({ where: { source_type: 'EXPENSE', source_id: id, status: 'ACTIVE' }, data: { status: 'CANCELLED' } });
       await this.audit.log(tx, ctx, { action: 'REJECT', entityType: 'EXPENSE', entityId: id, entityCode: e.code, locationId: e.location_id, before: e, after, reason: dto.reason });
       return after;
-    });
+    }).then((after) => { this.push.expenseDecided(ctx, after); return after; });
   }
 
   /** SUBMITTED / REJECTED -> CANCELLED by the creator or the owner. */

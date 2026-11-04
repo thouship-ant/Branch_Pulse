@@ -37,7 +37,13 @@
         }
       ],
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#1e2a8a"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

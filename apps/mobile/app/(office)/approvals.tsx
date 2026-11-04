@@ -1,5 +1,5 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
 import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, Screen, SegTabs, Sheet } from '@/components/ui';
@@ -20,6 +20,7 @@ export default function ApprovalsScreen() {
   const th = useTheme();
   const { me } = useSession();
   const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string; reject?: string }>();
   const [tab, setTab] = useState<'expenses' | 'closing'>('expenses');
   const [rows, setRows] = useState<any[] | null>(null);
   const [closings, setClosings] = useState<any[] | null>(null);
@@ -35,6 +36,15 @@ export default function ApprovalsScreen() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
   }, []);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+
+  // opened from a notification: show the Closing tab, or the reject box of one expense
+  useEffect(() => { if (params.tab === 'closing') setTab('closing'); }, [params.tab]);
+  useEffect(() => {
+    if (!params.reject || !rows) return;
+    const e = rows.find((x) => x.id === params.reject);
+    if (e) { setTab('expenses'); setReason(''); setRejecting(e); }
+    router.setParams({ reject: undefined });
+  }, [params.reject, rows]);
 
   const branch = (id: string) => me?.locations.find((l) => l.id === id)?.name ?? '';
 

@@ -23,6 +23,13 @@ export const env = {
   // demo / test account such as the default company's Admin. Everyone else still gets a real OTP by SMS.
   otpTestMobiles: new Set((process.env.OTP_TEST_MOBILES ?? '').split(',').map((m) => m.trim()).filter((m) => /^\d{10}$/.test(m))),
   otpTestCode: /^\d{6}$/.test(process.env.OTP_TEST_CODE ?? '') ? (process.env.OTP_TEST_CODE as string) : '123456',
+  // ---- push notifications through the Expo push service (set PUSH_ENABLED=false to switch them off; EXPO_ACCESS_TOKEN only if
+  // "enhanced push security" is turned on for the Expo project)
+  push: {
+    enabled: (process.env.PUSH_ENABLED ?? 'true') !== 'false',
+    url: process.env.EXPO_PUSH_URL ?? 'https://exp.host/--/api/v2/push/send',
+    accessToken: process.env.EXPO_ACCESS_TOKEN || undefined,
+  },
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES ?? 10),
   otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS ?? 5),
   otpResendSeconds: Number(process.env.OTP_RESEND_SECONDS ?? 30),

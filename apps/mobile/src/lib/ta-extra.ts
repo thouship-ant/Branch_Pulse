@@ -1,6 +1,13 @@
 // Mobile-only Tamil strings (English text -> Tamil). The web app's table is in ta-web.ts; lookups ignore letter case.
 // Tamil strings should be reviewed by a native speaker before go-live.
 export const TA_EXTRA: Record<string, string> = {
+  "Notifications": "அறிவிப்புகள்", "Push notifications": "புஷ் அறிவிப்புகள்",
+  "Approvals waiting for you, results of what you submitted, and closing reminders.": "உங்கள் அங்கீகாரத்திற்காகக் காத்திருப்பவை, நீங்கள் சமர்ப்பித்தவற்றின் முடிவுகள் மற்றும் நாள் முடிவு நினைவூட்டல்கள்.",
+  "Send a test notification": "சோதனை அறிவிப்பை அனுப்பு",
+  "Test sent. It should arrive in a few seconds.": "சோதனை அனுப்பப்பட்டது. சில வினாடிகளில் வந்துவிடும்.",
+  "No phone is registered for notifications yet.": "அறிவிப்புகளுக்கு இன்னும் எந்த போனும் பதிவு செய்யப்படவில்லை.",
+  "Notifications could not be turned on. Allow them for Branch Pulse in the phone settings.": "அறிவிப்புகளை இயக்க முடியவில்லை. போன் அமைப்புகளில் Branch Pulse க்கு அனுமதி வழங்கவும்.",
+  "Could not approve": "அங்கீகரிக்க முடியவில்லை", "Open Approvals": "அங்கீகாரங்களைத் திற", "Expense approved": "செலவு அங்கீகரிக்கப்பட்டது", "Closing approved": "நாள் முடிவு அங்கீகரிக்கப்பட்டது",
   // ---- navigation / tabs / menu
   "Today": "இன்று", "Sales": "விற்பனை", "Expense": "செலவு", "Cash": "ரொக்கம்", "Closing": "நாள் முடிவு", "Stock": "இருப்பு", "Dashboard": "முகப்புப் பலகை",
   "Approvals": "அங்கீகாரங்கள்", "More": "மேலும்", "Account": "கணக்கு", "Companies": "நிறுவனங்கள்", "Data Upload": "தரவு பதிவேற்றம்", "Company - Data Upload": "நிறுவனம் - தரவு பதிவேற்றம்",

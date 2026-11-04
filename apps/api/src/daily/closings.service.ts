@@ -8,6 +8,7 @@ import { ReqCtx } from '../common/auth-user';
 import { toDate, todayIST } from '../common/dates';
 import { D, ZERO } from '../common/money';
 import { PrismaService, SYSTEM_SCOPE, Tx } from '../common/prisma.service';
+import { PushService } from '../push/push.service';
 import { RulesService } from '../common/rules.service';
 import { SettingsService } from '../common/settings.service';
 import { CashService } from './cash.service';
@@ -34,6 +35,7 @@ export class ClosingsService {
     private readonly rules: RulesService,
     private readonly settings: SettingsService,
     private readonly cash: CashService,
+    private readonly push: PushService,
   ) {}
 
   // ------------------------------------------------------------ scheduled creation
@@ -309,7 +311,7 @@ export class ClosingsService {
         locationId: closing.location_id, before: { status: closing.status }, after: { status: 'SUBMITTED', ...snapshot },
       });
       return after;
-    });
+    }).then((after) => { this.push.closingSubmitted(ctx, after); return after; });
   }
 
   /** SUBMITTED -> APPROVED. Locks every record of the branch-day. */
@@ -374,7 +376,7 @@ export class ClosingsService {
         before: { status: closing.status }, after: { status: 'APPROVED' }, reason: dto.comment,
       });
       return after;
-    });
+    }).then((after) => { this.push.closingDecided(ctx, after, 'APPROVED', dto.comment); return after; });
   }
 
   /** SUBMITTED -> REJECTED (comment mandatory). */
@@ -393,7 +395,7 @@ export class ClosingsService {
         before: { status: closing.status }, after: { status: 'REJECTED' }, reason: dto.comment,
       });
       return after;
-    });
+    }).then((after) => { this.push.closingDecided(ctx, after, 'REJECTED', dto.comment); return after; });
   }
 
   /** APPROVED -> REOPENED (owner only; reason mandatory). Unlocks the branch-day. */
@@ -430,7 +432,7 @@ export class ClosingsService {
         before: { status: closing.status }, after: { status: 'REOPENED' }, reason: dto.comment,
       });
       return after;
-    });
+    }).then((after) => { this.push.closingDecided(ctx, after, 'REOPENED', dto.comment); return after; });
   }
 
   // ------------------------------------------------------------ cash variance approval (LLD s8)

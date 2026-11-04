@@ -43,3 +43,24 @@ npm run start            # scan the QR code with Expo Go, or press a for the And
 npm i -g eas-cli
 eas build --platform android --profile preview   # APK
 ```
+
+## Push notifications
+
+The app registers each signed-in phone with the API (`POST /push/register`) and the API sends notifications through the Expo push service.
+
+| Event | Who is told | Buttons |
+|---|---|---|
+| Expense submitted (needs approval) | everyone who can approve it for that branch | Approve, Reject |
+| Closing submitted | closing approvers | Approve, Review |
+| Expense approved / rejected | the person who entered it | - |
+| Closing approved / rejected / reopened | the branch team | - |
+| 8:30 pm, closing not submitted | the branch team | Open closing |
+
+One-time setup (needs your Expo account):
+
+1. `cd apps/mobile && npx eas init` - writes `extra.eas.projectId` into `app.json`. Without it the app cannot get a push token.
+2. **Android:** add a Firebase project, put its `google-services.json` in `apps/mobile` and reference it as `android.googleServicesFile` in `app.json`, then upload the FCM v1 service-account key to Expo (`eas credentials`).
+3. **iOS:** `eas build` sets up the push key for you.
+4. Notifications need a real phone and a development or production build (Expo Go on Android cannot receive remote pushes). Test from **Account > Send a test notification**.
+
+Server settings: `PUSH_ENABLED=false` switches sending off; `EXPO_ACCESS_TOKEN` is only needed if "enhanced push security" is on for the Expo project.
