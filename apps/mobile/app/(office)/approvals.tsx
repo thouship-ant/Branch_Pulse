@@ -49,7 +49,7 @@ export default function ApprovalsScreen() {
 
   return (
     <Screen onRefresh={load}>
-      <Heading title="Approvals · Expenses" />
+      <Heading onBlue title="Approvals · Expenses" />
       <ErrorBox error={error} />
       {!rows ? <Loading /> : rows.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : rows.map((e) => (
         <Card key={e.id} style={{ gap: 8 }}>

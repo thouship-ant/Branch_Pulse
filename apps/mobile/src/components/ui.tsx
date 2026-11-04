@@ -30,7 +30,7 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
     try { await onRefresh?.(); } finally { setRefreshing(false); }
   }, [onRefresh]);
   const insets = useSafeAreaInsets();
-  const overlap = !!hero && !!header && !title;
+  const overlap = !!header && !title; // every page scrolls over the header's curved lower edge (`hero` kept for callers, now the default)
   const right = headerRight ?? header?.right;
   // when the page scrolls over the header, the scroll view covers it and would swallow taps: the header's own buttons are drawn
   // again above the scroll view instead (same spot), and the header underneath is drawn without them
@@ -48,8 +48,12 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
           {children}
         </ScrollView>
       </KeyboardAvoidingView>
-      {overlap && right ? (
-        <View pointerEvents="box-none" style={{ position: 'absolute', top: insets.top + 14, right: 20, height: Math.max(48, headerH - insets.top - 76), justifyContent: 'center', zIndex: 20, elevation: 20 }}>{right}</View>
+      {/* the fixed part of the header (logo, greeting, name, company + its buttons) is drawn again above the scroll view: the page
+          slides over the curved edge below, and disappears under this part once it reaches the company name */}
+      {overlap && bar ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, headerH - 52), overflow: 'hidden', backgroundColor: th.brand, zIndex: 20, elevation: 20 }}>
+          <AppBar {...header!} right={right} />
+        </View>
       ) : null}
     </View>
   );
@@ -129,12 +133,13 @@ export function HeroCard({
   );
 }
 
-export function Heading({ title, sub }: { title: string; sub?: string }) {
+/** `onBlue`: the page's top heading, which sits over the header's blue curve, so it is white. */
+export function Heading({ title, sub, onBlue }: { title: string; sub?: string; onBlue?: boolean }) {
   const th = useTheme();
   return (
     <View>
-      {sub ? <Text style={{ color: th.muted, fontSize: 13 }}>{sub}</Text> : null}
-      <Text style={{ color: th.ink, fontSize: 22, fontWeight: '700' }}>{title}</Text>
+      {sub ? <Text style={{ color: onBlue ? 'rgba(255,255,255,0.8)' : th.muted, fontSize: 13 }}>{sub}</Text> : null}
+      <Text style={{ color: onBlue ? '#fff' : th.ink, fontSize: 22, fontWeight: '700' }}>{title}</Text>
     </View>
   );
 }

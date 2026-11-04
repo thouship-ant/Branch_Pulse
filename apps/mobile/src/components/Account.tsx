@@ -13,14 +13,14 @@ export function Account() {
   if (!me) return null;
   return (
     <Screen>
-      <Heading title="Account" />
+      <Heading onBlue title="Account" />
       <Card>
         <View style={{ gap: 2 }}>
           <Text style={{ color: th.ink, fontSize: 18, fontWeight: '700' }}>{me.fullName}</Text>
           <Muted>{me.roles.map(roleLabel).join(', ')}</Muted>
         </View>
         <Row label={me.isSuper ? 'Username' : 'Mobile'} value={me.isSuper ? me.username : me.mobile ?? me.username} />
-        {me.company ? <Row label="Company" value={`${me.company.name} (${me.company.code})`} /> : null}
+        {me.company ? <Row label="Company" value={me.company.name} /> : null}
         {!me.isSuper && me.locations.length > 0 ? <Row label="Branches" value={me.allLocations ? 'All' : String(me.locations.length)} /> : null}
       </Card>
       <Card><Text style={{ color: th.ink, fontWeight: '700' }}>Language</Text><LanguageSwitch /></Card>

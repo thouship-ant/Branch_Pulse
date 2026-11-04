@@ -47,7 +47,7 @@ export default function CompaniesScreen() {
   return (
     <Screen onRefresh={load}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <Heading title="Companies" sub={rows ? `${rows.length} total` : undefined} />
+        <Heading onBlue title="Companies" sub={rows ? `${rows.length} total` : undefined} />
         <Button small icon="plus" title="New company" onPress={() => setAdding(true)} />
       </View>
       <ErrorBox error={error} />

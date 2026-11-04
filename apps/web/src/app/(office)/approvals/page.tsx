@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ErrorBox, Sheet, Skeleton } from '@/components/ui';
+import { Sheet, Skeleton } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
@@ -61,7 +61,12 @@ export default function Approvals() {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">{t('approvals')} · {t('expenses')}</h2>
-      <ErrorBox error={error} />
+      <Sheet open={!!error} onClose={() => setError(null)} title={t('errorTitle')}>
+        <p role="alert" className="text-sm text-slate-700">{error}</p>
+        <div className="mt-4 flex justify-end">
+          <button className="btn-primary min-h-[44px] px-6" autoFocus onClick={() => setError(null)}>{t('ok')}</button>
+        </div>
+      </Sheet>
       {!rows ? <Skeleton className="h-64" /> : rows.length === 0 ? (
         <p role="status" className="rounded-card border border-emerald-300 bg-emerald-50 px-4 py-3 font-medium text-emerald-900">✓ {t('noExceptions')}</p>
       ) : (
@@ -74,7 +79,15 @@ export default function Approvals() {
                 <p className="text-xs text-slate-500">{e.code} · ⏱ {age(e.createdAt)}</p>
               </div>
               <div className="flex gap-2">
-                <button className="btn-secondary min-h-[44px] px-3" onClick={() => viewReceipt(e.id)} aria-label="View receipt">🧾</button>
+                <button
+                  className={`btn-secondary relative min-h-[44px] px-3 ${e.receiptCount === 0 ? 'opacity-70' : ''}`}
+                  onClick={() => viewReceipt(e.id)} aria-label={e.receiptCount === 0 ? t('noReceipt') : t('receipt')} title={e.receiptCount === 0 ? t('noReceipt') : t('receipt')}
+                >
+                  🧾
+                  {e.receiptCount === 0 && (
+                    <span aria-hidden className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-red-600 text-[11px] font-bold leading-none text-white shadow">✕</span>
+                  )}
+                </button>
                 <button className="btn-primary min-h-[44px] px-4" disabled={busy === e.id} onClick={() => approve(e.id)}>✓ {t('approve')}</button>
                 <button className="btn-danger min-h-[44px] px-4" disabled={busy === e.id} onClick={() => setRejecting(e)}>✕ {t('reject')}</button>
               </div>

@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AndroidBottomInset } from '@/components/AndroidBottomInset';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { LanguageProvider } from '@/lib/language';
 import { SessionProvider } from '@/lib/session';
@@ -22,7 +23,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <SessionProvider>
         <LanguageProvider>
-          <Shell />
+          <AndroidBottomInset>
+            <Shell />
+          </AndroidBottomInset>
         </LanguageProvider>
       </SessionProvider>
     </SafeAreaProvider>

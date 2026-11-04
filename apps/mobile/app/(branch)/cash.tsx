@@ -12,7 +12,7 @@ export default function CashScreen() {
   if (!locationId) return <Screen><Loading /></Screen>;
   return (
     <Screen>
-      <Heading sub={prettyDate(date)} title="Cash reconciliation" />
+      <Heading onBlue sub={prettyDate(date)} title="Cash reconciliation" />
       <CashRecon locationId={locationId} date={date} />
       <Button title="Go to closing →" variant="secondary" onPress={() => router.push('/closing')} />
     </Screen>

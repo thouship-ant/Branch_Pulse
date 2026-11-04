@@ -60,7 +60,7 @@ export default function ClosingScreen() {
   return (
     <Screen onRefresh={load}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Heading sub={prettyDate(date)} title="Closing" />
+        <Heading onBlue sub={prettyDate(date)} title="Closing" />
         <StatusPill status={status} />
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>{stepChip(1, 'Cash count')}{stepChip(2, 'Submit')}</View>

@@ -65,7 +65,7 @@ export default function SalesScreen() {
 
   return (
     <Screen onRefresh={load}>
-      <Heading sub={prettyDate(date)} title="Sales" />
+      <Heading onBlue sub={prettyDate(date)} title="Sales" />
       <Card>
         <MoneyField label="Total sales" value={form.total} onChange={set('total')} required />
         <View style={{ flexDirection: 'row', gap: 12 }}>

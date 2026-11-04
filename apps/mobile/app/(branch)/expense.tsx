@@ -85,7 +85,7 @@ export default function ExpenseScreen() {
 
   return (
     <Screen onRefresh={load}>
-      <Heading sub={prettyDate(date)} title="Expense" />
+      <Heading onBlue sub={prettyDate(date)} title="Expense" />
 
       <Card>
         <Chips label="Category" value={categoryId} onChange={(v) => { setCategoryId(v); setSubId(''); setSupplierId(''); }} options={top.map((c) => ({ value: c.id, label: c.nameEn }))} />
