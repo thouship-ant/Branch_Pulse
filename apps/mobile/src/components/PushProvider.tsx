@@ -54,6 +54,8 @@ export function PushProvider() {
             case 'EXPENSE_APPROVAL': return go('/approvals');
             case 'CLOSING_APPROVAL': return go('/approvals?tab=closing');
             case 'CLOSING_REMINDER': case 'CLOSING_RESULT': return go(isBranchUser ? '/closing' : closingPath);
+            case 'BACKDATE_REQUEST': return go('/approvals?tab=backdate');
+            case 'BACKDATE_RESULT': return go(isBranchUser ? '/home' : '/approvals');
             case 'EXPENSE_RESULT': return go(isBranchUser ? '/expense' : '/more/expenses');
             default: return;
           }

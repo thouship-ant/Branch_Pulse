@@ -304,6 +304,8 @@ export class AuthService {
             orderBy: { code: 'asc' },
           }),
         );
+    // the names the company gave its roles (an Admin can rename any role except Admin): shown instead of the role code
+    const roleNames = user.isSuper ? [] : await this.prisma.runScoped(user, (tx) => tx.role.findMany({ where: { code: { in: user.roles }, status: 'ACTIVE' }, select: { code: true, name: true } }));
     return {
       id: user.id,
       username: user.username,
@@ -311,6 +313,7 @@ export class AuthService {
       mobile: profile.mobile,
       language: profile.preferred_language,
       roles: user.roles,
+      roleNames: user.roles.map((c) => roleNames.find((r) => r.code === c)?.name).filter(Boolean) as string[],
       permissions: user.permissions,
       allLocations: user.allLocations,
       isSuper: user.isSuper,

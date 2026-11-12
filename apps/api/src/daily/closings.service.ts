@@ -198,7 +198,7 @@ export class ClosingsService {
     const inFlight = { in: ['SUBMITTED', 'APPROVED'] as Array<'SUBMITTED' | 'APPROVED'> };
     const [exp, pur, was, pendingExp, pendingPur, pendingWas] = await Promise.all([
       tx.expense.aggregate({ where: { ...live, approval_status: inFlight }, _sum: { amount: true }, _count: true }),
-      tx.purchase.aggregate({ where: { ...live, approval_status: inFlight }, _sum: { total_amount: true }, _count: true }),
+      tx.purchase.aggregate({ where: { ...live, approval_status: inFlight }, _sum: { total_amount: true, paid_amount: true, credit_amount: true }, _count: true }),
       tx.wastage.aggregate({ where: { ...live, approval_status: inFlight }, _sum: { estimated_value: true }, _count: true }),
       tx.expense.count({ where: { ...live, approval_status: 'SUBMITTED' } }),
       tx.purchase.count({ where: { ...live, approval_status: 'SUBMITTED' } }),
@@ -214,6 +214,8 @@ export class ClosingsService {
         totalExpenses: exp._sum.amount ?? ZERO,
         expenseCount: exp._count,
         totalPurchases: pur._sum.total_amount ?? ZERO,
+        purchasePaid: pur._sum.paid_amount ?? ZERO, // paid to suppliers on the day (shown with the expenses)
+        purchaseCredit: pur._sum.credit_amount ?? ZERO,
         purchaseCount: pur._count,
         totalWastageValue: was._sum.estimated_value ?? ZERO,
         wastageCount: was._count,

@@ -145,6 +145,7 @@ export function PurchaseForm({ fixedLocationId, onSaved }: { fixedLocationId?: s
   const [discount, setDiscount] = useState('');
   const [mode, setMode] = useState<(typeof MODES)[number]>('CASH');
   const [paid, setPaid] = useState('');
+  const [settle, setSettle] = useState<'FULL' | 'PART' | 'NONE'>('FULL');
   const [due, setDue] = useState('');
   const [remarks, setRemarks] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -160,11 +161,11 @@ export function PurchaseForm({ fixedLocationId, onSaved }: { fixedLocationId?: s
   const set = (i: number, patch: Partial<Line>) => setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   const subtotal = lines.reduce((a, l) => a.plus(dec(l.qty || '0').mul(dec(l.rate || '0'))), dec(0));
   const total = subtotal.plus(dec(other || '0')).minus(dec(discount || '0'));
-  const effectivePaid = mode === 'CREDIT' ? dec(0) : paid !== '' ? dec(paid) : total;
+  const effectivePaid = settle === 'NONE' || mode === 'CREDIT' ? dec(0) : settle === 'PART' ? dec(paid || '0') : total;
   const credit = total.minus(effectivePaid);
   const valid = lines.filter((l) => l.itemId && l.unitId && dec(l.qty || '0').greaterThan(0) && l.rate !== '');
   const anyPartial = lines.some((l) => (l.itemId || l.qty || l.rate) && !(l.itemId && l.unitId && dec(l.qty || '0').greaterThan(0) && l.rate !== ''));
-  const ready = !!locationId && !!supplierId && valid.length > 0 && !anyPartial && total.greaterThanOrEqualTo(0) && !effectivePaid.greaterThan(total) && (credit.lessThanOrEqualTo(0) || !!due);
+  const ready = !!locationId && !!supplierId && valid.length > 0 && !anyPartial && total.greaterThanOrEqualTo(0) && !effectivePaid.greaterThan(total) && (settle !== 'PART' || (effectivePaid.greaterThan(0) && effectivePaid.lessThan(total))) && (credit.lessThanOrEqualTo(0) || !!due);
 
   async function save() {
     setBusy(true); setError(null);
@@ -205,8 +206,13 @@ export function PurchaseForm({ fixedLocationId, onSaved }: { fixedLocationId?: s
         <View style={{ flex: 1 }}><MoneyField label="Discount" value={discount} onChange={setDiscount} /></View>
       </View>
       <Card tone="neutral"><Heading title={`Total ${formatINR(total)}`} /></Card>
-      <Chips label="Payment" value={mode} onChange={(m) => { setMode(m); setPaid(''); }} options={MODES.map((m) => ({ value: m, label: MODE_LABEL[m] }))} />
-      {mode !== 'CREDIT' ? <MoneyField label="Paid now (blank = full)" value={paid} onChange={setPaid} /> : null}
+      <Chips
+        label="Payment to supplier" value={settle}
+        onChange={(v) => { setSettle(v); setPaid(''); setMode(v === 'NONE' ? 'CREDIT' : mode === 'CREDIT' ? 'CASH' : mode); }}
+        options={[{ value: 'FULL', label: 'Paid in full' }, { value: 'PART', label: 'Part paid' }, { value: 'NONE', label: 'Not paid' }]}
+      />
+      {settle !== 'NONE' ? <Chips label="Paid by" value={mode} onChange={setMode} options={MODES.filter((m) => m !== 'CREDIT').map((m) => ({ value: m, label: MODE_LABEL[m] }))} /> : null}
+      {settle === 'PART' ? <MoneyField label="Amount paid" required value={paid} onChange={setPaid} hint="Less than the total; the rest stays on credit" /> : null}
       {credit.greaterThan(0) ? <Field label={`On credit ${formatINR(credit)} — due date (YYYY-MM-DD)`} required value={due} onChangeText={setDue} placeholder="2026-11-15" /> : null}
       <Field label="Remarks" value={remarks} onChangeText={setRemarks} multiline />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

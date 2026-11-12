@@ -224,7 +224,7 @@ export const TA_WEB: Record<string, string> = {
  "Branch-wise profitability": "கிளை வாரியான லாபம்",
  "Stock consumption": "இருப்புப் பயன்பாடு",
  "Wastage trend": "வீணாக்கப் போக்கு",
- "Operating margin: (sales − expenses − wastage) ÷ sales. Central costs and stock cost are not included yet.": "இயக்க லாப விகிதம்: (விற்பனை − செலவுகள் − வீணானது) ÷ விற்பனை. மத்திய செலவுகளும் இருப்பு செலவும் இன்னும் சேர்க்கப்படவில்லை.",
+ "Operating margin: (sales − expenses) ÷ sales. Central costs and stock cost are not included yet.": "இயக்க லாப விகிதம்: (விற்பனை − செலவுகள் − வீணானது) ÷ விற்பனை. மத்திய செலவுகளும் இருப்பு செலவும் இன்னும் சேர்க்கப்படவில்லை.",
  "Each item is drawn in its own unit, so every chart has its own axis.": "ஒவ்வொரு பொருளும் அதன் சொந்த அலகில் வரையப்படுகிறது, எனவே ஒவ்வொரு வரைபடத்திற்கும் தனி அச்சு உள்ளது.",
  "Yesterday": "நேற்று",
  "This week": "இந்த வாரம்",

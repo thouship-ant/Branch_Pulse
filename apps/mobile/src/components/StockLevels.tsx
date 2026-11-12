@@ -9,6 +9,11 @@ import { useBranches } from '@/lib/useLookups';
 import { Card, Chip, ErrorBox, Field, ListRow, Loading, Muted, SelectField, Sheet, ToggleRow } from './ui';
 
 const q = (v: string | number) => dec(v).toDecimalPlaces(3).toString();
+/** Stock is kept in ml and g; people read it in litres and kilograms (1 L = 1000 ml, 1 KG = 1000 g). */
+const BIG: Record<string, { per: number; unit: string }> = { ML: { per: 1000, unit: 'L' }, G: { per: 1000, unit: 'KG' } };
+const shownQty = (v: string | number, unit: string) => { const b = BIG[unit]; return b ? `${dec(v).div(b.per).toDecimalPlaces(3)} ${b.unit}` : `${q(v)} ${unit}`; };
+/** A rate per ml / g becomes a rate per litre / kg. */
+const shownRate = (v: string | number, unit: string) => { const b = BIG[unit]; return b ? `₹${dec(v).mul(b.per).toDecimalPlaces(2)} / ${b.unit}` : `₹${dec(v).toDecimalPlaces(2)}`; };
 
 /** Stock on hand per item with its value; low stock is flagged. Tap an item to see its recent movements. */
 export function StockLevels({ fixedLocationId }: { fixedLocationId?: string }) {
@@ -50,9 +55,9 @@ export function StockLevels({ fixedLocationId }: { fixedLocationId?: string }) {
           {shown.map((r) => (
             <ListRow
               key={`${r.locationId}-${r.itemId}`} title={r.itemName}
-              lines={[`${r.itemCode}${!fixedLocationId && !locationId ? ` · ${r.locationName}` : ''}`, `Avg cost ${dec(r.avgCost).greaterThan(0) ? `₹${dec(r.avgCost).toDecimalPlaces(2)}` : '—'}${dec(r.minStock).isZero() ? '' : ` · min ${q(r.minStock)}`}`]}
+              lines={[`${r.itemCode}${!fixedLocationId && !locationId ? ` · ${r.locationName}` : ''}`, `Avg cost ${dec(r.avgCost).greaterThan(0) ? shownRate(r.avgCost, r.unit) : '—'}${dec(r.minStock).isZero() ? '' : ` · min ${shownQty(r.minStock, r.unit)}`}`]}
               right={<>
-                <Text style={{ color: r.low ? th.bad.text : th.ink, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{q(r.quantity)} {r.unit}</Text>
+                <Text style={{ color: r.low ? th.bad.text : th.ink, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{shownQty(r.quantity, r.unit)}</Text>
                 <Text style={{ color: th.muted, fontSize: 12 }}>{formatINR(r.value, { decimals: false })}</Text>
                 {r.low ? <Chip text="Low" tone="bad" icon="▼" /> : null}
               </>}
@@ -67,9 +72,9 @@ export function StockLevels({ fixedLocationId }: { fixedLocationId?: string }) {
           <Card key={m.id ?? i} style={{ gap: 2, padding: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={{ color: th.ink, fontWeight: '600' }}>{String(m.txnType ?? m.type ?? '').replace(/_/g, ' ')}</Text>
-              <Text style={{ color: dec(m.quantity).isNegative() ? th.bad.text : th.ok.text, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{dec(m.quantity).greaterThan(0) ? '+' : ''}{q(m.quantity)} {r_unit(m, moves.item)}</Text>
+              <Text style={{ color: dec(m.quantity).isNegative() ? th.bad.text : th.ok.text, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{dec(m.quantity).greaterThan(0) ? '+' : ''}{shownQty(m.quantity, r_unit(m, moves.item))}</Text>
             </View>
-            <Text style={{ color: th.muted, fontSize: 12 }}>{m.businessDate ? prettyDate(String(m.businessDate).slice(0, 10)) : ''}{m.balanceAfter != null ? ` · balance ${q(m.balanceAfter)}` : ''}</Text>
+            <Text style={{ color: th.muted, fontSize: 12 }}>{m.businessDate ? prettyDate(String(m.businessDate).slice(0, 10)) : ''}{m.balanceAfter != null ? ` · balance ${shownQty(m.balanceAfter, r_unit(m, moves.item))}` : ''}</Text>
           </Card>
         ))}
       </Sheet>

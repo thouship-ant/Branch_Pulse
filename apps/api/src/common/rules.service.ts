@@ -36,6 +36,15 @@ export class RulesService {
       where: { location_id_business_date: { location_id: locationId, business_date: date } },
       select: { status: true },
     });
+    // A past day that was never closed (the cut-off, 23:30, has gone by) is locked for Branch Admins and Admins until an Admin
+    // approves a request to enter it (backdate_requests).
+    const today = toDate(todayIST());
+    if (date.getTime() < today.getTime() && (user.roles.includes('ADMIN') || user.roles.includes('BRANCH_MANAGER')) && (!closing || closing.status === 'PENDING')) {
+      const open = await tx.backdateRequest.findFirst({ where: { location_id: locationId, business_date: date, status: 'APPROVED' }, select: { id: true } });
+      if (!open) {
+        throw new AppException(409, 'BACKDATE_REQUEST_REQUIRED', `${fmtDate(date)} was not closed on time. Request approval from your Admin to enter it.`);
+      }
+    }
     if (!closing) return;
     if (closing.status === 'APPROVED') {
       throw new AppException(409, 'DAY_LOCKED', 'Day closed - ask the owner to reopen it');

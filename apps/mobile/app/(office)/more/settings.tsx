@@ -184,6 +184,7 @@ function Roles() {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<{ code: string; name: string; scopeMode: 'ALL' | 'ASSIGNED' } | null>(null);
+  const [roleName, setRoleName] = useState('');
 
   const load = useCallback(async () => {
     try { const [r, p] = await Promise.all([api.get('/roles'), api.get('/permissions')]); setRoles(r); setPerms(p); setError(null); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
@@ -220,13 +221,22 @@ function Roles() {
         <ListRow
           key={r.id} title={`${r.name}${r.status !== 'ACTIVE' ? ' (inactive)' : ''}`}
           lines={[`${r.code}${r.isSystem ? ' · system role' : ''}`, `${r.permissions.length} permissions · ${r.userCount} users · ${r.scopeMode === 'ALL' ? 'all branches' : 'assigned branches'}`]}
-          onPress={() => { setFormError(null); setOpenId(r.id); setSelected(r.permissions); }}
+          onPress={() => { setFormError(null); setOpenId(r.id); setSelected(r.permissions); setRoleName(r.name); }}
         />
       ))}
 
       <Sheet open={!!openRole} onClose={() => setOpenId(null)} title={openRole?.name ?? 'Role'}>
         {openRole ? (
           <>
+            {openRole.code !== 'ADMIN' && openRole.code !== 'SUPER_ADMIN' ? (
+              <>
+                <Field label="Role name" value={roleName} onChangeText={setRoleName} maxLength={60} />
+                <Button title="Save name" variant="secondary" disabled={!roleName.trim() || roleName.trim() === openRole.name} loading={busy} onPress={async () => {
+                  setBusy(true); setFormError(null);
+                  try { await api.patch(`/roles/${openRole.id}`, { name: roleName.trim() }); await load(); } catch (e) { setFormError(e instanceof ApiError ? e.message : 'Could not save'); } finally { setBusy(false); }
+                }} />
+              </>
+            ) : null}
             {Object.entries(byModule).map(([mod, list]) => (
               <View key={mod} style={{ gap: 4 }}>
                 <Text style={{ color: th.ink, fontWeight: '800' }}>{mod[0].toUpperCase() + mod.slice(1)}</Text>

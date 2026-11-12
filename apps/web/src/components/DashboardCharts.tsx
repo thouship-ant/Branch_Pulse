@@ -10,12 +10,14 @@ import { BarList, ChartCard, Columns, compact, LineChart, seriesColor, type Line
 
 const CODES = [
   'daily-sales-trend', 'branch-sales', 'expense-categories', 'monthly-sales',
-  'monthly-expenses', 'branch-profitability', 'stock-consumption', 'wastage-trend',
+  'monthly-expenses', 'branch-profitability', 'stock-consumption', 'wastage-trend', 'salary-trend',
 ] as const;
 
 const SALES = 'var(--series-1)';     // sales are always blue
 const EXPENSES = 'var(--series-2)';  // expenses are always orange
 const WASTAGE = 'var(--series-6)';   // wastage has its own hue
+const SALARY = 'var(--series-4)';
+const ALLOWANCE = 'var(--series-5)';
 
 const money = (n: number) => formatINR(n, { decimals: false });
 const moneyAxis = (n: number) => compact(n, true);
@@ -97,6 +99,7 @@ export function DashboardCharts() {
   const prof = data['branch-profitability']?.rows as Array<any> | undefined;
   const stock = data['stock-consumption'];
   const waste = data['wastage-trend'];
+  const sal = data['salary-trend'];
 
   const tipTitle = (d: string) => prettyDate(d);
 
@@ -170,7 +173,7 @@ export function DashboardCharts() {
         {/* 6. Branch-wise profitability: diverging around zero */}
         <ChartCard
           className="lg:col-span-2" title={t('cBranchProfit')} subtitle={t('cMarginNote')} loading={loading} empty={!prof || prof.every((r) => r.marginPct === null)}
-          table={prof && { head: [t('branch'), t('sales'), t('expenses'), t('wastage'), t('net'), '%'], rows: prof.map((r) => [pick(r.name, r.nameTa), money(Number(r.sales)), money(Number(r.expenses)), money(Number(r.wastage)), money(Number(r.profit)), r.marginPct === null ? '—' : `${r.marginPct}%`]) }}
+          table={prof && { head: [t('branch'), t('sales'), t('expenses'), t('net'), '%'], rows: prof.map((r) => [pick(r.name, r.nameTa), money(Number(r.sales)), money(Number(r.expenses) + Number(r.wastage)), money(Number(r.profit)), r.marginPct === null ? '—' : `${r.marginPct}%`]) }}
         >
           {prof && (
             <BarList
@@ -210,6 +213,27 @@ export function DashboardCharts() {
                 );
               })}
             </div>
+          )}
+        </ChartCard>
+
+        {/* 8a. Daily salary and allowance */}
+        <ChartCard
+          className="lg:col-span-2" title={t('cSalaryTrend')} subtitle={rangeText} loading={loading}
+          empty={!sal || sal.salary.every((v: string | null, i: number) => v === null && sal.allowance[i] === null)}
+          legend={[{ name: t('salaryLabel'), color: SALARY }, { name: t('allowanceLabel'), color: ALLOWANCE }]}
+          table={sal && {
+            head: [t('dateLabel'), t('salaryLabel'), t('allowanceLabel'), t('total')],
+            rows: (sal.dates as string[]).map((d, i) => [prettyDate(d), sal.salary[i] === null ? '—' : money(Number(sal.salary[i])), sal.allowance[i] === null ? '—' : money(Number(sal.allowance[i])), money(Number(sal.salary[i] ?? 0) + Number(sal.allowance[i] ?? 0))]),
+          }}
+        >
+          {sal && (
+            <LineChart
+              labels={sal.dates} ariaLabel={t('cSalaryTrend')} xText={shortDate} tipTitle={tipTitle} fmt={money} axisFmt={moneyAxis}
+              series={[
+                { key: 'salary', name: t('salaryLabel'), color: SALARY, values: (sal.salary as Array<string | null>).map(num) },
+                { key: 'allowance', name: t('allowanceLabel'), color: ALLOWANCE, values: (sal.allowance as Array<string | null>).map(num) },
+              ]}
+            />
           )}
         </ChartCard>
 

@@ -13,6 +13,8 @@ export interface Me {
   mobile?: string | null;
   language: string;
   roles: string[];
+  /** the names the company gave the user's roles (an Admin can rename any role except Admin) */
+  roleNames?: string[];
   permissions: string[];
   allLocations: boolean;
   /** Super Admin: manages companies, has no company of its own */

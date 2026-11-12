@@ -5,6 +5,7 @@ import { Tx } from './prisma.service';
 const KINDS = {
   expense: { seq: 'seq_code_expense', prefix: 'EXP', perLocation: true },
   purchase: { seq: 'seq_code_purchase', prefix: 'PUR', perLocation: true },
+  order: { seq: 'seq_code_order', prefix: 'ORD', perLocation: true },
   transfer: { seq: 'seq_code_transfer', prefix: 'TRF', perLocation: false },
   wastage: { seq: 'seq_code_wastage', prefix: 'WST', perLocation: true },
   supplierPayment: { seq: 'seq_code_supplier_payment', prefix: 'SPY', perLocation: true },

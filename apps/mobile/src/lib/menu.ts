@@ -10,6 +10,7 @@ export const MENU: MenuGroup[] = [
     items: [
       { path: '/more/closings', title: 'Closings', icon: 'check-square', perm: 'closing:view', hint: 'Branch closings by date' },
       { path: '/more/cash', title: 'Cash', icon: 'dollar-sign', perm: 'cash:view', hint: 'Reconciliation and variances' },
+      { path: '/more/orders', title: 'Orders', icon: 'calendar', perm: 'order:view', hint: 'Meetings, functions, payments' },
     ],
   },
   {

@@ -1,5 +1,6 @@
 'use client';
 
+import { BackdateRequests } from '@/components/BackdateRequests';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
@@ -62,6 +63,7 @@ export default function BranchHome() {
 
   return (
     <div className="space-y-4">
+      <BackdateRequests locationId={locationId} />
       <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef1ff] to-[#f6f7ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
         <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-brand/10 blur-2xl" aria-hidden />
         <p className="text-sm font-medium text-slate-600">{t('today')} · {prettyDate(date)}</p>

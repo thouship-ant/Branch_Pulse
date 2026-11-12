@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DashboardCharts } from '@/components/DashboardCharts';
+import { DashboardOrders } from '@/components/DashboardOrders';
 import { PeriodDropdown } from '@/components/PeriodDropdown';
 import { Icon, type IconName, MdiIcon } from '@/components/Icon';
 import { mdiAccountCashOutline, mdiCartOutline, mdiClipboardAlertOutline, mdiClockOutline, mdiCreditCardOutline, mdiDeleteOutline, mdiPackageVariantClosed, mdiPurseOutline, mdiQrcodeScan, mdiScaleBalance, mdiStorefrontOutline } from '@mdi/js';
@@ -220,6 +221,7 @@ export default function Dashboard() {
       </section>
 
       {/* Band 4: charts (own period filter; fetched lazily when scrolled near) */}
+      <DashboardOrders />
       <DashboardCharts />
     </div>
   );

@@ -10,7 +10,7 @@ interface CUser {
   id: string; fullName: string; username: string; mobile: string | null; email: string | null; status: string; roles: string[];
   lastLoginAt: string | null; mustChangePassword: boolean; locations: string[];
 }
-const ROLE_LABEL: Record<string, string> = { ADMIN: 'Admin', ACCOUNTANT: 'Accountant', STOCK_MANAGER: 'Stock Manager', BRANCH_MANAGER: 'Branch Manager', STAFF: 'Staff' };
+const ROLE_LABEL: Record<string, string> = { ADMIN: 'Admin', ACCOUNTANT: 'Accountant', STOCK_MANAGER: 'Stock Manager', BRANCH_MANAGER: 'Branch Admin', STAFF: 'Staff' };
 const roleText = (roles: string[]) => roles.map((r) => ROLE_LABEL[r] ?? r).join(', ');
 
 /** Every user of one company: change name / mobile / email, reset the password (a temporary one is sent by SMS). */

@@ -84,6 +84,8 @@ export default function ClosingPage() {
             <Row label={t('card')} value={screen.sales?.cardSales} />
             <Row label={`${t('expenses')} (${tot.expenseCount})`} value={tot.totalExpenses} />
             <Row label={`${t('purchases')} (${tot.purchaseCount})`} value={tot.totalPurchases} />
+            <Row label={`· ${t('paidToSuppliers')}`} value={tot.purchasePaid} />
+            <Row label={`· ${t('onCreditLabel')}`} value={tot.purchaseCredit} />
             <Row label={t('wastage')} value={tot.totalWastageValue} />
             <Row label={t('expectedCash')} value={cash.expectedClosing} whole />
             <Row label={t('actualCash')} value={cash.actualClosing} />

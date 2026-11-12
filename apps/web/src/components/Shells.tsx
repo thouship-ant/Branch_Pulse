@@ -156,6 +156,7 @@ const GROUPS: Array<{ id: Group; key: MessageKey }> = [
 const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group: Group; perm?: string }> = [
   { href: '/dashboard', key: 'dashboard', icon: 'grid', group: 'overview', perm: 'dashboard:view' },
   { href: '/closings', key: 'closings', icon: 'check', group: 'daily', perm: 'closing:view' },
+  { href: '/orders', key: 'ordersTitle', icon: 'sparkle', group: 'daily', perm: 'order:view' },
   { href: '/cash', key: 'cash', icon: 'wallet', group: 'daily', perm: 'cash:view' },
   { href: '/expenses', key: 'expenses', icon: 'card', group: 'money', perm: 'expense:view' },
   { href: '/purchases', key: 'purchases', icon: 'bag', group: 'money', perm: 'purchase:view' },
@@ -233,7 +234,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
             {!collapsed && (
               <div className="min-w-0 flex-1 text-sm">
                 <p className="truncate font-semibold text-white">{me.fullName}</p>
-                <p className="truncate text-xs text-white/60">{[me.company?.name, me.roles.map(roleLabel).join(', ')].filter(Boolean).join(' · ')}</p>
+                <p className="truncate text-xs text-white/60">{[me.company?.name, (me.roleNames?.length ? me.roleNames : me.roles.map(roleLabel)).join(', ')].filter(Boolean).join(' · ')}</p>
               </div>
             )}
             <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white" onClick={() => logout()} title={t('logout')} aria-label={t('logout')}>

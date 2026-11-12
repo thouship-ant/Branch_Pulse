@@ -10,6 +10,11 @@ import { ErrorBox, Sheet, Skeleton } from '../ui';
 import type { LocationOption } from './PurchaseForm';
 
 const qty = (v: string) => dec(v).toDecimalPlaces(3).toString();
+/** Stock is kept in ml and g; people read it in litres and kilograms (1 L = 1000 ml, 1 KG = 1000 g). */
+const BIG: Record<string, { per: number; unit: string }> = { ML: { per: 1000, unit: 'L' }, G: { per: 1000, unit: 'KG' } };
+const shown = (v: string | number, unit: string) => { const b = BIG[unit]; return b ? { n: dec(v).div(b.per).toDecimalPlaces(3).toString(), u: b.unit } : { n: qty(String(v)), u: unit }; };
+/** A rate per ml / g becomes a rate per litre / kg. */
+const rateShown = (v: string | number, unit: string) => { const b = BIG[unit]; return b ? { n: dec(v).mul(b.per).toDecimalPlaces(2).toString(), u: b.unit } : { n: dec(v).toDecimalPlaces(4).toString(), u: unit }; };
 
 /** Stock on hand per item (and location), low-stock flags, and the movements behind each figure. */
 export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { locations: LocationOption[]; fixedLocationId?: string; refreshKey?: number }) {
@@ -81,10 +86,10 @@ export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { lo
                     {r.low && <span className="ml-2 chip border-red-300 bg-red-50 text-red-800"><span aria-hidden>▼</span>{t('lowStock')}</span>}
                     <p className="font-mono text-xs font-normal text-slate-500">{r.itemCode}</p>
                   </th>
-                  <td className="px-3 py-2 text-right tabular-nums">{qty(r.quantity)} <span className="text-slate-500">{r.unit}</span></td>
-                  <td className="px-3 py-2 text-right tabular-nums">{dec(r.avgCost).greaterThan(0) ? `₹${dec(r.avgCost).toDecimalPlaces(4).toString()}` : '—'}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{shown(r.quantity, r.unit).n} <span className="text-slate-500">{shown(r.quantity, r.unit).u}</span></td>
+                  <td className="px-3 py-2 text-right tabular-nums">{dec(r.avgCost).greaterThan(0) ? <>₹{rateShown(r.avgCost, r.unit).n}<span className="text-slate-500"> / {rateShown(r.avgCost, r.unit).u}</span></> : '—'}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.value)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-600">{dec(r.minStock).isZero() ? '—' : qty(r.minStock)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slate-600">{dec(r.minStock).isZero() ? '—' : `${shown(r.minStock, r.unit).n} ${shown(r.minStock, r.unit).u}`}</td>
                 </tr>
               ))}
             </tbody>
@@ -102,9 +107,9 @@ export function StockLevels({ locations, fixedLocationId, refreshKey = 0 }: { lo
               <li key={m.id} className="flex items-center justify-between gap-2 py-2">
                 <div className="min-w-0">
                   <p className="font-medium">{m.txnType.replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase())}{m.sourceCode ? ` · ${m.sourceCode}` : ''}</p>
-                  <p className="text-xs text-slate-500">{prettyDate(String(m.businessDate).slice(0, 10))} · {t('balanceAfter')} {qty(m.balanceAfter)} {m.unit}</p>
+                  <p className="text-xs text-slate-500">{prettyDate(String(m.businessDate).slice(0, 10))} · {t('balanceAfter')} {shown(m.balanceAfter, m.unit).n} {shown(m.balanceAfter, m.unit).u}</p>
                 </div>
-                <span className={`tabular-nums ${dec(m.quantity).isNegative() ? 'text-red-700' : 'font-semibold text-emerald-800'}`}>{dec(m.quantity).isNegative() ? '' : '+'}{qty(m.quantity)} {m.unit}</span>
+                <span className={`tabular-nums ${dec(m.quantity).isNegative() ? 'text-red-700' : 'font-semibold text-emerald-800'}`}>{dec(m.quantity).isNegative() ? '' : '+'}{shown(m.quantity, m.unit).n} {shown(m.quantity, m.unit).u}</span>
               </li>
             ))}
           </ul>

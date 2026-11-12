@@ -4,24 +4,25 @@ import { useEffect, useState } from 'react';
 import { AdvanceManager } from '@/components/employees/AdvanceManager';
 import { AttendanceRoster } from '@/components/employees/AttendanceRoster';
 import { EmployeeManager } from '@/components/employees/EmployeeManager';
+import { EmployeeOverview } from '@/components/employees/EmployeeOverview';
 import { SalaryManager } from '@/components/employees/SalaryManager';
 import type { LocationOption } from '@/components/purchases/PurchaseForm';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
-type Tab = 'employees' | 'attendance' | 'salary' | 'advances';
+type Tab = 'overview' | 'employees' | 'attendance' | 'salary' | 'advances';
 
 /** Owner / accountant: employee records, daily attendance, monthly payroll and the advance workflow. */
 export default function EmployeesPage() {
   const { t } = useT();
   const { can } = useSession();
-  const [tab, setTab] = useState<Tab>('employees');
+  const [tab, setTab] = useState<Tab>('overview');
   const [locations, setLocations] = useState<LocationOption[]>([]);
   useEffect(() => { api.get('/locations').then((l) => setLocations((l as LocationOption[]).filter((x) => x.type === 'BRANCH'))).catch(() => undefined); }, []);
   if (!can('staff:view')) return <p className="card">{t('noAccess')}</p>;
 
-  const tabs: Array<[Tab, string]> = [['employees', t('tabEmployees')]];
+  const tabs: Array<[Tab, string]> = [['overview', t('tabOverview')], ['employees', t('tabEmployees')]];
   if (can('attendance:view')) tabs.push(['attendance', t('tabAttendance')]);
   if (can('salary:manage')) tabs.push(['salary', t('tabSalary')]);
   if (can('advance:view')) tabs.push(['advances', t('tabAdvances')]);
@@ -37,6 +38,7 @@ export default function EmployeesPage() {
           >{label}</button>
         ))}
       </div>
+      {tab === 'overview' && <EmployeeOverview locations={locations} />}
       {tab === 'employees' && <EmployeeManager locations={locations} />}
       {tab === 'attendance' && <AttendanceRoster locations={locations} />}
       {tab === 'salary' && <SalaryManager locations={locations} />}

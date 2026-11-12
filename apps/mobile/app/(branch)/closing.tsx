@@ -76,6 +76,8 @@ export default function ClosingScreen() {
             <Row label="Card" value={formatINR(screen.sales?.cardSales)} />
             <Row label={`Expenses (${tot.expenseCount})`} value={formatINR(tot.totalExpenses)} />
             <Row label={`Purchases (${tot.purchaseCount})`} value={formatINR(tot.totalPurchases)} />
+            <Row label="· Paid to suppliers" value={formatINR(tot.purchasePaid)} />
+            <Row label="· On credit" value={formatINR(tot.purchaseCredit)} />
             <Row label="Wastage" value={formatINR(tot.totalWastageValue)} />
             <Row label="Expected cash" value={formatINR(cash.expectedClosing, { decimals: false })} />
             <Row label="Actual cash" value={formatINR(cash.actualClosing)} />

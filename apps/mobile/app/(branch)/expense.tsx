@@ -36,15 +36,17 @@ export default function ExpenseScreen() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
+  const [bought, setBought] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     if (!locationId) return;
     try {
-      const [b, rows] = await Promise.all([
+      const [b, rows, buys] = await Promise.all([
         api.get(`/sync/bootstrap?locationId=${locationId}`),
         api.get(`/expenses?locationId=${locationId}&from=${date}&to=${date}&pageSize=100`),
+        api.get<any[]>(`/purchases?locationId=${locationId}&from=${date}&to=${date}&pageSize=50`).catch(() => [] as any[]),
       ]);
-      setBoot(b); setList(rows); setError(null);
+      setBoot(b); setList(rows); setBought(buys); setError(null);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
   }, [locationId, date]);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
@@ -80,7 +82,8 @@ export default function ExpenseScreen() {
   }
 
   if (!boot) return <Screen onRefresh={load}>{error ? <ErrorBox error={error} /> : <Loading />}</Screen>;
-  const top = boot.categories.filter((c) => !c.parentId);
+  // stock items (milk, tea powder ...) are bought through Stock > Purchase, which carries the payment
+  const top = boot.categories.filter((c) => !c.parentId && !c.requiresSupplier);
   const subs = boot.categories.filter((c) => c.parentId === categoryId);
 
   return (
@@ -117,6 +120,16 @@ export default function ExpenseScreen() {
       </View>
 
       <View style={{ gap: 8 }}>
+        <Card tone="sky" style={{ gap: 6 }}>
+          <H3>Purchases paid to suppliers</H3>
+          <Muted small>Entered in Stock › Purchase; shown here for the day.</Muted>
+          {bought.length === 0 ? <Muted>No purchases today.</Muted> : bought.map((p) => (
+            <View key={p.id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+              <View style={{ flex: 1 }}><Text style={{ color: th.ink, fontWeight: '600' }}>{p.supplierName ?? p.supplierCode}</Text><Text style={{ color: th.muted, fontSize: 12 }}>{p.code} · {String(p.paymentMode).replace('_', ' ')}</Text></View>
+              <View style={{ alignItems: 'flex-end' }}><Text style={{ color: th.ink, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatINR(p.paidAmount)}</Text><Text style={{ color: th.muted, fontSize: 12 }}>{dec(p.creditAmount).greaterThan(0) ? `On credit ${formatINR(p.creditAmount)}` : 'Paid in full'}</Text></View>
+            </View>
+          ))}
+        </Card>
         <H3>Today's expenses</H3>
         {list.length === 0 && <Muted>Nothing recorded yet.</Muted>}
         {list.map((e) => (

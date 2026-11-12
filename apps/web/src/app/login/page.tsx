@@ -163,7 +163,7 @@ export default function LoginPage() {
             <form onSubmit={onPassword} className="card space-y-4 p-5">
               <div className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 text-sm">
                 <span className="truncate font-semibold tabular-nums">{id}</span>
-                <button type="button" className="shrink-0 font-semibold text-brand" onClick={back}>{t('changeNumber')}</button>
+                <button type="button" className="shrink-0 rounded-full px-3 py-1 text-sm font-semibold text-brand transition hover:bg-brand-light" onClick={back}>{t('changeNumber')}</button>
               </div>
               <div>
                 <label htmlFor="password" className="label">{t('password')}{method === 'PASSWORD' ? ` · ${t('superAdminHint')}` : ''}</label>
@@ -197,7 +197,7 @@ export default function LoginPage() {
               <ErrorBox error={error} />
               <button className="btn-primary w-full" disabled={busy || otp.length !== 6}>{busy ? t('loading') : t('verifyOtp')}</button>
               <div className="flex items-center justify-between text-sm">
-                <button type="button" className="font-semibold text-slate-600 hover:underline" onClick={back}>← {t('changeNumber')}</button>
+                <button type="button" className="-ml-3 flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100" onClick={back}><Icon name="chevronLeft" size={16} />{t('changeNumber')}</button>
                 <button type="button" className="font-semibold text-brand disabled:text-slate-400" disabled={busy || wait > 0} onClick={() => void resend()}>
                   {wait > 0 ? `${t('resendIn')} ${wait}s` : t('resendOtp')}
                 </button>

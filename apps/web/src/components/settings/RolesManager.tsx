@@ -4,7 +4,7 @@ import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
-import { Overlay, ActiveChip, ErrorBox, Skeleton, TextField } from '../ui';
+import { Overlay, ActiveChip, ErrorBox, Sheet, Skeleton, TextField } from '../ui';
 
 interface RoleRow { id: string; code: string; name: string; scopeMode: string; isSystem: boolean; status: string; userCount: number; permissions: string[] }
 interface Perm { code: string; module: string; description: string | null }
@@ -17,6 +17,7 @@ const bucketName = (m: string) => m.replace(/^./, (c) => c.toUpperCase());
 export function RolesManager() {
   const { t } = useT();
   const [roles, setRoles] = useState<RoleRow[] | null>(null);
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [perms, setPerms] = useState<Perm[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -99,12 +100,30 @@ export function RolesManager() {
                   onClick={() => toggleActive(r)}>
                   {r.status === 'ACTIVE' ? t('inactive') : t('active')}
                 </button>
+                {r.code !== 'ADMIN' && r.code !== 'SUPER_ADMIN' && <button className="btn-secondary min-h-[36px] px-3 text-sm" onClick={() => { setFormError(null); setRenaming({ id: r.id, name: r.name }); }}>{t('renameRole')}</button>}
                 <button className="btn-secondary min-h-[36px] px-3 text-sm" onClick={() => open(r)}>{t('permissionsLabel')}</button>
               </div>
             </div>
           </li>
         ))}
       </ul>
+
+      <Sheet open={!!renaming} onClose={() => setRenaming(null)} title={t('renameRole')}>
+        {renaming && (
+          <div className="space-y-3">
+            <TextField id="rrn" label={t('roleNameLabelShort')} value={renaming.name} onChange={(e) => setRenaming({ ...renaming, name: e.target.value })} maxLength={60} />
+            <ErrorBox error={formError} />
+            <div className="flex justify-end gap-2">
+              <button className="btn-secondary" onClick={() => setRenaming(null)}>{t('cancel')}</button>
+              <button className="btn-primary" disabled={busy || !renaming.name.trim()} onClick={async () => {
+                setBusy(true); setFormError(null);
+                try { await api.patch(`/roles/${renaming.id}`, { name: renaming.name.trim() }); setRenaming(null); await load(); }
+                catch (e) { setFormError(e instanceof ApiError ? e.message : 'Could not save'); } finally { setBusy(false); }
+              }}>{t('save')}</button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       {openRole && (
         <Overlay>

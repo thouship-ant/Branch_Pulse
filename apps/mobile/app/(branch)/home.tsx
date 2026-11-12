@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
+import { BackdateRequests } from '@/components/BackdateRequests';
 import { Banner, Card, Chip, ErrorBox, HeroCard, LinkCard, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime, todayIST } from '@/lib/dates';
@@ -54,6 +55,7 @@ export default function BranchHome() {
 
   return (
     <Screen hero onRefresh={load}>
+      <BackdateRequests locationId={locationId} />
       <HeroCard
         icon="check-square" label={`Today · ${prettyDate(date)}`} value={`${stepsDone}/${stepsTotal}`} sub="steps done"
         columns={[

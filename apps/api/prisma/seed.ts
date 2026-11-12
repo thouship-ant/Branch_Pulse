@@ -40,7 +40,7 @@ const TA: Record<string, string> = {
   Repairs: 'பழுதுபார்ப்பு', Cleaning: 'சுத்தம்', 'Cooking oil': 'சமையல் எண்ணெய்', Packaging: 'பேக்கிங்', Miscellaneous: 'இதர',
   'Coffee powder': 'காபித் தூள்', Ginger: 'இஞ்சி', Cardamom: 'ஏலக்காய்', 'Paper cup 150 ml': 'காகிதக் குவளை 150 மி.லி',
   Glass: 'கண்ணாடி டம்ளர்', 'Water bottle 1 L': 'தண்ணீர் பாட்டில் 1 லி',
-  Snacks: 'சிற்றுண்டிகள்', 'Packaging material': 'பேக்கிங் பொருட்கள்', 'Other raw materials': 'மற்ற மூலப்பொருட்கள்',
+  Snacks: 'சிற்றுண்டிகள்', Groceries: 'மளிகைப் பொருட்கள்', Vegetables: 'காய்கறிகள்', 'Packaging material': 'பேக்கிங் பொருட்கள்', 'Other raw materials': 'மற்ற மூலப்பொருட்கள்',
 };
 
 const LOCATIONS = [
@@ -70,6 +70,8 @@ const ITEMS: Array<[string, string, string, string, string, string, boolean, str
   ['ITM011', 'Snacks', 'SNACKS', 'PCS', '8.00', 'PCS', false, '40'],
   ['ITM012', 'Packaging material', 'PACKAGING', 'PCS', '3.00', 'PCS', false, '100'],
   ['ITM013', 'Other raw materials', 'RAW_MATERIAL', 'G', '0.10', 'KG', false, '1000'],
+  ['ITM014', 'Groceries', 'GROCERIES', 'G', '0.06', 'KG', false, '5000'],
+  ['ITM015', 'Vegetables', 'VEGETABLES', 'G', '0.04', 'KG', false, '5000'],
 ];
 
 const SUPPLIERS: Array<[string, string, number]> = [

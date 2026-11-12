@@ -45,6 +45,8 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
   const [mode, setMode] = useState<Mode>('CASH');
   const [paid, setPaid] = useState('');
   const [paidTouched, setPaidTouched] = useState(false);
+  // how much of the bill is paid to the supplier now: all of it, part of it, or none (credit)
+  const [settle, setSettle] = useState<'FULL' | 'PART' | 'NONE'>('FULL');
   const [due, setDue] = useState('');
   const [remarks, setRemarks] = useState('');
   const [photos, setPhotos] = useState<Array<{ blob: Blob; name: string; url: string }>>([]);
@@ -114,6 +116,7 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
     : !supplierId ? t('chooseSupplier')
     : validLines.length === 0 || validLines.length !== lines.filter((l) => l.itemId || l.qty || l.rate).length ? t('chooseItem')
     : calc.total.lessThanOrEqualTo(0) ? t('purchaseTotal')
+    : settle === 'PART' && (calc.effectivePaid.lessThanOrEqualTo(0) || calc.effectivePaid.greaterThanOrEqualTo(calc.total)) ? t('partMustBeLess')
     : mode !== 'CREDIT' && (calc.effectivePaid.lessThanOrEqualTo(0) || calc.effectivePaid.greaterThan(calc.total)) ? t('paidNow')
     : calc.credit.greaterThan(0) && !due ? t('dueDate')
     : null;
@@ -223,10 +226,17 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
         <span>{t('purchaseTotal')}</span><span className="text-lg tabular-nums">{formatINR(calc.total)}</span>
       </div>
 
-      <Chips label={t('paymentMode')} value={mode} onChange={(m) => { setMode(m); setPaidTouched(false); setPaid(''); }} options={MODES.map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
-      {mode !== 'CREDIT' && (
+      <Chips
+        label={t('payStatusLabel')} value={settle}
+        onChange={(v) => { setSettle(v); setPaid(''); setPaidTouched(v === 'PART'); setMode(v === 'NONE' ? 'CREDIT' : mode === 'CREDIT' ? 'CASH' : mode); }}
+        options={[{ value: 'FULL', label: t('payFull') }, { value: 'PART', label: t('payPart') }, { value: 'NONE', label: t('payCredit') }]}
+      />
+      {settle !== 'NONE' && (
+        <Chips label={t('payBy')} value={mode} onChange={(m) => setMode(m)} options={MODES.filter((m) => m !== 'CREDIT').map((m) => ({ value: m, label: t(MODE_KEY[m]) }))} />
+      )}
+      {settle === 'PART' && (
         <div>
-          <label htmlFor="pp" className="label">{t('paidNow')}</label>
+          <label htmlFor="pp" className="label">{t('paidSoFar')} *</label>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
             {/* pre-filled with the total (a full payment); selecting it on focus means typing a smaller amount replaces it */}

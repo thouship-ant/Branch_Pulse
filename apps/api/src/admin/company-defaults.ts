@@ -19,7 +19,7 @@ export const PERMISSIONS: Record<string, string[]> = {
   count: ['view', 'enter', 'submit', 'approve'], wastage: ['view', 'create', 'approve'],
   recipe: ['view', 'manage'], staff: ['view', 'manage'], attendance: ['view', 'mark'],
   salary: ['manage', 'approve', 'pay'], advance: ['view', 'request', 'manager_approve', 'approve', 'pay'],
-  dashboard: ['view'], alert: ['view', 'manage'], pl: ['view'], report: ['view', 'export'], audit: ['view'],
+  order: ['view', 'manage'], dashboard: ['view'], alert: ['view', 'manage'], pl: ['view'], report: ['view', 'export'], audit: ['view'],
 };
 export const ALL_PERMS = Object.entries(PERMISSIONS).flatMap(([m, acts]) => acts.map((a) => `${m}:${a}`));
 /** Every permission a company role can hold (the company module belongs to the Super Admin alone). */
@@ -37,7 +37,7 @@ export const ROLE_TEMPLATES: Array<{ code: string; name: string; scope: 'ALL' | 
       'supplier:view', 'supplier:pay', 'stock:view', 'transfer:view', 'count:view', 'wastage:view',
       'recipe:view', 'staff:view', 'attendance:view', 'salary:manage', 'salary:approve', 'salary:pay',
       'advance:view', 'advance:approve', 'advance:pay', 'dashboard:view', 'alert:view', 'pl:view',
-      'report:view', 'report:export', 'audit:view',
+      'report:view', 'report:export', 'audit:view', 'order:view', 'order:manage',
     ],
   },
   {
@@ -47,23 +47,19 @@ export const ROLE_TEMPLATES: Array<{ code: string; name: string; scope: 'ALL' | 
       'supplier:view', 'supplier:manage', 'item:manage', 'stock:view',
       'transfer:view', 'transfer:create', 'transfer:dispatch', 'transfer:approve',
       'count:view', 'count:enter', 'count:approve', 'wastage:view', 'wastage:approve',
-      'recipe:view', 'alert:view', 'report:view', 'report:export', 'audit:view',
+      'recipe:view', 'alert:view', 'report:view', 'report:export', 'audit:view', 'order:view',
     ],
   },
   {
-    code: 'BRANCH_MANAGER', name: 'Branch Manager', scope: 'ASSIGNED',
+    code: 'BRANCH_MANAGER', name: 'Branch Admin', scope: 'ASSIGNED',
     perms: [
       'location:view', 'dashboard:view', 'sales:view', 'sales:enter', 'cash:view', 'cash:enter',
       'closing:view', 'closing:submit', 'expense:view', 'expense:create', 'expense:edit',
       'purchase:view', 'purchase:create', 'supplier:view', 'stock:view', 'transfer:view', 'transfer:receive',
       'count:view', 'count:enter', 'count:submit', 'wastage:view', 'wastage:create',
       'staff:view', 'attendance:view', 'attendance:mark', 'advance:view', 'advance:request', 'advance:manager_approve',
-      'alert:view', 'report:view', 'report:export',
+      'alert:view', 'report:view', 'report:export', 'order:view', 'order:manage',
     ],
-  },
-  {
-    code: 'STAFF', name: 'Staff', scope: 'ASSIGNED',
-    perms: ['stock:view', 'count:enter', 'wastage:create', 'attendance:mark', 'advance:view', 'advance:request'],
   },
 ];
 
@@ -97,8 +93,8 @@ export const CATEGORY_TA: Record<string, string> = {
 
 // category -> [sub-category, Tamil name]
 export const SUB_CATEGORIES: Record<string, Array<[string, string]>> = {
-  Milk: [['Cow milk', 'பசும்பால்'], ['Buffalo milk', 'எருமைப்பால்']],
-  Salary: [['Monthly salary', 'மாதச் சம்பளம்'], ['Daily wages', 'தினக்கூலி'], ['Overtime', 'கூடுதல் நேரம்']],
+  Milk: [['Cow milk', 'பசும்பால்'], ['Packet milk', 'பாக்கெட் பால்']],
+  Salary: [['Monthly salary', 'மாதச் சம்பளம்'], ['Daily wages', 'தினக்கூலி'], ['Overtime', 'கூடுதல் நேரம்'], ['Allowance', 'படி']],
   Gas: [['Commercial cylinder', 'வணிக சிலிண்டர்'], ['Cylinder delivery', 'சிலிண்டர் விநியோகம்']],
   Electricity: [['Shop meter bill', 'கடை மின் கட்டணம்'], ['Generator fuel', 'ஜெனரேட்டர் எரிபொருள்']],
   Transport: [['Fuel', 'எரிபொருள்'], ['Delivery charges', 'விநியோகக் கட்டணம்'], ['Vehicle hire', 'வாகன வாடகை']],

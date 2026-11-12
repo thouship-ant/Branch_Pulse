@@ -205,7 +205,7 @@ export class RecipesService {
   // ------------------------------------------------------------ reads (recipe:view)
   async list(ctx: ReqCtx, q: ListRecipesQuery) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
-      const recipes = await tx.recipe.findMany({ where: q.includeInactive === 'true' ? {} : { status: 'ACTIVE' }, orderBy: { code: 'asc' } });
+      const recipes = await tx.recipe.findMany({ where: q.includeInactive === 'true' ? {} : { status: 'ACTIVE' }, orderBy: { code: 'asc' }, include: { items: true } }); // items: the edit form opens straight from a list row
       return Promise.all(recipes.map(async (r) => {
         const { breakdown, totalCost, costPerUnit, marginPct } = await this.costOf(tx, r.id);
         return { ...r, ingredientCount: breakdown.length, totalCost, costPerUnit, marginPct };

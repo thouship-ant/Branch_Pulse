@@ -36,7 +36,7 @@ export function Account() {
       <Card>
         <View style={{ gap: 2 }}>
           <Text style={{ color: th.ink, fontSize: 18, fontWeight: '700' }}>{me.fullName}</Text>
-          <Muted>{me.roles.map(roleLabel).join(', ')}</Muted>
+          <Muted>{(me.roleNames?.length ? me.roleNames : me.roles.map(roleLabel)).join(', ')}</Muted>
         </View>
         <Row label={me.isSuper ? 'Username' : 'Mobile'} value={me.isSuper ? me.username : me.mobile ?? me.username} />
         {me.company ? <Row label="Company" value={me.company.name} /> : null}

@@ -72,6 +72,9 @@ export class RolesService {
     return this.prisma.runCurrent(async (tx) => {
       const before = await tx.role.findUnique({ where: { id }, include: { permissions: { include: { permission: true } }, _count: { select: { users: true } } } });
       if (!before) throw notFound('Role');
+      if (dto.name?.trim() && dto.name.trim() !== before.name && before.code === 'ADMIN') {
+        throw validation('ADMIN_ROLE_FIXED', 'The Admin role keeps its name', 'name');
+      }
       if (dto.status === 'INACTIVE' && before._count.users > 0) {
         throw validation('ROLE_IN_USE', 'Reassign users off this role before deactivating it', 'status');
       }

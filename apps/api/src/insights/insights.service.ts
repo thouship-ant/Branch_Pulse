@@ -13,7 +13,7 @@ type Dec = Prisma.Decimal;
 
 export const CHART_CODES = [
   'daily-sales-trend', 'branch-sales', 'expense-categories', 'monthly-sales',
-  'monthly-expenses', 'branch-profitability', 'stock-consumption', 'wastage-trend',
+  'monthly-expenses', 'branch-profitability', 'stock-consumption', 'wastage-trend', 'salary-trend',
 ];
 
 /** Inclusive list of YYYY-MM-DD strings. */
@@ -290,7 +290,11 @@ export class InsightsService {
           });
           const totals = new Map<string, Dec>();
           for (const r of g) totals.set(r.item_id, (totals.get(r.item_id) ?? ZERO).plus((r._sum.value ?? ZERO).abs()));
-          const top = [...totals.entries()].sort((a, b) => b[1].comparedTo(a[1])).slice(0, 4).map(([id]) => id);
+          const snacks = await tx.inventoryItem.findMany({ where: { category: 'SNACKS', status: 'ACTIVE' }, select: { id: true }, orderBy: { code: 'asc' }, take: 2 });
+          const snackIds = new Set(snacks.map((x) => x.id));
+          // the four heaviest items, plus Snacks (always shown, even when it is not among the four)
+          const heavy = [...totals.entries()].filter(([id]) => !snackIds.has(id)).sort((a, b) => b[1].comparedTo(a[1])).slice(0, 4).map(([id]) => id);
+          const top = [...heavy, ...snacks.map((x) => x.id)];
           const items = await tx.inventoryItem.findMany({ where: { id: { in: top } } });
           const units = await tx.unit.findMany();
           const dates = dateList(from, to);
@@ -312,6 +316,27 @@ export class InsightsService {
               };
             }),
           };
+        }
+
+        case 'salary-trend': {
+          // Day by day: what was paid as salary / wages / overtime, and what was paid as allowance (a sub-category called "Allowance"
+          // under Salary). Advances are not salary (they sit in the NON_PL bucket) and are left out.
+          const rows = await tx.$queryRaw<Array<{ day: Date; salary: Dec; allowance: Dec }>>`
+            SELECT e.business_date AS day,
+                   SUM(CASE WHEN lower(coalesce(sc.name_en, '')) LIKE '%allowance%' THEN 0 ELSE e.amount END) AS salary,
+                   SUM(CASE WHEN lower(coalesce(sc.name_en, '')) LIKE '%allowance%' THEN e.amount ELSE 0 END) AS allowance
+            FROM expenses e
+            JOIN expense_categories c ON c.id = e.category_id
+            LEFT JOIN expense_categories sc ON sc.id = e.sub_category_id
+            WHERE e.status = 'ACTIVE' AND e.approval_status IN ('SUBMITTED','APPROVED') AND c.pl_bucket = 'SALARY'
+              AND e.location_id = ANY(${ids}::uuid[]) AND e.business_date BETWEEN ${from} AND ${to}
+            GROUP BY e.business_date`;
+          const dates = dateList(from, to);
+          const byDay = new Map(rows.map((r) => [fmtDate(r.day), r]));
+          const salary: Array<Dec | null> = dates.map((d) => (byDay.has(d) ? D(byDay.get(d)!.salary) : null));
+          const allowance: Array<Dec | null> = dates.map((d) => (byDay.has(d) ? D(byDay.get(d)!.allowance) : null));
+          const sumOf = (a: Array<Dec | null>) => a.reduce<Dec>((t, v) => t.plus(v ?? ZERO), ZERO);
+          return { from: fmtDate(from), to: fmtDate(to), dates, salary, allowance, totalSalary: sumOf(salary), totalAllowance: sumOf(allowance) };
         }
 
         case 'wastage-trend': {

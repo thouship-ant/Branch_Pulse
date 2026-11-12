@@ -2,7 +2,9 @@
 
 import { Select } from '@/components/Select';
 import { DateInput } from '@/components/DateNav';
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { BackdateRequests } from '@/components/BackdateRequests';
 import { Chips, ErrorBox, MoneyInput, Skeleton, TextField, Warnings } from '@/components/ui';
 import { api, type Warning } from '@/lib/api';
 import { addDays, prettyDate } from '@/lib/dates';
@@ -26,6 +28,7 @@ export default function ExpensePage() {
   const { ops, waiting } = useOutbox(locationId, date);
   const [boot, setBoot] = useState<Bootstrap | null>(null);
   const [list, setList] = useState<any[]>([]);
+  const [bought, setBought] = useState<any[]>([]);
   const [categoryId, setCategoryId] = useState('');
   const [subId, setSubId] = useState('');
   const [supplierId, setSupplierId] = useState('');
@@ -60,6 +63,7 @@ export default function ExpensePage() {
     try {
       const rows = await api.get(`/expenses?locationId=${locationId}&from=${date}&to=${date}&pageSize=100`);
       setList(rows);
+      setBought(await api.get(`/purchases?locationId=${locationId}&from=${date}&to=${date}&pageSize=50`).then((r: any) => r as any[]).catch(() => []));
     } catch { /* offline: show only queued entries */ }
   }, [locationId, date]);
   useEffect(() => { void loadList(); }, [loadList, waiting]);
@@ -104,7 +108,8 @@ export default function ExpensePage() {
 
   if (!boot) return <Skeleton className="h-96" />;
   const name = (c: Category) => pick(c.nameEn, c.nameTa);
-  const top = boot.categories.filter((c) => !c.parentId);
+  // stock items (milk, tea powder ...) are bought through Stock > Purchase, which carries the payment: not entered here
+  const top = boot.categories.filter((c) => !c.parentId && !c.requiresSupplier);
   const subs = boot.categories.filter((c) => c.parentId === categoryId);
   const backdate = boot.rules.backdateDays ?? 0;
   const queued = ops.filter((o) => o.entityType === 'EXPENSE' && o.state !== 'DONE' && o.businessDate === date);
@@ -115,6 +120,8 @@ export default function ExpensePage() {
         <p className="text-sm text-slate-500">{prettyDate(date)}</p>
         <h2 className="text-xl font-bold">{t('expense')}</h2>
       </div>
+
+      <BackdateRequests locationId={locationId} />
 
       <section className="card space-y-4" aria-label={t('category')}>
         {backdate > 0 && (
@@ -174,6 +181,24 @@ export default function ExpensePage() {
 
       <section aria-label={t('expenses')}>
         <h3 className="mb-2 font-semibold">{t('expenses')}</h3>
+        {/* what was paid to suppliers on the day: entered once, in Stock > Purchase */}
+        <div className="card mb-3 space-y-2 border-sky-200 bg-sky-50/50">
+          <div className="flex items-start justify-between gap-2">
+            <div><p className="font-semibold">{t('purchasesPaid')}</p><p className="text-xs text-slate-500">{t('purchasesPaidNote')}</p></div>
+            <Link href="/b/stock" className="btn-secondary min-h-[36px] px-3 text-sm">{t('addPurchaseLink')}</Link>
+          </div>
+          {bought.length === 0 ? <p className="text-sm text-slate-500">{t('noPurchasesToday')}</p> : (
+            <ul className="divide-y divide-sky-100 text-sm">
+              {bought.map((p) => (
+                <li key={p.id} className="flex items-start justify-between gap-2 py-1.5">
+                  <span className="min-w-0"><b>{p.supplierName ?? p.supplier?.name ?? p.supplierCode}</b><span className="block text-xs text-slate-500">{p.code} · {MODE_KEY[p.paymentMode] ? t(MODE_KEY[p.paymentMode]) : p.paymentMode}</span></span>
+                  <span className="text-right tabular-nums"><b>{formatINR(p.paidAmount)}</b><span className="block text-xs text-slate-500">{dec(p.creditAmount).greaterThan(0) ? `${t('onCreditLabel')} ${formatINR(p.creditAmount)}` : t('payFull')}</span></span>
+                </li>
+              ))}
+              <li className="flex justify-between pt-2 font-semibold"><span>{t('paidToSuppliers')}</span><span className="tabular-nums">{formatINR(bought.reduce((a, p) => a.plus(dec(p.paidAmount)), dec(0)))}</span></li>
+            </ul>
+          )}
+        </div>
         <ul className="space-y-2">
           {queued.map((o) => (
             <li key={o.clientUuid} className="card flex items-center justify-between opacity-80">

@@ -1166,6 +1166,75 @@ model NotificationDelivery {
   @@map("notification_deliveries")
 }
 
+/// Outside-shop orders: business meetings, functions, parties ... with how much has been paid.
+model Order {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  company_id     String?  @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  code           String   @unique @db.VarChar(30)
+  location_id    String   @db.Uuid
+  customer_name  String   @db.VarChar(100)
+  customer_phone String?  @db.VarChar(15)
+  event_type     String   @db.VarChar(20) // BUSINESS_MEETING | FUNCTION | PARTY | CORPORATE | OTHER
+  event_date     DateTime @db.Date
+  event_time     String?  @db.VarChar(5)
+  venue          String?
+  items_summary  String?
+  people_count   Int?
+  amount         Decimal  @db.Decimal(14, 2)
+  paid_amount    Decimal  @default(0) @db.Decimal(14, 2)
+  payment_status String   @default("UNPAID") @db.VarChar(10) // UNPAID | PARTIAL | PAID
+  status         String   @default("PLANNED") @db.VarChar(12) // PLANNED | DELIVERED | CANCELLED
+  notes          String?
+  entered_by     String   @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz
+  created_by     String?  @db.Uuid
+  updated_at     DateTime @updatedAt @db.Timestamptz
+  updated_by     String?  @db.Uuid
+  version        Int      @default(1)
+
+  payments OrderPayment[]
+
+  @@index([location_id, event_date])
+  @@index([payment_status, status])
+  @@map("orders")
+}
+
+model OrderPayment {
+  id         String      @id @default(uuid(7)) @db.Uuid
+  order_id   String      @db.Uuid
+  paid_on    DateTime    @db.Date
+  amount     Decimal     @db.Decimal(14, 2)
+  mode       PaymentMode
+  reference  String?     @db.VarChar(60)
+  created_by String?     @db.Uuid
+  created_at DateTime    @default(now()) @db.Timestamptz
+
+  order Order @relation(fields: [order_id], references: [id])
+
+  @@index([order_id])
+  @@map("order_payments")
+}
+
+/// A request to enter entries for a past day that was not closed on time. An Admin approves it; until then the day stays locked for entry.
+model BackdateRequest {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  company_id    String?   @default(dbgenerated("(NULLIF(current_setting('app.company_id'::text, true), ''::text))::uuid")) @db.Uuid
+  location_id   String    @db.Uuid
+  business_date DateTime  @db.Date
+  requested_by  String    @db.Uuid
+  reason        String
+  status        String    @default("PENDING") @db.VarChar(10) // PENDING | APPROVED | REJECTED
+  decided_by    String?   @db.Uuid
+  decided_at    DateTime? @db.Timestamptz
+  decision_note String?
+  created_at    DateTime  @default(now()) @db.Timestamptz
+  updated_at    DateTime  @updatedAt @db.Timestamptz
+
+  @@index([location_id, business_date])
+  @@index([status])
+  @@map("backdate_requests")
+}
+
 /// A phone that receives push notifications (an Expo push token). Rows are never deleted: a signed-out or dead device goes INACTIVE.
 model PushDevice {
   id           String   @id @default(uuid(7)) @db.Uuid

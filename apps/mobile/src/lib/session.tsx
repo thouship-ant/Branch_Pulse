@@ -6,7 +6,7 @@ export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
 
 export interface Me {
   id: string; username: string; fullName: string; mobile?: string | null; language: string;
-  roles: string[]; permissions: string[]; allLocations: boolean;
+  roles: string[]; roleNames?: string[]; permissions: string[]; allLocations: boolean;
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;

@@ -90,7 +90,7 @@ export class LocationsService {
   /**
    * Make `userId` the manager of a branch or godown (or clear it with null). A manager runs exactly one
    * location, so the user's other assignment is moved, and the previous manager loses access to it.
-   * Branches are run by a Branch Manager; a godown by a Stock / Purchase Manager.
+   * Branches are run by a Branch Admin; a godown by a Stock / Purchase Manager.
    */
   assignManager(ctx: ReqCtx, locationId: string, userId: string | null | undefined) {
     return this.prisma.runScoped(ctx.user, async (tx) => {
@@ -103,7 +103,7 @@ export class LocationsService {
         const user = await tx.user.findUnique({ where: { id: userId }, include: { roles: { include: { role: true } } } });
         if (!user || user.status !== 'ACTIVE') throw notFound('User');
         if (!user.roles.some((r) => r.role.code === requiredRole)) {
-          throw validation('INVALID_MANAGER', `Choose a user with the ${requiredRole === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Stock / Purchase Manager'} role`, 'userId');
+          throw validation('INVALID_MANAGER', `Choose a user with the ${requiredRole === 'BRANCH_MANAGER' ? 'Branch Admin' : 'Stock / Purchase Manager'} role`, 'userId');
         }
         // one location per manager: clear any location they managed before and replace their assignment
         await tx.location.updateMany({ where: { manager_user_id: userId, id: { not: locationId } }, data: { manager_user_id: null } });
@@ -237,7 +237,22 @@ export class LocationsService {
     const users = actorIds.length
       ? await this.prisma.runCurrent((tx) => tx.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, full_name: true } }))
       : [];
-    const data = page.map((r) => ({ ...r, actor_name: users.find((u) => u.id === r.actor_id)?.full_name ?? null }));
+    // "approved_by", "reviewed_by" ... hold a user id: show the person's username instead
+    const BY = /_by$/;
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const byIds = new Set<string>();
+    const scan = (o: unknown) => { if (o && typeof o === 'object') for (const [k, v] of Object.entries(o as Record<string, unknown>)) if (BY.test(k) && typeof v === 'string' && UUID.test(v)) byIds.add(v); };
+    for (const r of page) { scan(r.old_values); scan(r.new_values); }
+    const names = byIds.size
+      ? new Map((await this.prisma.runCurrent((tx) => tx.user.findMany({ where: { id: { in: [...byIds] } }, select: { id: true, username: true } }))).map((u) => [u.id, u.username]))
+      : new Map<string, string>();
+    const swap = (o: unknown) => {
+      if (!o || typeof o !== 'object') return o;
+      const out: Record<string, unknown> = { ...(o as Record<string, unknown>) };
+      for (const [k, v] of Object.entries(out)) if (BY.test(k) && typeof v === 'string' && names.has(v)) out[k] = names.get(v);
+      return out;
+    };
+    const data = page.map((r) => ({ ...r, old_values: swap(r.old_values), new_values: swap(r.new_values), actor_name: users.find((u) => u.id === r.actor_id)?.full_name ?? null }));
     return new Envelope(data, [], { hasMore: rows.length > limit, next: page.length ? String(page[page.length - 1].id) : null });
   }
 }

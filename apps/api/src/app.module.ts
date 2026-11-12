@@ -3,6 +3,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
+import { BackdateModule } from './backdate/backdate.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
@@ -16,6 +17,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { HealthController } from './health.controller';
 import { InsightsModule } from './insights/insights.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { OrdersModule } from './orders/orders.module';
 import { PLModule } from './pl/pl.module';
 import { PushModule } from './push/push.module';
 import { PurchasesModule } from './purchases/purchases.module';
@@ -28,6 +30,8 @@ import { SyncModule } from './sync/sync.module';
     ScheduleModule.forRoot(),
     CommonModule,
     PushModule,
+    OrdersModule,
+    BackdateModule,
     CompanyModule,
     AttachmentsModule,
     AuthModule,

@@ -182,6 +182,32 @@ export class PushService {
     });
   }
 
+  /** A Branch Admin asked to enter a missed day -> the Admins. */
+  backdateRequested(ctx: ReqCtx, r: { id: string; location_id: string; business_date: Date; reason: string }) {
+    const companyId = ctx.user.companyId;
+    if (!companyId) return;
+    this.fire(async () => {
+      const [ids, names] = await Promise.all([this.recipients(companyId, 'closing:reopen', r.location_id, ctx.user.id), this.names(r.location_id)]);
+      await this.sendToUsers(ids, {
+        title: 'Previous-day entry request', body: `${names.location} · ${day(r.business_date)} — ${ctx.user.fullName}: ${r.reason}`,
+        category: 'info', data: { type: 'BACKDATE_REQUEST', requestId: r.id, locationId: r.location_id },
+      });
+    });
+  }
+
+  /** Approved / rejected -> the person who asked. */
+  backdateDecided(ctx: ReqCtx, r: { requested_by: string; location_id: string; business_date: Date; status: string; decision_note?: string | null }) {
+    if (r.requested_by === ctx.user.id) return;
+    this.fire(async () => {
+      const names = await this.names(r.location_id);
+      await this.sendToUsers([r.requested_by], {
+        title: r.status === 'APPROVED' ? 'Previous-day entry approved' : 'Previous-day entry rejected',
+        body: `${names.location} · ${day(r.business_date)}${r.decision_note ? ` — ${r.decision_note}` : r.status === 'APPROVED' ? ' — you can enter it now' : ''}`,
+        category: 'info', data: { type: 'BACKDATE_RESULT', locationId: r.location_id, date: r.business_date.toISOString().slice(0, 10) },
+      });
+    });
+  }
+
   private async names(locationId: string, categoryId?: string) {
     return this.prisma.runScoped(SYSTEM_SCOPE, async (tx) => {
       const [loc, cat] = await Promise.all([

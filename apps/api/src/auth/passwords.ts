@@ -50,7 +50,7 @@ export function generateTempPassword(): string {
   return chars.join('');
 }
 
-const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', ACCOUNTANT: 'Accountant', STOCK_MANAGER: 'Stock Manager', BRANCH_MANAGER: 'Branch Manager', STAFF: 'Staff' };
+const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', ACCOUNTANT: 'Accountant', STOCK_MANAGER: 'Stock Manager', BRANCH_MANAGER: 'Branch Admin', STAFF: 'Staff' };
 
 /** "Anna Nagar Manager (Branch Manager)": what the {user} placeholder of the SMS templates is replaced with. */
 export function userLabel(fullName: string, roleCodes: string[]): string {
