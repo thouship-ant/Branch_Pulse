@@ -3,6 +3,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
+import { DemoDataModule } from './demo/demo-data.module';
 import { BackdateModule } from './backdate/backdate.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { AuthModule } from './auth/auth.module';
@@ -32,6 +33,7 @@ import { SyncModule } from './sync/sync.module';
     PushModule,
     OrdersModule,
     BackdateModule,
+    DemoDataModule,
     CompanyModule,
     AttachmentsModule,
     AuthModule,

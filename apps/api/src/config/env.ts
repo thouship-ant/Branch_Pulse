@@ -30,6 +30,8 @@ export const env = {
     url: process.env.EXPO_PUSH_URL ?? 'https://exp.host/--/api/v2/push/send',
     accessToken: process.env.EXPO_ACCESS_TOKEN || undefined,
   },
+  // ---- demo data: DEMO_DATA_CRON=true fills the demo company with dummy data every day at 17:00 IST (never in production)
+  demo: { enabled: process.env.DEMO_DATA_CRON === 'true', company: process.env.DEMO_DATA_COMPANY || 'CMP000' },
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES ?? 10),
   otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS ?? 5),
   otpResendSeconds: Number(process.env.OTP_RESEND_SECONDS ?? 30),
