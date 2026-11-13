@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Image, Pressable, View } from 'react-native';
 import { Text } from './Text';
 import { api, ApiError, uploadAttachment } from '@/lib/api';
 import { prettyDate, todayIST, uuid } from '@/lib/dates';
@@ -11,7 +12,7 @@ import type { Period } from '@/lib/period';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 import { useBranches } from '@/lib/useLookups';
-import { BarList, Banner, Button, Card, Chip, Chips, ErrorBox, Field, Heading, ListRow, Loading, MoneyField, Muted, SectionTitle, SelectField, Sheet, StatCard } from './ui';
+import { ACCENT, type AccentName, BarList, Banner, Button, Card, Chip, Chips, ErrorBox, Field, Heading, ListRow, Loading, MoneyField, Muted, SectionTitle, SelectField, Sheet, StatCard } from './ui';
 
 const money = (n: number | string | null | undefined) => formatINR(n == null ? null : String(n), { decimals: false });
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CREDIT'] as const;
@@ -181,47 +182,145 @@ export function PurchaseForm({ fixedLocationId, onSaved }: { fixedLocationId?: s
     } catch (e) { setError(e instanceof ApiError ? (Array.isArray(e.details) ? e.details.map((d: any) => d.message).join('; ') : e.message) : 'Could not save'); setBusy(false); }
   }
 
+  const th = useTheme();
+  const lineTotal = (l: Line) => dec(l.qty || '0').mul(dec(l.rate || '0')).toDecimalPlaces(2);
+  const unitCode = (l: Line) => units.find((u) => u.id === l.unitId)?.code ?? '';
+  const PAYS = [
+    { value: 'FULL' as const, label: 'Paid in full', icon: 'check-circle' as const, accent: 'green' as AccentName },
+    { value: 'PART' as const, label: 'Part paid', icon: 'pie-chart' as const, accent: 'amber' as AccentName },
+    { value: 'NONE' as const, label: 'Not paid', icon: 'clock' as const, accent: 'red' as AccentName },
+  ];
+
   return (
-    <>
-      {!fixedLocationId ? <SelectField label="Branch" required value={locationId} onChange={setLocationId} options={branches.map((b) => ({ value: b.id, label: b.name }))} /> : null}
-      <SelectField label="Supplier" required value={supplierId} onChange={setSupplierId} options={suppliers.map((s) => ({ value: s.id, label: s.name }))} />
-      <Field label="Invoice no." value={refNo} onChangeText={setRefNo} maxLength={40} />
+    <View style={{ gap: 18 }}>
+      {/* 1. who and which bill */}
+      <Section icon="truck" accent="purple" title="Supplier & bill" />
+      <View style={{ gap: 12 }}>
+        {!fixedLocationId ? <SelectField label="Branch" required value={locationId} onChange={setLocationId} options={branches.map((b) => ({ value: b.id, label: b.name }))} /> : null}
+        <SelectField label="Supplier" required value={supplierId} onChange={setSupplierId} options={suppliers.map((s) => ({ value: s.id, label: s.name }))} />
+        <Field label="Invoice no." value={refNo} onChangeText={setRefNo} maxLength={40} placeholder="Optional" />
+      </View>
+
+      {/* 2. what was bought */}
+      <Section icon="shopping-bag" accent="blue" title="Items" right={<Text style={{ color: th.muted, fontSize: 13 }}>{valid.length} added</Text>} />
       {lines.map((l, i) => (
-        <Card key={i} style={{ gap: 8, padding: 12 }}>
-          <SelectField label={`Item ${i + 1}`} value={l.itemId} onChange={(v) => set(i, { itemId: v, unitId: unitsFor(v)[0]?.id ?? '' })} options={items.map((it) => ({ value: it.id, label: it.nameEn }))} />
-          {l.itemId ? <Chips value={l.unitId} onChange={(v) => set(i, { unitId: v })} options={unitsFor(l.itemId).map((u: any) => ({ value: u.id, label: u.code }))} /> : null}
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}><Field label="Quantity" value={l.qty} keyboardType="decimal-pad" onChangeText={(v) => set(i, { qty: cleanQty(v) })} /></View>
-            <View style={{ flex: 1 }}><MoneyField label="Rate" value={l.rate} onChange={(v) => set(i, { rate: cleanAmount(v, 4) })} /></View>
+        <View key={i} style={{ borderRadius: 18, borderWidth: 1, borderColor: th.border, backgroundColor: th.surface, overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 12 }}>
+            <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: ACCENT.blue.bg, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: ACCENT.blue.fg, fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
+            </View>
+            <Text style={{ flex: 1, color: th.ink, fontWeight: '700' }}>{items.find((it) => it.id === l.itemId)?.nameEn ?? `Item ${i + 1}`}</Text>
+            {lines.length > 1 ? (
+              <Pressable onPress={() => setLines((ls) => ls.filter((_, idx) => idx !== i))} accessibilityLabel={`Remove item ${i + 1}`} hitSlop={10} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: ACCENT.red.bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Feather name="trash-2" size={17} color={ACCENT.red.fg} />
+              </Pressable>
+            ) : null}
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Muted small>Line total {formatINR(dec(l.qty || '0').mul(dec(l.rate || '0')).toDecimalPlaces(2))}</Muted>
-            {lines.length > 1 ? <Button small variant="secondary" title="Remove" onPress={() => setLines((ls) => ls.filter((_, idx) => idx !== i))} /> : null}
+          <View style={{ padding: 14, gap: 12 }}>
+            <SelectField label="Item" value={l.itemId} onChange={(v) => set(i, { itemId: v, unitId: unitsFor(v)[0]?.id ?? '' })} options={items.map((it) => ({ value: it.id, label: it.nameEn }))} />
+            {l.itemId ? <Chips label="Unit" value={l.unitId} onChange={(v) => set(i, { unitId: v })} options={unitsFor(l.itemId).map((u: any) => ({ value: u.id, label: u.code }))} /> : null}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1 }}><Field label={unitCode(l) ? `Quantity (${unitCode(l)})` : 'Quantity'} value={l.qty} keyboardType="decimal-pad" onChangeText={(v) => set(i, { qty: cleanQty(v) })} placeholder="0" /></View>
+              <View style={{ flex: 1 }}><MoneyField label={unitCode(l) ? `Rate per ${unitCode(l)}` : 'Rate'} value={l.rate} onChange={(v) => set(i, { rate: cleanAmount(v, 4) })} /></View>
+            </View>
           </View>
-        </Card>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: th.brandLight }}>
+            <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>Line total</Text>
+            <Text style={{ color: th.ink, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatINR(lineTotal(l))}</Text>
+          </View>
+        </View>
       ))}
-      <Button small variant="secondary" title="+ Add item" onPress={() => setLines((ls) => [...ls, blank()])} />
-      <View style={{ flexDirection: 'row', gap: 10 }}>
+      <Pressable onPress={() => setLines((ls) => [...ls, blank()])} accessibilityRole="button" style={{ minHeight: 48, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: th.brand, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name="plus" size={18} color={th.brand} />
+        <Text style={{ color: th.brand, fontWeight: '800' }}>Add another item</Text>
+      </Pressable>
+
+      {/* 3. extras and the bill total */}
+      <Section icon="percent" accent="amber" title="Charges & total" />
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1 }}><MoneyField label="Other charges" value={other} onChange={setOther} /></View>
         <View style={{ flex: 1 }}><MoneyField label="Discount" value={discount} onChange={setDiscount} /></View>
       </View>
-      <Card tone="neutral"><Heading title={`Total ${formatINR(total)}`} /></Card>
-      <Chips
-        label="Payment to supplier" value={settle}
-        onChange={(v) => { setSettle(v); setPaid(''); setMode(v === 'NONE' ? 'CREDIT' : mode === 'CREDIT' ? 'CASH' : mode); }}
-        options={[{ value: 'FULL', label: 'Paid in full' }, { value: 'PART', label: 'Part paid' }, { value: 'NONE', label: 'Not paid' }]}
-      />
+      <View style={{ borderRadius: 18, backgroundColor: th.brand, padding: 16, gap: 8 }}>
+        <TotalRow label="Items" value={formatINR(subtotal)} />
+        {other ? <TotalRow label="Other charges" value={`+ ${formatINR(dec(other))}`} /> : null}
+        {discount ? <TotalRow label="Discount" value={`− ${formatINR(dec(discount))}`} /> : null}
+        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.25)' }} />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Total</Text>
+          <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatINR(total)}</Text>
+        </View>
+      </View>
+
+      {/* 4. how it is paid */}
+      <Section icon="credit-card" accent="green" title="Payment to supplier" />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {PAYS.map((o) => {
+          const on = settle === o.value;
+          const c = ACCENT[o.accent];
+          return (
+            <Pressable
+              key={o.value} accessibilityRole="button" accessibilityState={{ selected: on }}
+              onPress={() => { setSettle(o.value); setPaid(''); setMode(o.value === 'NONE' ? 'CREDIT' : mode === 'CREDIT' ? 'CASH' : mode); }}
+              style={{ flex: 1, minHeight: 76, borderRadius: 16, borderWidth: on ? 2 : 1, borderColor: on ? c.fg : th.border, backgroundColor: on ? c.bg : th.surface, alignItems: 'center', justifyContent: 'center', gap: 6, padding: 6 }}
+            >
+              <Feather name={o.icon} size={22} color={on ? c.fg : th.muted} />
+              <Text style={{ color: on ? c.fg : th.ink, fontSize: 13, fontWeight: '800', textAlign: 'center' }}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
       {settle !== 'NONE' ? <Chips label="Paid by" value={mode} onChange={setMode} options={MODES.filter((m) => m !== 'CREDIT').map((m) => ({ value: m, label: MODE_LABEL[m] }))} /> : null}
       {settle === 'PART' ? <MoneyField label="Amount paid" required value={paid} onChange={setPaid} hint="Less than the total; the rest stays on credit" /> : null}
-      {credit.greaterThan(0) ? <Field label={`On credit ${formatINR(credit)} — due date (YYYY-MM-DD)`} required value={due} onChangeText={setDue} placeholder="2026-11-15" /> : null}
-      <Field label="Remarks" value={remarks} onChangeText={setRemarks} multiline />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Button small variant="secondary" icon="camera" title="Invoice photo" onPress={async () => { try { const p = await pickPhoto('camera'); if (p) setPhoto(p); } catch (e) { setError(e instanceof Error ? e.message : 'Photo failed'); } }} />
-        {photo ? <Image source={{ uri: photo.uri }} style={{ width: 48, height: 48, borderRadius: 10 }} /> : null}
+      {credit.greaterThan(0) ? (
+        <View style={{ borderRadius: 16, borderWidth: 1, borderColor: ACCENT.amber.fg, backgroundColor: ACCENT.amber.bg, padding: 14, gap: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: ACCENT.amber.fg, fontWeight: '700' }}>Stays on credit</Text>
+            <Text style={{ color: ACCENT.amber.fg, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatINR(credit)}</Text>
+          </View>
+          <Field label="Due date" required value={due} onChangeText={setDue} placeholder="YYYY-MM-DD, for example 2026-11-15" />
+        </View>
+      ) : null}
+
+      {/* 5. optional notes and the bill photo */}
+      <Section icon="file-text" accent="sky" title="Notes & bill photo" />
+      <Field label="Remarks" value={remarks} onChangeText={setRemarks} multiline placeholder="Optional" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Pressable
+          onPress={async () => { try { const ph = await pickPhoto('camera'); if (ph) setPhoto(ph); } catch (e) { setError(e instanceof Error ? e.message : 'Photo failed'); } }}
+          accessibilityRole="button" style={{ flex: 1, minHeight: 52, borderRadius: 14, borderWidth: 1, borderColor: th.border, backgroundColor: th.surface, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Feather name="camera" size={20} color={th.brand} />
+          <Text style={{ color: th.ink, fontWeight: '700' }}>{photo ? 'Retake bill photo' : 'Take bill photo'}</Text>
+        </Pressable>
+        {photo ? <Image source={{ uri: photo.uri }} style={{ width: 52, height: 52, borderRadius: 12 }} /> : null}
       </View>
+
       <ErrorBox error={error} />
-      <Button title="Save purchase" onPress={save} loading={busy} disabled={!ready} />
-    </>
+      <Button title={`Save purchase · ${formatINR(total)}`} onPress={save} loading={busy} disabled={!ready} />
+    </View>
+  );
+}
+
+/** A section heading: coloured icon tile and title. */
+function Section({ icon, accent, title, right }: { icon: React.ComponentProps<typeof Feather>['name']; accent: AccentName; title: string; right?: React.ReactNode }) {
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
+      <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: ACCENT[accent].bg, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name={icon} size={17} color={ACCENT[accent].fg} />
+      </View>
+      <Text style={{ flex: 1, color: th.ink, fontSize: 17, fontWeight: '800' }}>{title}</Text>
+      {right}
+    </View>
+  );
+}
+function TotalRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{value}</Text>
+    </View>
   );
 }
 

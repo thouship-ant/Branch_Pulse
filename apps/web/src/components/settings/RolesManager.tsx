@@ -87,7 +87,7 @@ export function RolesManager() {
           <li key={r.id} className={`card space-y-2 ${r.status !== 'ACTIVE' ? 'opacity-70' : ''}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="font-semibold">{r.name} <span className="font-normal text-slate-500">· {r.code}</span></p>
+                <p className="font-semibold">{r.name}</p>
                 <p className="text-xs text-slate-500">
                   {r.scopeMode === 'ALL' ? t('scopeAll') : t('scopeAssigned')} · {r.permissions.length} {t('permissionsLabel').toLowerCase()}
                   {r.isSystem && ` · ${t('systemRoleHint')}`} · {r.userCount} {t('roleUsersCount')}

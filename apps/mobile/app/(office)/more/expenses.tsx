@@ -26,8 +26,7 @@ export default function ExpensesScreen() {
   const tabs: Array<{ key: Tab; label: string }> = [{ key: 'overview', label: 'Overview' }, { key: 'ledger', label: 'Ledger' }];
   if (can('settings:manage')) tabs.push({ key: 'categories', label: 'Categories' });
   return (
-    <Screen title="Expenses" headerRight={tab === 'categories' ? undefined : <PeriodPill period={period} today={today} onChange={setPeriod} />}>
-      <SegTabs value={tab} onChange={setTab} tabs={tabs} />
+    <Screen title="Expenses" headerRight={tab === 'categories' ? undefined : <PeriodPill period={period} today={today} onChange={setPeriod} />} top={<SegTabs value={tab} onChange={setTab} tabs={tabs} />}>
       {tab === 'overview' ? <Overview period={period} /> : tab === 'ledger' ? <Ledger period={period} /> : <Categories />}
     </Screen>
   );

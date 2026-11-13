@@ -148,63 +148,77 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
       )}
       {locked && <p role="status" className="rounded-card border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{closingStatus === 'APPROVED' ? '✓ ' : '◔ '}{t(closingStatus === 'APPROVED' ? 'approved' : 'submitted')}</p>}
 
-      {/* 1. workings: Opening + cash sales + other receipts - expenses - withdrawals = expected */}
-      <section className="card space-y-1 text-sm" aria-label={t('expectedCash')}>
-        <Row label={t('openingCash')} value={cash.openingCash} />
-        <Row label={`+ ${t('cash')} ${t('sales')}`} value={cash.cashSales} />
-        {!dec(cash.otherReceipts).isZero() && <Row label={`+ ${t('otherReceipts')}`} value={cash.otherReceipts} />}
-        <Row label={`− ${t('expenses')}`} value={cash.cashExpenses} />
-        {!dec(cash.cashPurchases).isZero() && <Row label={`− ${t('purchases')}`} value={cash.cashPurchases} />}
-        {!dec(cash.otherCashOut).isZero() && <Row label={`− ${t('supplierAdvances')}`} value={cash.otherCashOut} />}
-        {!dec(cash.withdrawals).isZero() && <Row label={`− ${t('withdrawals')}`} value={cash.withdrawals} />}
-        <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold">
-          <span>{t('expectedCash')}</span><span className="tabular-nums">{formatINR(cash.expectedClosing, { decimals: false })}</span>
+      {/* 1. the expected cash up front, then how it is worked out */}
+      <section aria-label={t('expectedCash')} className="space-y-3">
+        <div className="rounded-2xl bg-[#1e2a8a] px-5 py-4 text-white shadow-md shadow-[#1e2a8a]/25">
+          <p className="text-sm font-semibold text-white/80">{t('expectedCash')}</p>
+          <p className="text-4xl font-extrabold tabular-nums">{formatINR(cash.expectedClosing, { decimals: false })}</p>
         </div>
+        <ul className="card divide-y divide-slate-200 !p-0 text-[15px]">
+          {([
+            [t('openingCash'), cash.openingCash, 0, true],
+            [`${t('cash')} ${t('sales')}`, cash.cashSales, 1, true],
+            [t('otherReceipts'), cash.otherReceipts, 1, !dec(cash.otherReceipts).isZero()],
+            [t('expenses'), cash.cashExpenses, -1, true],
+            [t('purchases'), cash.cashPurchases, -1, !dec(cash.cashPurchases).isZero()],
+            [t('supplierAdvances'), cash.otherCashOut, -1, !dec(cash.otherCashOut).isZero()],
+            [t('withdrawals'), cash.withdrawals, -1, !dec(cash.withdrawals).isZero()],
+          ] as Array<[string, any, number, boolean]>).filter((r) => r[3]).map(([label, value, sign]) => (
+            <li key={label} className="flex items-center gap-3 px-4 py-3">
+              <span aria-hidden className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-base font-extrabold ${sign > 0 ? 'bg-[#DCFCE7] text-[#16A34A]' : sign < 0 ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-brand-light text-brand'}`}>{sign > 0 ? '+' : sign < 0 ? '−' : '•'}</span>
+              <span className="flex-1">{label}</span>
+              <span className="font-bold tabular-nums">{formatINR(value)}</span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* 2. movements that feed the workings */}
-      <section className="card space-y-2" aria-label={t('cashMovements')}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">{t('cashMovements')}</h3>
-          <button className="btn-secondary min-h-[40px] px-3 text-sm" disabled={locked} onClick={() => setAdding(true)}>+ {t('addCashMove')}</button>
+      <section className="card space-y-3" aria-label={t('cashMovements')}>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-lg font-bold">{t('cashMovements')}</h3>
+          <button className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-brand-light px-3.5 text-sm font-bold text-brand transition hover:brightness-95 disabled:opacity-50" disabled={locked} onClick={() => setAdding(true)}>+ {t('addCashMove')}</button>
         </div>
         {live.length === 0 ? <p className="text-sm text-slate-500">—</p> : (
-          <ul className="divide-y text-sm">
+          <ul className="space-y-3 text-sm">
             {live.map((m) => (
-              <li key={m.id} className="flex items-center justify-between gap-2 py-2">
-                <div className="min-w-0">
-                  <p className="font-medium">{MOVEMENT_KEY[m.txnType] ? t(MOVEMENT_KEY[m.txnType]) : m.txnType}</p>
+              <li key={m.id} className="flex items-center gap-3">
+                <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl text-lg font-bold ${m.direction < 0 ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#DCFCE7] text-[#16A34A]'}`}>{m.direction < 0 ? '↗' : '↙'}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{MOVEMENT_KEY[m.txnType] ? t(MOVEMENT_KEY[m.txnType]) : m.txnType}</p>
                   {m.description && <p className="truncate text-xs text-slate-500">{m.description}</p>}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`tabular-nums ${m.direction < 0 ? 'text-slate-700' : 'font-semibold text-emerald-800'}`}>{m.direction < 0 ? '−' : '+'} {formatINR(m.amount)}</span>
-                  {!locked && !m.sourceType && MANUAL.includes(m.txnType) && (
-                    <button className="min-h-[36px] rounded-card border border-slate-300 px-2 text-xs hover:bg-slate-100" disabled={busy} onClick={() => cancelMove(m.id)} aria-label={`${t('cancelEntry')}: ${MOVEMENT_KEY[m.txnType] ? t(MOVEMENT_KEY[m.txnType]) : m.txnType}`}>✕</button>
-                  )}
-                </div>
+                <span className={`font-extrabold tabular-nums ${m.direction < 0 ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>{m.direction < 0 ? '−' : '+'} {formatINR(m.amount)}</span>
+                {!locked && !m.sourceType && MANUAL.includes(m.txnType) && (
+                  <button className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-light text-slate-600 transition hover:brightness-95" disabled={busy} onClick={() => cancelMove(m.id)} aria-label={`${t('cancelEntry')}: ${MOVEMENT_KEY[m.txnType] ? t(MOVEMENT_KEY[m.txnType]) : m.txnType}`}>✕</button>
+                )}
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {/* 3. the count */}
-      <section className="card space-y-3" aria-label={t('denominations')}>
-        <h3 className="font-semibold">{t('denominations')}</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {DENOMS.map((d) => (
-            <label key={d} className="block">
-              <span className="label">₹{d}</span>
-              <input
-                className="field text-center text-lg" inputMode="numeric" placeholder="0" disabled={locked}
-                value={counts[d] ?? ''} onChange={(e) => { setOverride(''); setCounts((c) => ({ ...c, [d]: e.target.value.replace(/\D/g, '').slice(0, 5) })); }}
-              />
-            </label>
-          ))}
+      {/* 3. the count: one tile per note or coin, with what it adds up to */}
+      <section className="card space-y-4" aria-label={t('denominations')}>
+        <h3 className="text-lg font-bold">{t('denominations')}</h3>
+        <div className="grid grid-cols-3 gap-2.5">
+          {DENOMS.map((d) => {
+            const n = Number(counts[d] || 0);
+            return (
+              <label key={d} className={`block overflow-hidden rounded-xl border bg-white transition focus-within:ring-2 focus-within:ring-brand/30 ${n ? 'border-brand' : 'border-slate-300'}`}>
+                <span className={`block py-1 text-center text-sm font-extrabold ${n ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 text-slate-800'}`}>₹{d}</span>
+                <input
+                  className="block h-12 w-full border-0 bg-transparent text-center text-xl font-bold outline-none" inputMode="numeric" placeholder="0" disabled={locked}
+                  value={counts[d] ?? ''} onChange={(e) => { setOverride(''); setCounts((c) => ({ ...c, [d]: e.target.value.replace(/\D/g, '').slice(0, 5) })); }}
+                />
+                <span className={`block pb-1.5 text-center text-[11px] font-semibold tabular-nums ${n ? 'text-brand' : 'text-slate-400'}`}>{n ? `= ₹${(n * d).toLocaleString('en-IN')}` : '—'}</span>
+              </label>
+            );
+          })}
         </div>
         <MoneyInput id="typed" label={t('typeTotal')} value={override} onChange={setOverride} disabled={locked} />
-        <div className="flex items-center justify-between rounded-card bg-slate-100 px-3 py-3 font-semibold">
-          <span>{t('actualCash')}</span><span className="text-lg tabular-nums">{hasCount ? formatINR(actual) : '—'}</span>
+        <div className={`flex items-center justify-between rounded-xl border px-4 py-3.5 font-bold ${hasCount ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-slate-100'}`}>
+          <span>{t('actualCash')}</span><span className="text-2xl font-extrabold tabular-nums">{hasCount ? formatINR(actual) : '—'}</span>
         </div>
       </section>
 

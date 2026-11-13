@@ -17,11 +17,12 @@ const SIGNIFICANT_PCT = 5; // the shop-wide default; the server decides per item
  * = expected closing, then the physical count and the difference. A significant difference needs a reason and an explanation
  * and is approved by the Admin.
  */
-export function StockCount({ fixedLocationId }: { fixedLocationId?: string }) {
+export function StockCount({ fixedLocationId, day: outerDay }: { fixedLocationId?: string; day?: ReturnType<typeof useDay> }) {
   const th = useTheme();
   const { can } = useSession();
   const branches = useBranches();
-  const day = useDay();
+  const ownDay = useDay();
+  const day = outerDay ?? ownDay; // a parent that keeps the date picker fixed at the top passes its own
   const [locationId, setLocationId] = useState(fixedLocationId ?? '');
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -113,12 +114,12 @@ export function StockCount({ fixedLocationId }: { fixedLocationId?: string }) {
 
   const totals = data?.totals;
   const shown = rows.filter((r) => !search || `${r.name} ${r.code}`.toLowerCase().includes(search.toLowerCase()));
-  const statusChip = status === 'APPROVED' ? <Chip text="Approved" tone="ok" icon="✓" /> : status === 'SUBMITTED' ? <Chip text="Sent for approval" tone="warn" icon="◔" /> : status === 'REJECTED' ? <Chip text="Rejected" tone="bad" icon="✕" /> : status === 'DRAFT' ? <Chip text="Draft" /> : null;
+  const statusChip = status === 'APPROVED' ? <Chip text="Approved" tone="ok" icon="✓" /> : status === 'SUBMITTED' ? <Chip text="Waiting" tone="warn" icon="◔" /> : status === 'REJECTED' ? <Chip text="Rejected" tone="bad" icon="✕" /> : status === 'DRAFT' ? <Chip text="Draft" /> : null;
 
   return (
     <>
       {!fixedLocationId ? <SelectField label="Branch" value={locationId} onChange={setLocationId} placeholder="Choose a branch…" options={branches.map((b) => ({ value: b.id, label: `${b.code} · ${b.name}` }))} /> : null}
-      <DateStepper label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} />
+      {outerDay ? null : <DateStepper label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} />}
       {waiting.length > 0 ? (
         <Card tone="warn">
           <Text style={{ color: th.warn.text, fontWeight: '700' }}>{waiting.length} count{waiting.length === 1 ? '' : 's'} waiting for your approval</Text>

@@ -18,8 +18,7 @@ export default function InventoryScreen() {
   if (can('count:view')) tabs.push({ key: 'variance', label: 'Variance' });
   if (can('item:manage')) tabs.push({ key: 'items', label: 'Items' });
   return (
-    <Screen title="Inventory">
-      <SegTabs value={tab} onChange={setTab} tabs={tabs} />
+    <Screen title="Inventory" top={<SegTabs value={tab} onChange={setTab} tabs={tabs} />}>
       {tab === 'stock' ? <StockLevels /> : tab === 'count' ? <StockCount /> : tab === 'wastage' ? <WastagePanel /> : tab === 'transfers' ? <TransfersPanel /> : tab === 'variance' ? <StockVariancePanel /> : <ItemsPanel />}
     </Screen>
   );

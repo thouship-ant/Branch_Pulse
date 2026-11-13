@@ -34,7 +34,7 @@ export function WastageForm({ locations, fixedLocationId, onSaved }: { locations
   const [itemId, setItemId] = useState('');
   const [unitId, setUnitId] = useState('');
   const [qty, setQty] = useState('');
-  const [reason, setReason] = useState('SPOILED');
+  const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [photo, setPhoto] = useState<{ blob: Blob; name: string; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -114,7 +114,7 @@ export function WastageForm({ locations, fixedLocationId, onSaved }: { locations
       </div>
       <div className="sticky bottom-0 -mx-5 -mb-5 space-y-2 border-t border-slate-200 bg-surface px-5 pb-5 pt-3">
         <ErrorBox error={error} />
-        <button className="btn-primary w-full" disabled={busy || !locationId || !itemId || !unitId || dec(qty).lessThanOrEqualTo(0)} onClick={save}>{busy ? t('loading') : t('save')}</button>
+        <button className="btn-primary w-full" disabled={busy || !locationId || !itemId || !unitId || !reason || dec(qty).lessThanOrEqualTo(0)} onClick={save}>{busy ? t('loading') : t('save')}</button>
       </div>
     </div>
   );

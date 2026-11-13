@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { ClosingBacklog } from '@/components/ClosingBacklog';
 import { DateNav } from '@/components/DateNav';
 import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -15,6 +16,7 @@ export default function ClosingBoard() {
   const [date, setDate, ready] = useDateParam();
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'backlog' | 'day'>('backlog');
 
   const load = useCallback(async () => {
     try { setRows(await api.get(`/closings?date=${date}`)); setError(null); } catch (e: any) { setError(e.message); }
@@ -25,10 +27,15 @@ export default function ClosingBoard() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 className="text-2xl font-bold">{t('closings')}</h2>
-        <DateNav id="d" date={date} onChange={setDate} />
+        {view === 'day' && <DateNav id="d" date={date} onChange={setDate} />}
       </div>
+      <div role="tablist">
+        <button role="tab" aria-selected={view === 'backlog'} onClick={() => setView('backlog')}>{t('closeBacklogTab')}</button>
+        <button role="tab" aria-selected={view === 'day'} onClick={() => setView('day')}>{t('closeByDayTab')}</button>
+      </div>
+      {view === 'backlog' && <ClosingBacklog />}
       <ErrorBox error={error} />
-      {!rows ? <Skeleton className="h-64" /> : (
+      {view === 'day' && (!rows ? <Skeleton className="h-64" /> : (
         <ul className="grid gap-3 md:grid-cols-2">
           {rows.map((r) => {
             const v = r.cashVariance;
@@ -52,7 +59,7 @@ export default function ClosingBoard() {
             );
           })}
         </ul>
-      )}
+      ))}
     </div>
   );
 }

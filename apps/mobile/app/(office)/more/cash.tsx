@@ -16,18 +16,37 @@ const whole = (v: string | number | null | undefined) => formatINR(v == null ? n
 /** Cash for every branch: the day's reconciliation, and the history of differences. */
 export default function CashScreen() {
   const [tab, setTab] = useState<Tab>('daily');
+  const day = useDay();
+  const [days, setDays] = useState<'7' | '30' | '90'>('30');
+  const [locationId, setLocationId] = useState('');
+  const [branches, setBranches] = useState<any[]>([]);
+  useEffect(() => { api.get('/locations?type=BRANCH').then((b) => setBranches(b as any[])).catch(() => undefined); }, []);
+  // the tabs and the date / filters stay put; only the results below scroll
   return (
-    <Screen title="Cash">
-      <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'daily', label: 'Daily' }, { key: 'report', label: 'Variance report' }]} />
-      {tab === 'daily' ? <Daily /> : <Report />}
+    <Screen
+      title="Cash"
+      top={(
+        <>
+          <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'daily', label: 'Daily' }, { key: 'report', label: 'Variance report' }]} />
+          {tab === 'daily' ? (
+            <DateStepper label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} />
+          ) : (
+            <>
+              <SegTabs value={days} onChange={setDays} tabs={[{ key: '7', label: '7 days' }, { key: '30', label: '30 days' }, { key: '90', label: '90 days' }]} />
+              <SelectField label="Branch" value={locationId} onChange={setLocationId} placeholder="All branches" options={[{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} />
+            </>
+          )}
+        </>
+      )}
+    >
+      {tab === 'daily' ? <Daily day={day} /> : <Report days={days} locationId={locationId} />}
     </Screen>
   );
 }
 
-function Daily() {
+function Daily({ day }: { day: ReturnType<typeof useDay> }) {
   const th = useTheme();
   const router = useRouter();
-  const day = useDay();
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +58,6 @@ function Daily() {
 
   return (
     <>
-      <DateStepper label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} />
       <ErrorBox error={error} />
       {!data ? <Loading /> : (
         <>
@@ -70,17 +88,13 @@ function Daily() {
   );
 }
 
-function Report() {
+function Report({ days, locationId }: { days: '7' | '30' | '90'; locationId: string }) {
   const th = useTheme();
   const router = useRouter();
   const today = todayIST();
-  const [days, setDays] = useState<'7' | '30' | '90'>('30');
-  const [branches, setBranches] = useState<any[]>([]);
-  const [locationId, setLocationId] = useState('');
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { api.get('/locations?type=BRANCH').then((b) => setBranches(b as any[])).catch(() => undefined); }, []);
   const load = useCallback(async () => {
     try {
       const qs = `${locationId ? `locationId=${locationId}&` : ''}from=${addDays(today, -(Number(days) - 1))}&to=${today}`;
@@ -91,8 +105,6 @@ function Report() {
 
   return (
     <>
-      <SegTabs value={days} onChange={setDays} tabs={[{ key: '7', label: '7 days' }, { key: '30', label: '30 days' }, { key: '90', label: '90 days' }]} />
-      <SelectField label="Branch" value={locationId} onChange={setLocationId} placeholder="All branches" options={[{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} />
       <ErrorBox error={error} />
       {!rows ? <Loading /> : rows.length === 0 ? <Empty text="No cash differences in this period." /> : rows.map((r) => {
         const neg = dec(r.variance).isNegative();

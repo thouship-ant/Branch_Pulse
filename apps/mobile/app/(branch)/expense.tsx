@@ -1,9 +1,10 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Image, Pressable, useWindowDimensions, View } from 'react-native';
 import { tAlert } from '@/lib/i18n';
 import { Text } from '@/components/Text';
-import { Banner, Button, Card, Chips, ErrorBox, Field, H3, Heading, Loading, Muted, MoneyField, Screen, Warnings } from '@/components/ui';
+import { ACCENT, type AccentName, Banner, Button, Card, Chips, ErrorBox, Field, H3, Heading, Loading, Muted, MoneyField, Screen, Warnings } from '@/components/ui';
 import { api, ApiError, uploadAttachment, type Warning } from '@/lib/api';
 import { prettyDate, todayIST, uuid } from '@/lib/dates';
 import { MODE_LABEL, STATUS_LABEL } from '@/lib/labels';
@@ -17,6 +18,54 @@ interface Supplier { id: string; code: string; name: string }
 interface Bootstrap { categories: Category[]; suppliers?: Supplier[]; rules: { receiptAbove: number } }
 
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'] as const;
+
+const ACCENTS: AccentName[] = ['blue', 'amber', 'purple', 'green', 'sky', 'rose'];
+const CAT_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
+  salary: 'users', 'staff advance': 'dollar-sign', rent: 'home', electricity: 'zap', transport: 'truck', maintenance: 'tool', repairs: 'settings',
+  cleaning: 'droplet', miscellaneous: 'more-horizontal', water: 'droplet', internet: 'wifi', phone: 'phone', gas: 'zap', packaging: 'package', marketing: 'send',
+};
+const MODE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = { CASH: 'dollar-sign', UPI: 'smartphone', CARD: 'credit-card', BANK_TRANSFER: 'briefcase', CHEQUE: 'file-text' };
+
+/** A section heading: coloured icon tile and title. */
+function Section({ icon, accent, title }: { icon: React.ComponentProps<typeof Feather>['name']; accent: AccentName; title: string }) {
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: ACCENT[accent].bg, alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name={icon} size={16} color={ACCENT[accent].fg} />
+      </View>
+      <Text style={{ color: th.ink, fontSize: 16, fontWeight: '800' }}>{title}</Text>
+    </View>
+  );
+}
+
+/** A grid of icon tiles to pick one option: easier to hit and to scan than a row of small chips. */
+function Tiles<T extends string>({ options, value, onChange, cols = 3 }: { options: Array<{ value: T; label: string; icon: React.ComponentProps<typeof Feather>['name']; accent: AccentName }>; value: T | ''; onChange: (v: T) => void; cols?: number }) {
+  const th = useTheme();
+  const { width } = useWindowDimensions();
+  const gap = 10;
+  const cell = Math.floor((width - 32 - 32 - gap * (cols - 1)) / cols);
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap }}>
+      {options.map((o) => {
+        const on = value === o.value;
+        const c = ACCENT[o.accent];
+        return (
+          <Pressable
+            key={o.value} onPress={() => onChange(o.value)} accessibilityRole="button" accessibilityState={{ selected: on }}
+            style={{ width: cell, minHeight: cols > 3 ? 72 : 84, borderRadius: 16, borderWidth: on ? 2 : 1, borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brandLight : th.surface, alignItems: 'center', justifyContent: 'center', gap: 6, padding: 6 }}
+          >
+            <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name={o.icon} size={18} color={c.fg} />
+            </View>
+            <Text numberOfLines={2} style={{ color: on ? th.brand : th.ink, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{o.label}</Text>
+            {on ? <View style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: 9, backgroundColor: th.brand, alignItems: 'center', justifyContent: 'center' }}><Feather name="check" size={12} color="#fff" /></View> : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function ExpenseScreen() {
   const th = useTheme();
@@ -90,24 +139,40 @@ export default function ExpenseScreen() {
     <Screen onRefresh={load}>
       <Heading onBlue sub={prettyDate(date)} title="Expense" />
 
-      <Card>
-        <Chips label="Category" value={categoryId} onChange={(v) => { setCategoryId(v); setSubId(''); setSupplierId(''); }} options={top.map((c) => ({ value: c.id, label: c.nameEn }))} />
+      <Card style={{ gap: 18 }}>
+        <Section icon="grid" accent="blue" title="Category" />
+        <Tiles
+          value={categoryId} onChange={(v) => { setCategoryId(v); setSubId(''); setSupplierId(''); }}
+          options={top.map((c, i) => ({ value: c.id, label: c.nameEn, icon: CAT_ICON[c.nameEn.toLowerCase()] ?? 'tag', accent: ACCENTS[i % ACCENTS.length] }))}
+        />
         {subs.length > 0 && <Chips label="Sub-category" value={subId} onChange={setSubId} options={subs.map((c) => ({ value: c.id, label: c.nameEn }))} />}
-        <MoneyField label="Amount" value={amount} onChange={setAmount} required />
-        <Chips label="Payment mode" value={mode} onChange={setMode} options={MODES.map((m) => ({ value: m, label: MODE_LABEL[m] }))} />
+
+        <Section icon="dollar-sign" accent="green" title="Amount" />
+        <MoneyField label="How much?" value={amount} onChange={setAmount} required />
+
+        <Section icon="credit-card" accent="purple" title="Paid by" />
+        <Tiles
+          value={mode} onChange={setMode} cols={4}
+          options={MODES.map((m) => ({ value: m, label: MODE_LABEL[m], icon: MODE_ICON[m] ?? 'circle', accent: 'purple' as AccentName }))}
+        />
         {needsSupplier && (boot.suppliers?.length ?? 0) > 0 && (
           <Chips label="Supplier (required for this category)" value={supplierId} onChange={setSupplierId} options={boot.suppliers!.map((s) => ({ value: s.id, label: s.name }))} />
         )}
-        <Field label="Paid to" value={payee} onChangeText={setPayee} />
-        <Field label="Description" value={note} onChangeText={setNote} />
 
-        <View style={{ gap: 8 }}>
-          <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>Receipt photo{needsReceipt ? <Text style={{ color: th.bad.text }}> * required above {formatINR(receiptAbove, { decimals: false })}</Text> : null}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Button small variant="secondary" icon="camera" title="Camera" onPress={() => attach('camera')} />
-            <Button small variant="secondary" icon="image" title="Gallery" onPress={() => attach('library')} />
-            {photo && <Image source={{ uri: photo.uri }} style={{ width: 52, height: 52, borderRadius: 12, borderWidth: 1, borderColor: th.border }} accessibilityLabel="Receipt preview" />}
-          </View>
+        <Section icon="file-text" accent="amber" title="Details" />
+        <Field label="Paid to" value={payee} onChangeText={setPayee} placeholder="Person or shop" />
+        <Field label="Description" value={note} onChangeText={setNote} placeholder="What was it for?" />
+
+        <Section icon="camera" accent="sky" title="Receipt photo" />
+        {needsReceipt ? <Text style={{ color: th.bad.text, fontSize: 13, fontWeight: '700', marginTop: -10 }}>Required above {formatINR(receiptAbove, { decimals: false })}</Text> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {([['camera', 'camera', 'Camera'], ['library', 'image', 'Gallery']] as const).map(([src, icon, label]) => (
+            <Pressable key={src} onPress={() => attach(src)} accessibilityRole="button" style={{ flex: 1, minHeight: 64, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: th.brand, backgroundColor: th.brandLight, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <Feather name={icon} size={22} color={th.brand} />
+              <Text style={{ color: th.brand, fontWeight: '800', fontSize: 13 }}>{label}</Text>
+            </Pressable>
+          ))}
+          {photo && <Image source={{ uri: photo.uri }} style={{ width: 64, height: 64, borderRadius: 14, borderWidth: 1, borderColor: th.border }} accessibilityLabel="Receipt preview" />}
         </View>
       </Card>
 

@@ -17,8 +17,7 @@ export default function PurchasesScreen() {
   const tabs: Array<{ key: Tab; label: string }> = [{ key: 'overview', label: 'Overview' }, { key: 'purchases', label: 'Purchases' }];
   if (can('supplier:view')) tabs.push({ key: 'suppliers', label: 'Suppliers' });
   return (
-    <Screen title="Purchases" headerRight={tab === 'suppliers' ? undefined : <PeriodPill period={period} today={today} onChange={setPeriod} />}>
-      <SegTabs value={tab} onChange={setTab} tabs={tabs} />
+    <Screen title="Purchases" headerRight={tab === 'suppliers' ? undefined : <PeriodPill period={period} today={today} onChange={setPeriod} />} top={<SegTabs value={tab} onChange={setTab} tabs={tabs} />}>
       {tab === 'overview' ? <PurchaseOverview period={period} /> : tab === 'purchases' ? <PurchaseList period={period} /> : <SuppliersPanel />}
     </Screen>
   );

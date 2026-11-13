@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { DashboardOrders } from '@/components/DashboardOrders';
+import { HomeFocus } from '@/components/HomeFocus';
 import { PeriodDropdown } from '@/components/PeriodDropdown';
 import { Icon, type IconName, MdiIcon } from '@/components/Icon';
 import { mdiAccountCashOutline, mdiCartOutline, mdiClipboardAlertOutline, mdiClockOutline, mdiCreditCardOutline, mdiDeleteOutline, mdiPackageVariantClosed, mdiPurseOutline, mdiQrcodeScan, mdiScaleBalance, mdiStorefrontOutline } from '@mdi/js';
 import { ErrorBox, Sheet, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
-import { periodQuery, resolvePeriod, type Period } from '@/lib/period';
+import { periodCustomText, periodQuery, resolvePeriod, type Period } from '@/lib/period';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { EXCEPTION_KEY } from '@/lib/labels';
@@ -122,14 +123,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      {alertCount > 0 && (
-        <button
-          type="button" onClick={() => { setPendingPage(1); setPendingOpen(true); }}
-          className="block w-full overflow-hidden rounded-card border border-red-300 bg-red-50 px-4 py-2 text-left text-sm font-semibold text-red-900"
-        >
-          <span className="anim-marquee">⛔ {ticker}</span>
-        </button>
-      )}
+      <HomeFocus summary={summary} periodLabel={period.id === 'custom' ? periodCustomText(period) : t(({ today: 'today', yesterday: 'pYesterday', week: 'pThisWeek', month: 'pThisMonth', all: 'pAllTime', custom: 'customRange' } as const)[period.id])} />
       <Sheet open={pendingOpen} onClose={() => setPendingOpen(false)} title={`${t('exceptions')} (${alertCount})`}>
         <div className="space-y-4">
           {alertGroups.slice((pendingPage - 1) * PENDING_PAGE_SIZE, pendingPage * PENDING_PAGE_SIZE).map((g) => (
@@ -152,7 +146,7 @@ export default function Dashboard() {
         )}
       </Sheet>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-2xl font-bold">{t('dashboard')}</h2>
+        <h2 className="text-xl font-bold">{t('attAllFigures')}</h2>
         <PeriodDropdown period={period} today={today} onChange={setPeriod} />
       </div>
       <ErrorBox error={error} />
@@ -170,25 +164,25 @@ export default function Dashboard() {
         <Tile icon="trend" tint="blue" label={t('totalSales')} value={formatINR(tl.totalSales, { decimals: false })} sub={change != null ? `${Number(change) >= 0 ? '▲' : '▼'} ${Math.abs(Number(change))}% ${summary?.vsLastWeek?.comparedWith === 'PREVIOUS_PERIOD' ? t('vsPrevPeriod') : t('vsLastWeek')}` : undefined} />
         <Tile icon="card" tint="amber" label={t('expenses')} value={formatINR(tl.totalExpenses, { decimals: false })} />
         <Tile icon="bars" tint="green" label={t('net')} value={formatINR(tl.netOperating, { decimals: false })} />
-        <Tile icon="bag" tint="violet" mdi={mdiCartOutline} label={t('purchases')} value={formatINR(tl.totalPurchases, { decimals: false })} />
+        <Tile icon="bag" tint="purple" mdi={mdiCartOutline} label={t('purchases')} value={formatINR(tl.totalPurchases, { decimals: false })} />
         <Tile icon="wallet" tint="green" mdi={mdiPurseOutline} label={t('cash')} value={formatINR(tl.cash, { decimals: false })} />
         <Tile icon="phone" tint="sky" mdi={mdiQrcodeScan} label={t('upi')} value={formatINR(tl.upi, { decimals: false })} />
         <Tile icon="card" tint="blue" mdi={mdiCreditCardOutline} label={t('card')} value={formatINR(tl.card, { decimals: false })} />
-        <Tile icon="trash" tint="amber" mdi={mdiDeleteOutline} label={t('wastage')} value={formatINR(tl.wastage, { decimals: false })} />
+        <Tile icon="trash" tint="red" mdi={mdiDeleteOutline} label={t('wastage')} value={formatINR(tl.wastage, { decimals: false })} />
         <Tile
           icon="alert" tint="green" mdi={mdiScaleBalance} label={t('cashVariance')} value={formatINR(tl.cashVariance, { decimals: false })}
           sub={tl.hasCashShortage ? `▼ ${t('shortage')}` : dec(tl.cashVariance).isZero() ? `✓ ${t('tallied')}` : undefined}
           tone={tl.hasCashShortage ? 'bad' : 'ok'}
         />
-        <Tile icon="clock" tint="blue" mdi={mdiClockOutline} label={`${t('pending')} ${t('closings')}`} value={`${tl.pendingClosings} / ${tl.branchCount}`} tone={tl.pendingClosings ? 'warn' : 'ok'} />
+        <Tile icon="clock" tint="amber" mdi={mdiClockOutline} label={`${t('pending')} ${t('closings')}`} value={`${tl.pendingClosings} / ${tl.branchCount}`} tone={tl.pendingClosings ? 'warn' : 'ok'} />
         <Tile icon="box" tint="sky" mdi={mdiPackageVariantClosed} label={t('stockValue')} value={formatINR(tl.totalStockValue, { decimals: false })} />
         <Tile
-          icon="alert" tint="amber" mdi={mdiClipboardAlertOutline} label={t('stockVarianceLabel')} value={formatINR(tl.stockVariance, { decimals: false })}
+          icon="alert" tint="rose" mdi={mdiClipboardAlertOutline} label={t('stockVarianceLabel')} value={formatINR(tl.stockVariance, { decimals: false })}
           sub={dec(tl.stockVariance).isNegative() ? `▼ ${t('shortage')}` : dec(tl.stockVariance).isZero() ? undefined : `▲ ${t('excess')}`}
           tone={dec(tl.stockVariance).isNegative() ? 'bad' : undefined}
         />
-        <Tile icon="user" tint="violet" mdi={mdiAccountCashOutline} label={t('salaryPayableLabel')} value={formatINR(tl.salaryPayable, { decimals: false })} />
-        <Tile icon="store" tint="amber" mdi={mdiStorefrontOutline} label={t('rOutstanding')} value={formatINR(tl.supplierOutstanding, { decimals: false })} />
+        <Tile icon="user" tint="purple" mdi={mdiAccountCashOutline} label={t('salaryPayableLabel')} value={formatINR(tl.salaryPayable, { decimals: false })} />
+        <Tile icon="store" tint="blue" mdi={mdiStorefrontOutline} label={t('rOutstanding')} value={formatINR(tl.supplierOutstanding, { decimals: false })} />
       </section>
 
       {/* Band 3: branch table */}
@@ -232,12 +226,13 @@ function Td({ v }: { v: string }) {
 }
 
 const TINT = {
-  blue: 'bg-brand-light text-brand-dark',
-  green: 'bg-emerald-50 text-emerald-800',
-  amber: 'bg-amber-50 text-amber-800',
-  violet: 'bg-violet-50 text-violet-800',
-  red: 'bg-red-50 text-red-800',
-  sky: 'bg-sky-50 text-sky-900',
+  blue: 'bg-[#EFF6FF] text-[#3B82F6]',
+  amber: 'bg-[#FEF3C7] text-[#D97706]',
+  purple: 'bg-[#F3E8FF] text-[#9333EA]',
+  green: 'bg-[#DCFCE7] text-[#16A34A]',
+  sky: 'bg-[#E0F2FE] text-[#0284C7]',
+  red: 'bg-[#FEE2E2] text-[#DC2626]',
+  rose: 'bg-[#FFE4E6] text-[#E11D48]',
 } as const;
 
 /** KPI card: tinted icon chip + label + value, like the reference admin theme. */
@@ -251,7 +246,7 @@ function Tile({
         {mdi ? <MdiIcon path={mdi} size={24} /> : <Icon name={icon} size={22} />}
       </span>
       <div className="min-w-0 max-w-full">
-        <p className="truncate text-sm font-medium text-slate-600">{label}</p>
+        <p className="text-sm font-medium leading-tight text-slate-600">{label}</p>
         <p className="whitespace-nowrap text-[clamp(1.1rem,5.6vw,1.375rem)] font-extrabold leading-tight tracking-tight tabular-nums sm:text-[22px]">{value}</p>
         {sub && <p className="text-xs text-slate-600">{sub}</p>}
       </div>

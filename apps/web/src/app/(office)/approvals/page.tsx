@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { Sheet, Skeleton } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
@@ -30,13 +31,24 @@ function Tick({ checked, onChange, label, partial }: { checked: boolean; onChang
 
 export default function Approvals() {
   const { t, pick } = useT();
-  const { me } = useSession();
+  const { me, can } = useSession();
+  // closings and missed-day requests are decided by the Admin only; others never see those tabs
+  const showClosing = can('closing:approve');
+  const showBackdate = can('closing:reopen');
   const [tab, setTab] = useState<'expenses' | 'closing' | 'backdate'>('expenses');
   const [requests, setRequests] = useState<any[] | null>(null);
   const [deciding, setDeciding] = useState<{ r: any; approve: boolean } | null>(null);
   const [note, setNote] = useState('');
-  const [rows, setRows] = useState<any[] | null>(null);
-  const [closings, setClosings] = useState<any[] | null>(null);
+  const [rowsAll, setRows] = useState<any[] | null>(null);
+  const [closingsAll, setClosings] = useState<any[] | null>(null);
+  // an approval waits 5 seconds so it can be undone: the row disappears at once, the server call follows (UX-06)
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [toast, setToast] = useState<{ id: string; label: string } | null>(null);
+  const timers = useRef(new Map<string, { run: () => Promise<void>; t: ReturnType<typeof setTimeout> }>());
+  const rows = rowsAll ? rowsAll.filter((e) => !hidden.includes(e.id)) : null;
+  const closings = closingsAll ? closingsAll.filter((c) => !hidden.includes(c.closingId)) : null;
+  const params = useSearchParams();
+  useEffect(() => { const k = params.get('tab'); if ((k === 'closing' && showClosing) || (k === 'backdate' && showBackdate) || k === 'expenses') setTab(k); }, [params, showClosing, showBackdate]);
   const [error, setError] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [reason, setReason] = useState('');
@@ -66,19 +78,31 @@ export default function Approvals() {
     return pick(l?.name, l?.nameTa);
   };
 
-  async function approve(id: string) {
-    setBusy(id);
-    try { await api.post(`/expenses/${id}/approve`); await load(); }
-    catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
-    finally { setBusy(null); }
+  /** Approve with a 5-second undo: the row leaves the list now, and the server is told when the time is up (or when you leave the page). */
+  function queueApprove(id: string, label: string, call: () => Promise<unknown>) {
+    setHidden((h) => [...h, id]);
+    setToast({ id, label });
+    const run = async () => {
+      timers.current.delete(id);
+      try { await call(); }
+      catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
+      finally { setHidden((h) => h.filter((x) => x !== id)); await load(); window.dispatchEvent(new Event('bp:attention')); }
+    };
+    const t = setTimeout(() => { setToast((cur) => (cur?.id === id ? null : cur)); void run(); }, 5000);
+    timers.current.set(id, { run, t });
   }
+  function undo() {
+    if (!toast) return;
+    const q = timers.current.get(toast.id);
+    if (q) { clearTimeout(q.t); timers.current.delete(toast.id); }
+    setHidden((h) => h.filter((x) => x !== toast.id));
+    setToast(null);
+  }
+  // leaving the page must not lose an approval that is still counting down
+  useEffect(() => () => { for (const q of timers.current.values()) { clearTimeout(q.t); void q.run(); } }, []);
 
-  async function approveClosing(id: string) {
-    setBusy(id);
-    try { await api.post(`/closings/${id}/approve`, {}); await load(); }
-    catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); }
-    finally { setBusy(null); }
-  }
+  const approve = (id: string) => { const e = rowsAll?.find((x) => x.id === id); if (e) queueApprove(id, `${e.code} · ${formatINR(e.amount)}`, () => api.post(`/expenses/${id}/approve`)); };
+  const approveClosing = (id: string) => { const c = closingsAll?.find((x) => x.closingId === id); if (c) queueApprove(id, `${pick(c.locationName, c.locationNameTa)} · ${prettyDate(String(c.businessDate).slice(0, 10))}`, () => api.post(`/closings/${id}/approve`, {})); };
 
   async function reject() {
     if (!rejecting) return;
@@ -136,7 +160,7 @@ export default function Approvals() {
     </p>
   );
   const rowCls = (on: boolean) =>
-    `card grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-3 !p-3 transition sm:grid-cols-[auto_1fr_auto] sm:gap-x-4 sm:!px-4 ${on ? 'border-brand/60 bg-brand-light/50 ring-2 ring-brand/30' : ''}`;
+    `card grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-3 !p-3 transition sm:grid-cols-[auto_1fr_8.5rem_auto] sm:gap-x-4 sm:!px-4 ${on ? 'border-brand/60 bg-brand-light/50 ring-2 ring-brand/30' : ''}`;
 
   return (
     <div className="space-y-4">
@@ -144,10 +168,10 @@ export default function Approvals() {
         <h2 className="text-2xl font-bold">{t('approvals')}</h2>
         <p className="text-sm text-slate-600">{tab === 'expenses' ? t('expenses') : tab === 'closing' ? t('closings') : t('bdTab')}</p>
       </div>
-      <div role="tablist" className="flex gap-2">
-        {([['expenses', t('expenses'), rows?.length ?? 0], ['closing', t('closings'), closings?.length ?? 0], ['backdate', t('bdTab'), requests?.length ?? 0]] as const).map(([k, label, n]) => (
+      <div role="tablist" className="flex gap-2 tabs-pills">
+        {([['expenses', t('expenses'), rows?.length ?? 0], ['closing', t('closings'), closings?.length ?? 0], ['backdate', t('bdTab'), requests?.length ?? 0]] as const).filter(([k]) => (k === 'closing' ? showClosing : k === 'backdate' ? showBackdate : true)).map(([k, label, n]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
-            {label}{n > 0 ? <span className="ml-2 rounded-full bg-white/25 px-2 py-0.5 text-xs">{n}</span> : null}
+            {label}{n > 0 ? <><span className="ml-2 hidden rounded-full bg-white/25 px-2 py-0.5 text-xs md:inline">{n}</span><span className="md:hidden"> ({n})</span></> : null}
           </button>
         ))}
       </div>
@@ -159,19 +183,15 @@ export default function Approvals() {
       </Sheet>
 
       {ids.length > 0 && (
-        <div className="card sticky top-[68px] z-20 flex flex-wrap items-center gap-x-4 gap-y-2 !p-2 sm:!px-4">
+        <div className="card sticky top-[68px] z-20 flex flex-nowrap items-center gap-x-3 !p-2 sm:!px-4">
           <div className="flex items-center gap-1">
             <Tick checked={allPicked} partial={picked.length > 0 && !allPicked} onChange={() => setPicked(allPicked ? [] : ids)} label={t('selectAll')} />
-            <span className="font-semibold">{t('selectAll')}</span>
+            <span className="whitespace-nowrap font-semibold">{t('selectAll')}</span>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-sm tabular-nums text-slate-700"><b>{picked.length}</b> / {ids.length} {t('nSelected')}</span>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <button className="btn-primary min-h-[42px] gap-1.5 px-4 text-sm" disabled={picked.length === 0 || busy !== null} onClick={() => setBulk('approve')}>
-              <Icon name="tick" size={16} strokeWidth={3} />{allPicked ? t('approveAll') : t('approveSelected')}{picked.length ? ` (${picked.length})` : ''}
-            </button>
-            <button className="btn-danger min-h-[42px] gap-1.5 px-4 text-sm" disabled={picked.length === 0 || busy !== null} onClick={() => { setBulkReason(''); setBulk('reject'); }}>
-              <Icon name="close" size={16} strokeWidth={3} />{allPicked ? t('rejectAll') : t('rejectSelected')}{picked.length ? ` (${picked.length})` : ''}
-            </button>
+          <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-sm tabular-nums text-slate-700"><b>{picked.length}</b> / {ids.length}</span>
+          <div className="ml-auto flex flex-nowrap gap-2">
+            <button type="button" className="inline-flex h-11 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-full bg-emerald-600 px-3 text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={picked.length === 0 || busy !== null} onClick={() => setBulk('approve')} aria-label={allPicked ? t('approveAll') : t('approveSelected')} title={allPicked ? t('approveAll') : t('approveSelected')}><Icon name="thumbsUp" size={22} />{picked.length > 0 && <span className="text-sm font-bold tabular-nums">{picked.length}</span>}</button>
+            <button type="button" className="inline-flex h-11 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-full border-2 border-red-300 bg-red-50 px-3 text-red-700 transition hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={picked.length === 0 || busy !== null} onClick={() => { setBulkReason(''); setBulk('reject'); }} aria-label={allPicked ? t('rejectAll') : t('rejectSelected')} title={allPicked ? t('rejectAll') : t('rejectSelected')}><Icon name="thumbsDown" size={22} />{picked.length > 0 && <span className="text-sm font-bold tabular-nums">{picked.length}</span>}</button>
           </div>
         </div>
       )}
@@ -186,9 +206,9 @@ export default function Approvals() {
                   <p className="text-sm text-slate-600">{r.requestedByName} <span className="text-slate-400">({r.requestedByUsername})</span> · ⏱ {age(r.createdAt)}</p>
                   <p className="text-sm">“{r.reason}”</p>
                 </div>
-                <div className="flex w-full gap-2 sm:w-auto">
-                  <button className="btn-primary min-h-[42px] flex-1 gap-1.5 px-4 text-sm sm:flex-none" disabled={busy !== null} onClick={() => { setNote(''); setDeciding({ r, approve: true }); }}><Icon name="tick" size={16} strokeWidth={3} />{t('approve')}</button>
-                  <button className="btn-danger min-h-[42px] flex-1 gap-1.5 px-4 text-sm sm:flex-none" disabled={busy !== null} onClick={() => { setNote(''); setDeciding({ r, approve: false }); }}><Icon name="close" size={16} strokeWidth={3} />{t('reject')}</button>
+                <div className="flex w-full justify-end gap-3 sm:w-auto">
+                  <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-600 text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy !== null} onClick={() => { setNote(''); setDeciding({ r, approve: true }); }} aria-label={t('approve')} title={t('approve')}><Icon name="thumbsUp" size={22} /></button>
+                  <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-red-300 bg-red-50 text-red-700 transition hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy !== null} onClick={() => { setNote(''); setDeciding({ r, approve: false }); }} aria-label={t('reject')} title={t('reject')}><Icon name="thumbsDown" size={22} /></button>
                 </div>
               </li>
             ))}
@@ -201,23 +221,21 @@ export default function Approvals() {
               const day = String(c.businessDate).slice(0, 10);
               const off = c.cashVariance != null && Number(c.cashVariance) !== 0;
               return (
-                <li key={c.closingId} className={rowCls(picked.includes(c.closingId))}>
+                <li key={c.closingId} className={rowCls(picked.includes(c.closingId)).replace('grid-cols-[auto_1fr]', 'grid-cols-[auto_1fr_auto]')}>
                   <Tick checked={picked.includes(c.closingId)} onChange={() => toggle(c.closingId)} label={t('selectAll')} />
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <div className="min-w-0">
+                  <div className="min-w-0">
                       <p className="truncate text-base font-bold">{pick(c.locationName, c.locationNameTa)}</p>
                       <p className="text-sm text-slate-600">{prettyDate(day)}{c.submittedAt ? <span className="text-slate-400"> · ⏱ {age(c.submittedAt)}</span> : null}</p>
                       {off && <p className="mt-0.5 text-xs font-semibold text-amber-800">{t('difference')} {formatINR(c.cashVariance)}</p>}
                     </div>
-                    <div className="text-right">
+                  <div className="text-right">
                       <p className="text-xs text-slate-500">{t('sales')}</p>
                       <p className="text-lg font-extrabold tabular-nums">{c.totalSales != null ? formatINR(c.totalSales) : '—'}</p>
                     </div>
-                  </div>
-                  <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1">
+                  <div className="col-span-3 flex flex-wrap items-center justify-end gap-3 sm:col-span-1">
                     <Link href={`/closings/${c.locationId}/${day}`} className="btn-secondary flex min-h-[42px] flex-1 items-center justify-center px-4 text-sm sm:flex-none">{t('view')}</Link>
-                    <button className="btn-primary min-h-[42px] flex-1 gap-1.5 px-4 text-sm sm:flex-none" disabled={busy === c.closingId} onClick={() => approveClosing(c.closingId)}><Icon name="tick" size={16} strokeWidth={3} />{t('approve')}</button>
-                    <button className="btn-danger min-h-[42px] flex-1 gap-1.5 px-4 text-sm sm:flex-none" disabled={busy === c.closingId} onClick={() => { setReason(''); setRejecting({ ...c, id: c.closingId, code: `${c.locationCode} ${day}` }); }}><Icon name="close" size={16} strokeWidth={3} />{t('reject')}</button>
+                    <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-600 text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy === c.closingId} onClick={() => approveClosing(c.closingId)} aria-label={t('approve')} title={t('approve')}><Icon name="thumbsUp" size={22} /></button>
+                    <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-red-300 bg-red-50 text-red-700 transition hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy === c.closingId} onClick={() => { setReason(''); setRejecting({ ...c, id: c.closingId, code: `${c.locationCode} ${day}` }); }} aria-label={t('reject')} title={t('reject')}><Icon name="thumbsDown" size={22} /></button>
                   </div>
                 </li>
               );
@@ -227,15 +245,16 @@ export default function Approvals() {
       ) : !rows ? <Skeleton className="h-64" /> : rows.length === 0 ? empty : (
         <ul className="space-y-2.5">
           {rows.map((e) => (
-            <li key={e.id} className={rowCls(picked.includes(e.id))}>
+            <li key={e.id} className={rowCls(picked.includes(e.id)).replace('grid-cols-[auto_1fr]', 'grid-cols-[auto_1fr_auto] items-start sm:items-center')}>
               <Tick checked={picked.includes(e.id)} onChange={() => toggle(e.id)} label={t('selectAll')} />
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <div className="min-w-0 space-y-0.5">
+              <div className="min-w-0 space-y-0.5">
                   <p className="flex flex-wrap items-center gap-2">
                     <span className="truncate text-base font-bold">{pick(e.categoryName, e.categoryNameTa)}</span>
                     <span className="chip border-slate-300 bg-slate-100 !py-0.5 text-xs text-slate-700">{MODE_KEY[e.paymentMode] ? t(MODE_KEY[e.paymentMode]) : e.paymentMode}</span>
                   </p>
                   <p className="text-sm text-slate-600">{branch(e.locationId)} · {prettyDate(e.businessDate)}{e.payeeName ? ` · ${e.payeeName}` : ''}</p>
+                  {e.description && <p className="text-sm font-medium text-slate-800">“{e.description}”</p>}
+                  {e.receiptCount === 0 && Number(e.amount) > 500 && <p className="text-xs font-semibold text-red-700">⚠ {t('noReceiptWarn')}</p>}
                   <p className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
                     <span className="font-mono">{e.code}</span><span>⏱ {age(e.createdAt)}</span>
                     <button
@@ -246,17 +265,23 @@ export default function Approvals() {
                     </button>
                   </p>
                 </div>
-                <p className="shrink-0 text-right text-xl font-extrabold tabular-nums">{formatINR(e.amount)}</p>
+              <div className="flex flex-col items-end gap-2.5 sm:contents"><p className="text-xl font-extrabold tabular-nums sm:text-right">{formatINR(e.amount)}</p>
+              <div className="flex justify-end gap-2 sm:col-span-1 sm:gap-3">
+                <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-600 text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy === e.id} onClick={() => approve(e.id)} aria-label={t('approve')} title={t('approve')}><Icon name="thumbsUp" size={22} /></button>
+                <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-red-300 bg-red-50 text-red-700 transition hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" disabled={busy === e.id} onClick={() => setRejecting(e)} aria-label={t('reject')} title={t('reject')}><Icon name="thumbsDown" size={22} /></button>
               </div>
-              <div className="col-span-2 flex gap-2 sm:col-span-1">
-                <button className="btn-primary min-h-[42px] flex-1 gap-1.5 px-4 text-sm sm:flex-none" disabled={busy === e.id} onClick={() => approve(e.id)}><Icon name="tick" size={16} strokeWidth={3} />{t('approve')}</button>
-                <button className="btn-danger min-h-[42px] flex-1 gap-1.5 px-4 text-sm sm:flex-none" disabled={busy === e.id} onClick={() => setRejecting(e)}><Icon name="close" size={16} strokeWidth={3} />{t('reject')}</button>
               </div>
             </li>
           ))}
         </ul>
       )}
 
+      {toast && (
+        <div role="status" className="anim-fade fixed bottom-20 left-1/2 z-[70] flex w-[min(92vw,420px)] -translate-x-1/2 items-center gap-3 rounded-xl bg-emerald-900 px-4 py-3 text-sm text-white shadow-xl md:bottom-6 md:left-auto md:right-6 md:translate-x-0">
+          <span className="min-w-0 flex-1 truncate">✓ {t('approvedToast')}: {toast.label}</span>
+          <button type="button" className="shrink-0 rounded-md px-2 py-1 font-bold text-amber-200 hover:bg-white/10" onClick={undo}>{t('undoLabel')}</button>
+        </div>
+      )}
       <Sheet open={!!deciding} onClose={() => setDeciding(null)} title={`${deciding?.approve ? t('approve') : t('reject')} · ${deciding ? prettyDate(String(deciding.r.businessDate).slice(0, 10)) : ''}`}>
         <div className="space-y-3">
           <label htmlFor="bdn" className="label">{deciding?.approve ? t('comment') : `${t('reason')} *`}</label>

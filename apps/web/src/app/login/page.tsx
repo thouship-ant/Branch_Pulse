@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Icon } from '@/components/Icon';
 import { LogoMark } from '@/components/Logo';
+import { OtpInput } from '@/components/OtpInput';
 import { ErrorBox, TextField } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -66,7 +67,9 @@ export default function LoginPage() {
       const signedIn = await fn();
       if (!signedIn) setBusy(false);
     } catch (err) {
-      setError(friendly(err));
+      // "wait 30 seconds before another OTP" is not an error to read: the button simply counts down
+      if (err instanceof ApiError && err.code === 'OTP_TOO_SOON') setWait(Number(/(\d+)\s*second/.exec(err.message)?.[1]) || RESEND_SECONDS);
+      else setError(friendly(err));
       setBusy(false);
     }
   }
@@ -144,7 +147,7 @@ export default function LoginPage() {
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight">{step === 'otp' ? t('enterOtp') : t('loginTitle')}</h2>
             <p className="mt-1 text-slate-600">
-              {step === 'otp' ? <>{t('otpSentTo')} <b className="tabular-nums">{isMobile ? `${id.slice(0, 2)}******${id.slice(-2)}` : id}</b></> : t('loginSub')}
+              {step === 'otp' ? <>{t('otpSentTo')} <b className="tabular-nums">{isMobile ? `+91 ${id.slice(0, 2)}******${id.slice(-2)}` : id}</b></> : t('loginSub')}
             </p>
           </div>
 
@@ -152,17 +155,18 @@ export default function LoginPage() {
             <form onSubmit={onIdentify} className="card space-y-4 p-5">
               <TextField
                 id="identifier" label={t('mobileOrUsername')} autoComplete="username" autoCapitalize="none" inputMode="tel" autoFocus
-                value={identifier} onChange={(e) => setIdentifier(e.target.value.replace(/\s/g, ''))} required
+                value={identifier} onChange={(e) => { const v = e.target.value.replace(/\s/g, ''); setIdentifier(/^\d/.test(v) ? v.replace(/\D/g, '').slice(0, 10) : v); }} required
+                prefix={!identifier || /^\d/.test(identifier) ? '+91' : undefined}
               />
               <ErrorBox error={error} />
-              <button className="btn-primary w-full" disabled={busy || !id}>{busy ? t('loading') : t('continueLabel')}</button>
+              <button className="btn-primary w-full" disabled={busy || !id || wait > 0}>{busy ? t('loading') : wait > 0 ? `${t('resendIn')} ${wait}s` : t('continueLabel')}</button>
             </form>
           )}
 
           {step === 'password' && (
             <form onSubmit={onPassword} className="card space-y-4 p-5">
               <div className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 text-sm">
-                <span className="truncate font-semibold tabular-nums">{id}</span>
+                <span className="truncate font-semibold tabular-nums">{isMobile ? `+91 ${id}` : id}</span>
                 <button type="button" className="shrink-0 rounded-full px-3 py-1 text-sm font-semibold text-brand transition hover:bg-brand-light" onClick={back}>{t('changeNumber')}</button>
               </div>
               <div>
@@ -181,18 +185,15 @@ export default function LoginPage() {
                 </div>
               </div>
               <ErrorBox error={error} />
-              <button className="btn-primary w-full" disabled={busy || !password}>{busy ? t('loading') : method === 'PASSWORD' ? t('login') : t('continueLabel')}</button>
+              <button className="btn-primary w-full" disabled={busy || !password || wait > 0}>{busy ? t('loading') : wait > 0 ? `${t('resendIn')} ${wait}s` : method === 'PASSWORD' ? t('login') : t('continueLabel')}</button>
             </form>
           )}
 
           {step === 'otp' && (
             <form onSubmit={onOtp} className="card space-y-4 p-5">
               <div>
-                <label htmlFor="otp" className="label">{t('otpLabel')}</label>
-                <input
-                  ref={otpRef} id="otp" className="field text-center text-2xl font-bold tracking-[0.5em] tabular-nums" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
-                  value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" required
-                />
+                <label className="label mb-2 block">{t('otpLabel')}</label>
+                <OtpInput value={otp} onChange={setOtp} autoFocus />
               </div>
               <ErrorBox error={error} />
               <button className="btn-primary w-full" disabled={busy || otp.length !== 6}>{busy ? t('loading') : t('verifyOtp')}</button>

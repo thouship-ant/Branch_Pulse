@@ -10,13 +10,14 @@ import { useTheme } from '@/lib/theme';
 type FeatherName = React.ComponentProps<typeof Feather>['name'];
 const TABS: Array<{ name: string; title: string; icon: FeatherName }> = [
   { name: 'home', title: 'Today', icon: 'home' },
+  { name: 'stock', title: 'Stock', icon: 'box' },
   { name: 'sales', title: 'Sales', icon: 'trending-up' },
   { name: 'expense', title: 'Expense', icon: 'credit-card' },
-  { name: 'stock', title: 'Stock', icon: 'box' },
   { name: 'closing', title: 'Closing', icon: 'check-square' },
+  { name: 'account', title: 'Account', icon: 'user' },
 ];
 
-/** The branch manager's phone layout: one branch, five tabs. */
+/** The branch manager's phone layout: one branch, six tabs. */
 export default function BranchLayout() {
   const th = useTheme();
   const tabBar = useTabBarOptions();
@@ -52,7 +53,6 @@ export default function BranchLayout() {
       {/* reachable from the Today checklist, not tabs of their own */}
       <Tabs.Screen name="cash" options={{ href: null }} />
       <Tabs.Screen name="staff" options={{ href: null }} />
-      <Tabs.Screen name="account" options={{ href: null }} />
     </Tabs>
     </HeaderProvider>
   );

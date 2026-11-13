@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@/components/Text';
-import { DateStepper, Empty, ErrorBox, ListRow, Loading, Screen, StatusPill } from '@/components/ui';
+import { ClosingBacklog } from '@/components/ClosingBacklog';
+import { DateStepper, Empty, ErrorBox, ListRow, Loading, Screen, SegTabs, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyTime } from '@/lib/dates';
 import { dec, formatINR } from '@/lib/money';
@@ -13,6 +14,7 @@ export default function ClosingsScreen() {
   const th = useTheme();
   const router = useRouter();
   const day = useDay();
+  const [view, setView] = useState<'backlog' | 'day'>('backlog');
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,8 +24,16 @@ export default function ClosingsScreen() {
   useEffect(() => { setRows(null); void load(); }, [load]);
 
   return (
-    <Screen title="Closings" onRefresh={load}>
-      <DateStepper date={day.date} label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} />
+    <Screen
+      title="Closings" onRefresh={load}
+      top={(
+        <>
+          <SegTabs value={view} onChange={setView} tabs={[{ key: 'backlog', label: 'Backlog' }, { key: 'day', label: 'By day' }]} />
+          {view === 'day' ? <DateStepper date={day.date} label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} /> : null}
+        </>
+      )}
+    >
+      {view === 'backlog' ? <ClosingBacklog /> : <>
       <ErrorBox error={error} />
       {!rows ? <Loading /> : rows.length === 0 ? <Empty text="No branches." /> : rows.map((r) => {
         const v = r.cashVariance;
@@ -37,6 +47,7 @@ export default function ClosingsScreen() {
           />
         );
       })}
+      </>}
     </Screen>
   );
 }

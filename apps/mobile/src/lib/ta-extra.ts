@@ -1,15 +1,25 @@
 // Mobile-only Tamil strings (English text -> Tamil). The web app's table is in ta-web.ts; lookups ignore letter case.
 // Tamil strings should be reviewed by a native speaker before go-live.
 export const TA_EXTRA: Record<string, string> = {
+  "How much?": "எவ்வளவு?", "Paid by": "செலுத்திய முறை", "Details": "விவரங்கள்", "Person or shop": "நபர் அல்லது கடை", "What was it for?": "எதற்காக?", "Receipt photo": "ரசீது புகைப்படம்",
+  "Supplier & bill": "சப்ளையர் & பில்", "Charges & total": "கட்டணங்கள் & மொத்தம்", "Notes & bill photo": "குறிப்புகள் & பில் புகைப்படம்", "Add another item": "மற்றொரு பொருளைச் சேர்", "Line total": "வரி மொத்தம்", "Stays on credit": "கடனாக இருக்கும்", "Due date": "செலுத்த வேண்டிய தேதி", "Take bill photo": "பில் புகைப்படம் எடு", "Retake bill photo": "மீண்டும் புகைப்படம் எடு", "Items": "பொருட்கள்",
+  "Backlog": "நிலுவை", "By day": "நாள் வாரியாக", "not closed": "முடிக்கப்படவில்லை", "waiting for you": "உங்களுக்காகக் காத்திருக்கிறது", "BRANCH": "கிளை",
+  "Charts": "வரைபடங்கள்", "Daily sales": "தினசரி விற்பனை", "Branch-wise sales": "கிளை வாரி விற்பனை", "Expense categories": "செலவு வகைகள்", "Monthly sales": "மாதாந்திர விற்பனை", "Monthly expenses": "மாதாந்திர செலவுகள்", "Branch profitability": "கிளை லாபம்", "Daily salary & allowance": "தினசரி சம்பளம் & படி", "Wastage": "வீணானவை", "Stock consumption": "இருப்பு பயன்பாடு", "Last 7 days": "கடந்த 7 நாட்கள்", "Last 30 days": "கடந்த 30 நாட்கள்", "Last 90 days": "கடந்த 90 நாட்கள்", "Tap a bar for the exact amount": "சரியான தொகைக்கு பட்டையைத் தொடவும்", "No data for this period.": "இந்தக் காலத்திற்குத் தரவு இல்லை.", "Orders": "ஆர்டர்கள்", "Upcoming": "வரவிருப்பவை", "Not paid": "செலுத்தவில்லை", "Partly paid": "பகுதி செலுத்தியது", "Paid": "செலுத்தப்பட்டது", "Outstanding": "நிலுவை", "View ›": "காண் ›",
+  "Card": "கார்டு", "Stock value": "இருப்பு மதிப்பு", "Stock variance": "இருப்பு வேறுபாடு", "Salary payable": "செலுத்த வேண்டிய சம்பளம்", "Supplier outstanding": "சப்ளையர் நிலுவை", "Not submitted Closings": "சமர்ப்பிக்காத நாள் முடிவுகள்", "Tallied": "சரியாக உள்ளது", "Shortage": "பற்றாக்குறை", "Excess": "கூடுதல்",
+  "Sales, last 7 days": "விற்பனை, கடந்த 7 நாட்கள்", "Not closed yet, so not counted": "இன்னும் முடிக்கப்படவில்லை, எனவே கணக்கில் இல்லை", "Last 7 days. One line per branch, not one alert per day.": "கடந்த 7 நாட்கள். ஒரு கிளைக்கு ஒரு வரி.", "Open closing backlog": "நாள் முடிவு நிலுவையைத் திற", "Not closed": "முடிக்கப்படவில்லை", "Waiting for you": "உங்களுக்காகக் காத்திருக்கிறது", "Closed": "முடிக்கப்பட்டது",
+  "View": "காண்", "Plan": "திட்டமிடு", "days": "நாட்கள்",
+  "Home": "முகப்பு", "Management P&L": "மேலாண்மை லாப நட்டம்",
+  "Needs your attention": "உங்கள் கவனம் தேவை", "Review ›": "பார் ›", "Not submitted": "சமர்ப்பிக்கவில்லை", "Waiting": "காத்திருக்கிறது",
+  "All selected": "அனைத்தும் தேர்ந்தெடுக்கப்பட்டன", "Tick to select": "தேர்ந்தெடுக்கத் தொடவும்", "Undo": "செயல்தவிர்", "No receipt for an amount above ₹500": "₹500 க்கு மேல் ரசீது இல்லை", "No receipt": "ரசீது இல்லை", "Sales": "விற்பனை",
   "Days not closed on time": "நேரத்தில் முடிக்காத நாட்கள்", "The closing time has passed, so these days are locked. Ask your Admin to open one so you can enter it.": "நாள் முடிவு நேரம் கடந்துவிட்டதால் இந்த நாட்கள் பூட்டப்பட்டுள்ளன. பதிவு செய்ய நிர்வாகியிடம் திறக்கக் கேளுங்கள்.",
   "Request entry": "பதிவுக்குக் கோரு", "Send request": "கோரிக்கை அனுப்பு", "Waiting for approval": "அங்கீகாரத்திற்காகக் காத்திருக்கிறது", "Approved - enter it now": "அங்கீகரிக்கப்பட்டது - இப்போது பதிவு செய்யலாம்", "Why was the day not closed?": "நாள் ஏன் முடிக்கப்படவில்லை?",
   "Date requests": "தேதி கோரிக்கைகள்", "Approvals · Date requests": "அங்கீகாரங்கள் · தேதி கோரிக்கைகள்", "Payment to supplier": "சப்ளையருக்கான கட்டணம்", "Paid in full": "முழுவதும் செலுத்தப்பட்டது", "Part paid": "பகுதி செலுத்தியது", "Amount paid": "செலுத்திய தொகை",
   "Less than the total; the rest stays on credit": "மொத்தத்தை விடக் குறைவாக; மீதி கடனாக இருக்கும்", "Purchases paid to suppliers": "சப்ளையர்களுக்குச் செலுத்திய கொள்முதல்", "No purchases today.": "இன்று கொள்முதல் இல்லை.", "Paid to suppliers": "சப்ளையர்களுக்குச் செலுத்தியது", "On credit": "கடனில்",
-  "Orders": "ஆர்டர்கள்", "Meetings, functions, payments": "கூட்டங்கள், விழாக்கள், கட்டணங்கள்", "Meetings, functions and other outside-shop orders": "கூட்டங்கள், விழாக்கள் மற்றும் கடைக்கு வெளியே ஆர்டர்கள்",
-  "Upcoming": "வரவிருப்பவை", "Delivered": "வழங்கப்பட்டது", "Not paid": "செலுத்தவில்லை", "Partly paid": "பகுதி செலுத்தியது", "Paid": "செலுத்தப்பட்டது", "Order value": "ஆர்டர் மதிப்பு", "Received": "பெற்றது", "Outstanding": "நிலுவை",
+  "Meetings, functions, payments": "கூட்டங்கள், விழாக்கள், கட்டணங்கள்", "Meetings, functions and other outside-shop orders": "கூட்டங்கள், விழாக்கள் மற்றும் கடைக்கு வெளியே ஆர்டர்கள்",
+  "Delivered": "வழங்கப்பட்டது", "Order value": "ஆர்டர் மதிப்பு", "Received": "பெற்றது", 
   "New order": "புதிய ஆர்டர்", "Customer": "வாடிக்கையாளர்", "Business meeting": "வணிகக் கூட்டம்", "Function": "விழா", "Party": "விருந்து", "Corporate": "நிறுவனம்", "Event type": "நிகழ்வு வகை", "Event date": "நிகழ்வு தேதி",
   "Tomorrow": "நாளை", "In 2 days": "2 நாட்களில்", "In a week": "ஒரு வாரத்தில்", "What is ordered": "ஆர்டர் செய்தவை", "Venue / address": "இடம் / முகவரி", "Handled by branch": "கையாளும் கிளை", "Order amount": "ஆர்டர் தொகை",
-  "Advance paid": "முன்பணம்", "Advance paid by": "முன்பணம் செலுத்திய முறை", "Save order": "ஆர்டரைச் சேமி", "Payments": "கட்டணங்கள்", "No payment yet": "இன்னும் கட்டணம் இல்லை", "Add payment": "கட்டணம் சேர்", "Paid by": "செலுத்திய முறை",
+  "Advance paid": "முன்பணம்", "Advance paid by": "முன்பணம் செலுத்திய முறை", "Save order": "ஆர்டரைச் சேமி", "Payments": "கட்டணங்கள்", "No payment yet": "இன்னும் கட்டணம் இல்லை", "Add payment": "கட்டணம் சேர்", 
   "Cancel order": "ஆர்டரை ரத்து செய்", "✓ Mark delivered": "✓ வழங்கப்பட்டது எனக் குறி", "No orders found.": "ஆர்டர்கள் இல்லை.", "Balance": "நிலுவை", "Monthly / daily": "மாதம் / தினக் கூலி", "Monthly payroll": "மாதச் சம்பளச் செலவு",
   "A daily wage counts 26 days": "தினக்கூலி 26 நாட்களாகக் கணக்கிடப்படும்", "By role": "பணிப்பிரிவு வாரியாக", "By branch": "கிளை வாரியாக", "Name, role, code or phone": "பெயர், பணி, குறியீடு அல்லது தொலைபேசி", "No employees found.": "ஊழியர்கள் இல்லை.",
   "Select all": "அனைத்தையும் தேர்ந்தெடு", "Approve all": "அனைத்தையும் அங்கீகரி", "Approve selected": "தேர்ந்தெடுத்தவற்றை அங்கீகரி", "Reject all": "அனைத்தையும் நிராகரி", "Reject selected": "தேர்ந்தெடுத்தவற்றை நிராகரி",
@@ -22,7 +32,7 @@ export const TA_EXTRA: Record<string, string> = {
   "Notifications could not be turned on. Allow them for Branch Pulse in the phone settings.": "அறிவிப்புகளை இயக்க முடியவில்லை. போன் அமைப்புகளில் Branch Pulse க்கு அனுமதி வழங்கவும்.",
   "Could not approve": "அங்கீகரிக்க முடியவில்லை", "Open Approvals": "அங்கீகாரங்களைத் திற", "Expense approved": "செலவு அங்கீகரிக்கப்பட்டது", "Closing approved": "நாள் முடிவு அங்கீகரிக்கப்பட்டது",
   // ---- navigation / tabs / menu
-  "Today": "இன்று", "Sales": "விற்பனை", "Expense": "செலவு", "Cash": "ரொக்கம்", "Closing": "நாள் முடிவு", "Stock": "இருப்பு", "Dashboard": "முகப்புப் பலகை",
+  "Today": "இன்று", "Expense": "செலவு", "Cash": "ரொக்கம்", "Closing": "நாள் முடிவு", "Stock": "இருப்பு", "Dashboard": "முகப்புப் பலகை",
   "Approvals": "அங்கீகாரங்கள்", "More": "மேலும்", "Account": "கணக்கு", "Companies": "நிறுவனங்கள்", "Data Upload": "தரவு பதிவேற்றம்", "Company - Data Upload": "நிறுவனம் - தரவு பதிவேற்றம்",
   "Daily": "தினசரி", "Money": "பணம்", "People": "மக்கள்", "Setup": "அமைப்பு", "Closings": "நாள் முடிவுகள்", "Expenses": "செலவுகள்", "Purchases": "கொள்முதல்",
   "Profit & Loss": "இலாப நஷ்டம்", "Inventory": "இருப்பு மேலாண்மை", "Recipes": "செய்முறைகள்", "Employees": "ஊழியர்கள்", "Branches": "கிளைகள்", "Users": "பயனர்கள்", "Settings": "அமைப்புகள்",
@@ -41,7 +51,7 @@ export const TA_EXTRA: Record<string, string> = {
   "Nothing recorded yet.": "இன்னும் எதுவும் பதிவாகவில்லை.", "Today's expenses": "இன்றைய செலவுகள்", "Language": "மொழி",
 
   // ---- dashboard
-  "Total Sales": "மொத்த விற்பனை", "Net Operating": "நிகர இயக்க லாபம்", "Overview": "மேலோட்டம்", "UPI": "UPI", "Wastage": "வீண்விரயம்", "Cash variance": "ரொக்க வித்தியாசம்",
+  "Total Sales": "மொத்த விற்பனை", "Net Operating": "நிகர இயக்க லாபம்", "Overview": "மேலோட்டம்", "UPI": "UPI", "Cash variance": "ரொக்க வித்தியாசம்",
   "Closings open": "திறந்த நாள் முடிவுகள்", "Needs attention": "கவனம் தேவை", "Closing pending": "நாள் முடிவு நிலுவை", "vs previous period": "முந்தைய காலத்துடன் ஒப்பிடுகையில்", "vs last week": "கடந்த வாரத்துடன் ஒப்பிடுகையில்",
   "No branches yet.": "இன்னும் கிளைகள் இல்லை.", "No branches.": "கிளைகள் இல்லை.", "Cash diff": "ரொக்க வித்தியாசம்", "Net": "நிகரம்", "Select Period": "காலத்தைத் தேர்ந்தெடுக்கவும்", "Custom Range": "தனிப்பயன் காலம்",
   "Yesterday": "நேற்று", "This Week": "இந்த வாரம்", "This Month": "இந்த மாதம்", "All Time": "அனைத்து காலம்", "Apply": "பயன்படுத்து", "Tap the first day": "முதல் நாளைத் தொடவும்", "Previous month": "முந்தைய மாதம்", "Next month": "அடுத்த மாதம்",
@@ -83,7 +93,7 @@ export const TA_EXTRA: Record<string, string> = {
 
   // ---- empty states
   "No advances.": "முன்பணங்கள் இல்லை.", "No cash differences in this period.": "இந்தக் காலத்தில் ரொக்க வித்தியாசங்கள் இல்லை.", "No changes recorded.": "மாற்றங்கள் பதிவாகவில்லை.", "No companies yet. Add the first one.": "இன்னும் நிறுவனங்கள் இல்லை. முதலாவதைச் சேர்க்கவும்.",
-  "No data for this period.": "இந்தக் காலத்திற்கு தரவு இல்லை.", "No employees at this branch.": "இந்தக் கிளையில் ஊழியர்கள் இல்லை.", "No entries.": "பதிவுகள் இல்லை.", "No expenses for these filters.": "இந்த வடிப்பான்களுக்கு செலவுகள் இல்லை.",
+  "No employees at this branch.": "இந்தக் கிளையில் ஊழியர்கள் இல்லை.", "No entries.": "பதிவுகள் இல்லை.", "No expenses for these filters.": "இந்த வடிப்பான்களுக்கு செலவுகள் இல்லை.",
   "No ledger date": "பேரேட்டு தேதி இல்லை", "No purchases for these filters.": "இந்த வடிப்பான்களுக்கு கொள்முதல்கள் இல்லை.", "No recent movements.": "சமீபத்திய நகர்வுகள் இல்லை.", "No salary calculated for this month yet.": "இந்த மாதத்திற்கு இன்னும் சம்பளம் கணக்கிடப்படவில்லை.",
   "No stock records.": "இருப்புப் பதிவுகள் இல்லை.", "No suppliers yet.": "இன்னும் விநியோகஸ்தர்கள் இல்லை.", "No wastage in the last 30 days.": "கடந்த 30 நாட்களில் வீண்விரயம் இல்லை.", "None saved": "எதுவும் சேமிக்கப்படவில்லை", "Not assigned": "நியமிக்கப்படவில்லை",
   "Not marked": "குறிக்கப்படவில்லை", "Not sent": "அனுப்பப்படவில்லை", "Never signed in": "ஒருபோதும் உள்நுழையவில்லை", "Nothing new to import from this file.": "இந்தக் கோப்பிலிருந்து இறக்குமதி செய்ய புதிதாக எதுவுமில்லை.", "Nothing waiting for approval": "அங்கீகாரத்திற்காக எதுவும் காத்திருக்கவில்லை",
@@ -112,7 +122,7 @@ export const TA_EXTRA: Record<string, string> = {
 
   // ---- stock
   "Items counted": "எண்ணிய பொருட்கள்", "Shortages": "பற்றாக்குறைகள்", "Daily count": "தினசரி எண்ணிக்கை", "Counted every day": "தினமும் எண்ணப்படும்", "Low stock only": "குறைந்த இருப்பு மட்டும்", "Used today": "இன்று பயன்படுத்தியது", "Counted": "எண்ணியது",
-  "Opening": "தொடக்கம்", "Shortage": "பற்றாக்குறை", "Excess": "கூடுதல்", "Tallied": "சரியாக உள்ளது", "Low": "குறைவு", "Minimum stock per branch": "கிளைவாரியான குறைந்தபட்ச இருப்பு", "Stock unit": "இருப்பு அலகு", "Bought in (optional)": "வாங்கும் அலகு (விருப்பம்)", "Same as stock unit": "இருப்பு அலகுக்கு சமம்",
+  "Opening": "தொடக்கம்", "Low": "குறைவு", "Minimum stock per branch": "கிளைவாரியான குறைந்தபட்ச இருப்பு", "Stock unit": "இருப்பு அலகு", "Bought in (optional)": "வாங்கும் அலகு (விருப்பம்)", "Same as stock unit": "இருப்பு அலகுக்கு சமம்",
   "Base unit": "அடிப்படை அலகு", "Base unit (blank = this is a base unit)": "அடிப்படை அலகு (காலி = இது அடிப்படை அலகு)", "Factor to base": "அடிப்படைக்கான காரணி", "Perishable": "எளிதில் கெடும்", "Variance alert (%)": "வித்தியாச எச்சரிக்கை (%)", "Variance alert (quantity)": "வித்தியாச எச்சரிக்கை (அளவு)",
   "shop default": "கடை இயல்பு", "Spoiled": "கெட்டுப்போனது", "Expired": "காலாவதியானது", "Burnt": "எரிந்தது", "Damaged": "சேதமடைந்தது", "Excess preparation": "அதிகத் தயாரிப்பு", "Staff consumption": "ஊழியர் பயன்பாடு", "Complimentary": "இலவசம்",
   "Measurement": "அளவீடு", "Spillage": "சிந்தியது", "Unrecorded use": "பதிவு செய்யாத பயன்பாடு", "Unrecorded wastage": "பதிவு செய்யாத வீண்விரயம்", "Supplier short": "விநியோகஸ்தர் குறைவு", "Theft suspected": "திருட்டு சந்தேகம்", "Other": "மற்றவை",
@@ -122,7 +132,7 @@ export const TA_EXTRA: Record<string, string> = {
   // ---- employees
   "Staff payments": "ஊழியர் கொடுப்பனவுகள்", "Job role": "பணி", "Joining date (YYYY-MM-DD)": "சேர்ந்த தேதி (YYYY-MM-DD)", "Overtime hours": "கூடுதல் நேர மணிநேரம்", "Overtime rate per hour": "மணிக்கான கூடுதல் நேர விகிதம்", "Bank details (stored encrypted)": "வங்கி விவரங்கள் (குறியாக்கத்துடன் சேமிக்கப்படும்)",
   "UPI id": "UPI அடையாளம்", "Tea master, Cashier ...": "தேநீர் மாஸ்டர், காசாளர் ...", "Calculate salary for this branch": "இந்தக் கிளைக்கு சம்பளம் கணக்கிடு", "Attendance saved": "வருகை சேமிக்கப்பட்டது", "Present": "வந்தார்", "Absent": "வரவில்லை", "Half day": "அரை நாள்",
-  "Leave": "விடுப்பு", "Week off": "வார விடுப்பு", "Holiday": "விடுமுறை", "Manager approved": "மேலாளர் அங்கீகரித்தார்", "Requested": "கோரப்பட்டது", "Closed": "முடிக்கப்பட்டது", "Request advance": "முன்பணம் கோரு", "Manager approve": "மேலாளர் அங்கீகாரம்", "Final approve": "இறுதி அங்கீகாரம்",
+  "Leave": "விடுப்பு", "Week off": "வார விடுப்பு", "Holiday": "விடுமுறை", "Manager approved": "மேலாளர் அங்கீகரித்தார்", "Requested": "கோரப்பட்டது", "Request advance": "முன்பணம் கோரு", "Manager approve": "மேலாளர் அங்கீகாரம்", "Final approve": "இறுதி அங்கீகாரம்",
   "Monthly recovery (optional)": "மாதாந்திர பிடித்தம் (விருப்பம்)", "Record repayment": "திருப்பிச் செலுத்தலைப் பதிவு செய்", "Monthly salary": "மாத சம்பளம்", "Daily wage": "தினக் கூலி", "Salary type": "சம்பள வகை", "Left": "பணி நீங்கியவர்", "days present": "நாட்கள் வருகை",
 
   // ---- branches / users / settings
@@ -154,7 +164,7 @@ export const TA_EXTRA: Record<string, string> = {
   "and they must change it at the next sign-in. They are signed out everywhere now.": "அடுத்த உள்நுழைவில் அவர்கள் அதை மாற்ற வேண்டும். அவர்கள் இப்போது எல்லா இடங்களிலும் வெளியேற்றப்படுவார்கள்.",
   "Reject": "நிராகரி",
   "Variance": "வித்தியாசம்",
-  "Receipt photo": "ரசீது புகைப்படம்",
+  
   "Actual": "உண்மை",
   "paid": "செலுத்தியது",
   "excess": "கூடுதல்",
@@ -162,7 +172,7 @@ export const TA_EXTRA: Record<string, string> = {
   "expenses": "செலவுகள்",
   "entries": "பதிவுகள்",
   "entry": "பதிவு",
-  "days": "நாட்கள்",
+  
   "avg": "சராசரி",
   "shortage days": "பற்றாக்குறை நாட்கள்",
   "sales days": "விற்பனை நாட்கள்",
@@ -199,7 +209,7 @@ export const TA_EXTRA: Record<string, string> = {
   "OT": "கூடுதல் நேரம்",
   "total value": "மொத்த மதிப்பு",
   "low": "குறைவு",
-  "Items": "பொருட்கள்",
+  
   "items": "பொருட்கள்",
   "counted": "எண்ணியது",
   "Sales days": "விற்பனை நாட்கள்",

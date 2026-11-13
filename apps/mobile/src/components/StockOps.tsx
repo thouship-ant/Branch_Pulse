@@ -43,7 +43,7 @@ export function WastagePanel({ fixedLocationId }: { fixedLocationId?: string }) 
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [why, setWhy] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
-  const [form, setForm] = useState({ itemId: '', unitId: '', qty: '', reason: 'SPOILED', note: '' });
+  const [form, setForm] = useState({ itemId: '', unitId: '', qty: '', reason: '', note: '' });
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [warn, setWarn] = useState<any[]>([]);
@@ -64,7 +64,7 @@ export function WastagePanel({ fixedLocationId }: { fixedLocationId?: string }) 
     try {
       const attachmentKeys = photo ? [await uploadAttachment(photo.uri, photo.name, locationId)] : undefined;
       const res = await api.full.post('/wastage', { locationId, businessDate: todayIST(), itemId: form.itemId, unitId: form.unitId, quantity: dec(form.qty).toString(), reason: form.reason, reasonNote: form.note.trim() || undefined, attachmentKeys, clientUuid: uuid() });
-      setWarn(res.warnings ?? []); setAdding(false); setForm({ itemId: '', unitId: '', qty: '', reason: 'SPOILED', note: '' }); setPhoto(null); await load();
+      setWarn(res.warnings ?? []); setAdding(false); setForm({ itemId: '', unitId: '', qty: '', reason: '', note: '' }); setPhoto(null); await load();
     } catch (e) { setFormError(e instanceof ApiError ? e.message : 'Could not save'); } finally { setBusy(null); }
   }
   async function act(id: string, kind: 'approve' | 'reject' | 'cancel', body?: unknown) {
@@ -135,7 +135,7 @@ export function WastagePanel({ fixedLocationId }: { fixedLocationId?: string }) 
           {photo ? <Image source={{ uri: photo.uri }} style={{ width: 48, height: 48, borderRadius: 10 }} /> : null}
         </View>
         <ErrorBox error={formError} />
-        <Button title="Save" loading={busy === 'new'} disabled={!form.itemId || !form.unitId || !dec(form.qty || '0').greaterThan(0)} onPress={save} />
+        <Button title="Save" loading={busy === 'new'} disabled={!form.itemId || !form.unitId || !form.reason || !dec(form.qty || '0').greaterThan(0)} onPress={save} />
       </Sheet>
       <Sheet open={!!rejecting} onClose={() => setRejecting(null)} title="Reject wastage">
         <Field label="Reason" required value={why} onChangeText={setWhy} multiline />

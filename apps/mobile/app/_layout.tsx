@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AndroidBottomInset } from '@/components/AndroidBottomInset';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { PushProvider } from '@/components/PushProvider';
+import { ToastHost } from '@/lib/toast';
 import { LanguageProvider } from '@/lib/language';
 import { SessionProvider } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
@@ -16,6 +17,7 @@ function Shell() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: th.bg } }} />
       <ChangePasswordModal />
       <PushProvider />
+      <ToastHost />
     </>
   );
 }

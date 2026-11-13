@@ -20,7 +20,7 @@ type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
  * `hero`: the header stays fixed behind the page and the first card (HeroCard) sits over it - scrolling up, the cards
  * slide over the header. Without it the header is a normal bar above the page.
  */
-export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight, title }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode; title?: string }) {
+export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight, title, top }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode; title?: string; top?: ReactNode }) {
   const th = useTheme();
   const header = useHeader();
   const [headerH, setHeaderH] = useState(190);
@@ -39,9 +39,10 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
     <View style={{ flex: 1, backgroundColor: th.bg }}>
       {bar && !overlap ? bar : null}
       {bar && overlap ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>{bar}</View> : null}
+      {top ? <View style={{ paddingHorizontal: 16, paddingTop: overlap ? headerH - 30 : 16, paddingBottom: 4, gap: 12, backgroundColor: overlap ? 'transparent' : th.bg }}>{top}</View> : null}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingTop: overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
+          contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap ? '#fff' : th.brand} progressViewOffset={overlap ? headerH - 60 : 0} /> : undefined}
         >
@@ -79,9 +80,16 @@ export function Card({ children, style, tone }: { children: ReactNode; style?: S
 
 /** Rounded tinted square holding an icon (the coloured tile on every stat card). */
 export type MdiName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-export function IconTile({ icon, mdi, tone = 'brand', size = 48 }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; size?: number }) {
+/** Icon colours of the Daily Meat admin dashboard: a strong glyph on a soft tint of the same colour. */
+export const ACCENT = {
+  blue: { fg: '#3B82F6', bg: '#EFF6FF' }, amber: { fg: '#D97706', bg: '#FEF3C7' }, purple: { fg: '#9333EA', bg: '#F3E8FF' },
+  green: { fg: '#16A34A', bg: '#DCFCE7' }, sky: { fg: '#0284C7', bg: '#E0F2FE' }, red: { fg: '#DC2626', bg: '#FEE2E2' }, rose: { fg: '#E11D48', bg: '#FFE4E6' },
+} as const;
+export type AccentName = keyof typeof ACCENT;
+export function IconTile({ icon, mdi, tone = 'brand', size = 48, accent }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; size?: number; accent?: AccentName }) {
   const th = useTheme();
-  const c = tone === 'brand' ? { bg: th.brandLight, fg: th.brandDark } : { bg: th[tone].bg, fg: th[tone].text };
+  const c = accent && (tone === 'brand' || tone === 'ok' || tone === 'neutral') ? ACCENT[accent]
+    : tone === 'brand' ? { bg: th.brandLight, fg: th.brandDark } : { bg: th[tone].bg, fg: th[tone].text };
   return (
     <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
       {mdi ? <MaterialCommunityIcons name={mdi} size={size * 0.52} color={c.fg} /> : <Feather name={icon} size={size * 0.46} color={c.fg} />}
@@ -90,11 +98,11 @@ export function IconTile({ icon, mdi, tone = 'brand', size = 48 }: { icon: IconN
 }
 
 /** Half-width stat card: icon tile, big number, label (the "Overview" grid). */
-export function StatCard({ icon, mdi, tone = 'brand', value, label, sub, alert }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; value: string; label: string; sub?: string; alert?: boolean }) {
+export function StatCard({ icon, mdi, tone = 'brand', accent, value, label, sub, alert }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; accent?: AccentName; value: string; label: string; sub?: string; alert?: boolean }) {
   const th = useTheme();
   return (
     <View style={[{ width: '47.8%', backgroundColor: th.surface, borderRadius: 20, padding: 16, gap: 10 }, cardLook(th)]}>
-      <IconTile icon={icon} mdi={mdi} tone={tone} />
+      <IconTile icon={icon} mdi={mdi} tone={tone} accent={accent} />
       <View>
         <Text style={{ color: alert ? th.bad.text : th.ink, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
         <Text style={{ color: th.muted, fontSize: 14 }}>{label}</Text>
@@ -138,10 +146,11 @@ export function HeroCard({
 export function Heading({ title, sub, onBlue }: { title: string; sub?: string; onBlue?: boolean }) {
   const th = useTheme();
   return (
-    <View>
-      {sub ? <Text style={{ color: onBlue ? 'rgba(255,255,255,0.8)' : th.muted, fontSize: 13 }}>{sub}</Text> : null}
-      <Text style={{ color: onBlue ? '#fff' : th.ink, fontSize: 22, fontWeight: '700' }}>{title}</Text>
-    </View>
+    // title and date on one line: "Expense · 13 Nov 2026"
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: onBlue ? '#fff' : th.ink, fontSize: 22, fontWeight: '700' }}>
+      {title}
+      {sub ? <Text style={{ color: onBlue ? 'rgba(255,255,255,0.8)' : th.muted, fontSize: 14, fontWeight: '500' }}>{`  ·  ${sub}`}</Text> : null}
+    </Text>
   );
 }
 

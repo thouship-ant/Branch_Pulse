@@ -111,7 +111,7 @@ interface RLine { itemId: string; unitId: string; qty: string }
 interface RDraft { id?: string; nameEn: string; yieldQty: string; sellingPrice: string; lines: RLine[]; active: boolean }
 
 /** Recipes with their cost per portion and margin; open one for the ingredient breakdown and cost trend. */
-export function RecipesPanel() {
+export function RecipesPanel({ addSignal }: { addSignal?: number } = {}) {
   const th = useTheme();
   const { can } = useSession();
   const [rows, setRows] = useState<any[] | null>(null);
@@ -126,6 +126,7 @@ export function RecipesPanel() {
   const load = useCallback(async () => { try { setRows(await api.get('/recipes')); setError(null); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); } }, []);
   useEffect(() => { void load(); api.get('/sync/bootstrap').then(setBoot).catch(() => undefined); }, [load]);
 
+  useEffect(() => { if (addSignal) { setFormError(null); setDraft({ nameEn: '', yieldQty: '1', sellingPrice: '', active: true, lines: [{ itemId: '', unitId: '', qty: '' }] }); } }, [addSignal]);
   const items: any[] = (boot?.items ?? []).filter((i: any) => i.status === 'ACTIVE');
   const units: any[] = boot?.units ?? [];
   const unitsFor = (itemId: string) => { const it = items.find((i) => i.id === itemId); return it ? [it.baseUnitId, it.purchaseUnitId].filter(Boolean).map((id: string) => units.find((u) => u.id === id)).filter(Boolean) : []; };
@@ -161,10 +162,12 @@ export function RecipesPanel() {
   const manage = can('recipe:manage');
   return (
     <>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      {addSignal === undefined ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Heading title="Recipes" />
         {manage ? <Button small icon="plus" title="Add" onPress={() => { setFormError(null); setDraft({ nameEn: '', yieldQty: '1', sellingPrice: '', active: true, lines: [{ itemId: '', unitId: '', qty: '' }] }); }} /> : null}
       </View>
+      ) : null}
       <ErrorBox error={error} />
       {!rows ? <Loading /> : rows.length === 0 ? <Muted>No recipes yet.</Muted> : rows.map((r) => (
         <ListRow

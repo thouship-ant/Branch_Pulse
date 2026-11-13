@@ -15,8 +15,7 @@ export default function EmployeesScreen() {
   if (can('salary:manage')) tabs.push({ key: 'salary', label: 'Salary' });
   if (can('advance:view')) tabs.push({ key: 'advances', label: 'Advances' });
   return (
-    <Screen title="Employees">
-      <SegTabs value={tab} onChange={setTab} tabs={tabs} />
+    <Screen title="Employees" top={<SegTabs value={tab} onChange={setTab} tabs={tabs} />}>
       {tab === 'overview' ? <EmployeeOverview /> : tab === 'staff' ? <EmployeeList /> : tab === 'attendance' ? <AttendancePanel /> : tab === 'salary' ? <SalaryPanel /> : <AdvancesPanel />}
     </Screen>
   );

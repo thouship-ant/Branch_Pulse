@@ -77,7 +77,7 @@ function ConsolidatedPL() {
 export default function PLPage() {
   const { t } = useT();
   const { can } = useSession();
-  const [tab, setTab] = useState<Tab>('branch');
+  const [tab, setTab] = useState<Tab>('consolidated');
   const [locations, setLocations] = useState<LocationOption[]>([]);
   useEffect(() => { api.get('/locations').then((l) => setLocations((l as LocationOption[]).filter((x) => x.type === 'BRANCH'))).catch(() => undefined); }, []);
   if (!can('pl:view')) return <p className="card">{t('noAccess')}</p>;

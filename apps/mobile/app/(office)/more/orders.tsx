@@ -82,9 +82,8 @@ export default function OrdersScreen() {
   }
 
   return (
-    <Screen title="Orders" onRefresh={load} headerRight={manage ? <Button small icon="plus" title="New" onPress={() => { setFormError(null); setAdding({ ...blank(), locationId: branches[0]?.id ?? '' }); }} /> : undefined}>
+    <Screen title="Orders" onRefresh={load} headerRight={manage ? <Button small icon="plus" title="New" onPress={() => { setFormError(null); setAdding({ ...blank(), locationId: branches[0]?.id ?? '' }); }} /> : undefined} top={<SegTabs value={tab} onChange={setTab} tabs={[{ key: 'ALL', label: 'All' }, { key: 'PLANNED', label: 'Upcoming' }, { key: 'DELIVERED', label: 'Delivered' }, { key: 'CANCELLED', label: 'Cancelled' }]} />}>
       <Muted>Meetings, functions and other outside-shop orders</Muted>
-      <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'ALL', label: 'All' }, { key: 'PLANNED', label: 'Upcoming' }, { key: 'DELIVERED', label: 'Delivered' }, { key: 'CANCELLED', label: 'Cancelled' }]} />
       <Chips label="Payment" value={pay as any} onChange={(v) => setPay(pay === v ? '' : v)} options={[{ value: 'UNPAID', label: 'Not paid' }, { value: 'PARTIAL', label: 'Partly paid' }, { value: 'PAID', label: 'Paid' }]} />
       <SelectField label="Branch" value={branch} onChange={setBranch} options={[{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} />
       <ErrorBox error={error} />

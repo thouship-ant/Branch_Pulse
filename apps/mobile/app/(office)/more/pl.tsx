@@ -38,9 +38,7 @@ export default function PLScreen() {
   }, [tab, locationId, period]);
 
   return (
-    <Screen title="Profit & Loss" headerRight={<PeriodPill period={period} today={today} onChange={setPeriod} />}>
-      <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'branch', label: 'Branch' }, { key: 'consolidated', label: 'Consolidated' }]} />
-      {tab === 'branch' ? <SelectField label="Branch" value={locationId} onChange={setLocationId} placeholder="Choose a branch…" options={branches.map((b) => ({ value: b.id, label: `${b.code} · ${b.name}` }))} /> : null}
+    <Screen title="Profit & Loss" headerRight={<PeriodPill period={period} today={today} onChange={setPeriod} />} top={<><SegTabs value={tab} onChange={setTab} tabs={[{ key: 'branch', label: 'Branch' }, { key: 'consolidated', label: 'Consolidated' }]} />{tab === 'branch' ? <SelectField label="Branch" value={locationId} onChange={setLocationId} placeholder="Choose a branch…" options={branches.map((b) => ({ value: b.id, label: `${b.code} · ${b.name}` }))} /> : null}</>}>
       <ErrorBox error={error} />
       {tab === 'branch' && !locationId ? <Muted>Choose a branch to see its profit and loss.</Muted> : !data ? (error ? null : <Loading />) : <Report data={data} period={periodLabel(period)} />}
     </Screen>

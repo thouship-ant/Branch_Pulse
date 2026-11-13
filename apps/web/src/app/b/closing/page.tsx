@@ -68,9 +68,18 @@ export default function ClosingPage() {
         <StatusPill status={status} />
       </div>
 
-      <ol className="flex gap-2 text-sm font-medium" aria-label="Steps">
-        <li className={`chip ${step === 1 ? 'border-brand bg-brand text-white' : 'border-slate-300'}`}>1 · {t('cashRecon')}</li>
-        <li className={`chip ${step === 2 ? 'border-brand bg-brand text-white' : 'border-slate-300'}`}>2 · {t('submit')}</li>
+      <ol className="card flex items-center gap-3 !px-4 !py-2.5 text-sm" aria-label="Steps">
+        {([[1, t('cashRecon')], [2, t('submit')]] as const).map(([n, label], i) => {
+          const on = step === n;
+          const done = step > n;
+          return (
+            <li key={n} className={`flex items-center gap-2 ${i === 1 ? '' : 'flex-1'}`} aria-current={on ? 'step' : undefined}>
+              <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[13px] font-extrabold ${on || done ? 'bg-brand text-white' : 'border-[1.5px] border-slate-300 text-slate-600'}`}>{done ? '✓' : n}</span>
+              <span className={on ? 'font-extrabold' : 'font-semibold text-slate-600'}>{label}</span>
+              {i === 0 && <span aria-hidden className={`ml-1 h-0.5 flex-1 rounded ${step > 1 ? 'bg-brand' : 'bg-slate-200'}`} />}
+            </li>
+          );
+        })}
       </ol>
 
       {step === 1 && <CashReconciliation locationId={locationId} date={date} onContinue={() => setStep(2)} />}

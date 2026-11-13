@@ -122,16 +122,24 @@ export function LabelRow({ htmlFor, hint, children }: { htmlFor?: string; hint?:
   );
 }
 
-export function TextField({ label, id, className = '', hint, ...rest }: { label: string; id: string; hint?: string } & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({ label, id, className = '', hint, prefix, ...rest }: { label: string; id: string; hint?: string; prefix?: string } & InputHTMLAttributes<HTMLInputElement>) {
+  const input = (
+    <input
+      id={id} aria-readonly={rest.readOnly || undefined}
+      className={`field ${rest.readOnly ? 'cursor-default bg-slate-100 text-slate-600 focus:border-slate-300 focus:ring-0' : ''} ${prefix ? 'flex-1 !rounded-l-none' : ''} ${className}`}
+      {...rest}
+    />
+  );
   return (
     <div>
       <LabelRow htmlFor={id} hint={hint}>{label}</LabelRow>
       {/* read-only values look different from editable ones (and are announced as read-only) */}
-      <input
-        id={id} aria-readonly={rest.readOnly || undefined}
-        className={`field ${rest.readOnly ? 'cursor-default bg-slate-100 text-slate-600 focus:border-slate-300 focus:ring-0' : ''} ${className}`}
-        {...rest}
-      />
+      {prefix ? (
+        <div className="flex">
+          <span className="flex items-center rounded-l-xl border border-r-0 border-slate-300 bg-brand-light px-3 font-bold text-slate-800">{prefix}</span>
+          {input}
+        </div>
+      ) : input}
     </div>
   );
 }

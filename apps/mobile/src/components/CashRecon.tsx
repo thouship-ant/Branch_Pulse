@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, TextInput, View } from 'react-native';
 import { tAlert } from '@/lib/i18n';
@@ -132,61 +133,87 @@ export function CashRecon({ locationId, date, onContinue }: { locationId: string
       {closingStatus === 'REJECTED' && closing.reviewComment ? <Banner tone="bad">✕ Review comment: {closing.reviewComment}</Banner> : null}
       {locked ? <Banner tone="warn">{closingStatus === 'APPROVED' ? '✓ Approved' : '◔ Submitted'} — the count is locked</Banner> : null}
 
-      {/* workings: opening + cash sales + other receipts - expenses - withdrawals = expected */}
-      <Card style={{ gap: 6 }}>
-        <Row label="Opening cash" value={formatINR(cash.openingCash)} />
-        <Row label="+ Cash sales" value={formatINR(cash.cashSales)} />
-        {!dec(cash.otherReceipts).isZero() && <Row label="+ Other receipts" value={formatINR(cash.otherReceipts)} />}
-        <Row label="− Expenses" value={formatINR(cash.cashExpenses)} />
-        {!dec(cash.cashPurchases).isZero() && <Row label="− Purchases" value={formatINR(cash.cashPurchases)} />}
-        {!dec(cash.otherCashOut).isZero() && <Row label="− Supplier advances" value={formatINR(cash.otherCashOut)} />}
-        {!dec(cash.withdrawals).isZero() && <Row label="− Withdrawals" value={formatINR(cash.withdrawals)} />}
-        <View style={{ borderTopWidth: 1, borderTopColor: th.border, paddingTop: 8, marginTop: 4 }}>
-          <Row label="Expected cash" value={formatINR(cash.expectedClosing, { decimals: false })} bold />
-        </View>
+      {/* the expected cash up front, then how it is worked out */}
+      <View style={{ borderRadius: 20, backgroundColor: th.brand, padding: 18, gap: 4 }}>
+        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600' }}>Expected cash in drawer</Text>
+        <Text style={{ color: '#fff', fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatINR(cash.expectedClosing, { decimals: false })}</Text>
+      </View>
+      <Card style={{ gap: 0, padding: 0, overflow: 'hidden' }}>
+        {([
+          ['Opening cash', cash.openingCash, 0],
+          ['Cash sales', cash.cashSales, 1],
+          ['Other receipts', cash.otherReceipts, 1],
+          ['Expenses', cash.cashExpenses, -1],
+          ['Purchases', cash.cashPurchases, -1],
+          ['Supplier advances', cash.otherCashOut, -1],
+          ['Withdrawals', cash.withdrawals, -1],
+        ] as Array<[string, any, number]>).filter(([l, v]) => l === 'Opening cash' || l === 'Cash sales' || l === 'Expenses' || !dec(v).isZero()).map(([label, value, sign], i) => (
+          <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: th.border }}>
+            <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: sign > 0 ? '#DCFCE7' : sign < 0 ? '#FEE2E2' : th.brandLight }}>
+              <Text style={{ color: sign > 0 ? '#16A34A' : sign < 0 ? '#DC2626' : th.brand, fontWeight: '800', fontSize: 16 }}>{sign > 0 ? '+' : sign < 0 ? '−' : '•'}</Text>
+            </View>
+            <Text style={{ flex: 1, color: th.ink, fontSize: 15 }}>{label}</Text>
+            <Text style={{ color: th.ink, fontWeight: '700', fontSize: 15, fontVariant: ['tabular-nums'] }}>{formatINR(value)}</Text>
+          </View>
+        ))}
       </Card>
 
       {/* movements that feed the workings */}
-      <Card>
+      <Card style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <H3>Cash movements</H3>
-          <Button small variant="secondary" title="+ Add" disabled={locked} onPress={() => setAdding(true)} />
+          <Pressable disabled={locked} onPress={() => setAdding(true)} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 12, backgroundColor: th.brandLight, flexDirection: 'row', gap: 6, alignItems: 'center', opacity: locked ? 0.5 : 1 }}>
+            <Feather name="plus" size={16} color={th.brand} />
+            <Text style={{ color: th.brand, fontWeight: '800' }}>Add</Text>
+          </Pressable>
         </View>
-        {live.length === 0 ? <Muted>—</Muted> : live.map((m) => (
-          <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        {live.length === 0 ? <Muted>No cash in or out entered yet.</Muted> : live.map((m) => (
+          <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: m.direction < 0 ? '#FEE2E2' : '#DCFCE7' }}>
+              <Feather name={m.direction < 0 ? 'arrow-up-right' : 'arrow-down-left'} size={18} color={m.direction < 0 ? '#DC2626' : '#16A34A'} />
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: th.ink, fontWeight: '500' }}>{MOVEMENT_LABEL[m.txnType] ?? m.txnType}</Text>
+              <Text style={{ color: th.ink, fontWeight: '600' }}>{MOVEMENT_LABEL[m.txnType] ?? m.txnType}</Text>
               {m.description ? <Text numberOfLines={1} style={{ color: th.muted, fontSize: 12 }}>{m.description}</Text> : null}
             </View>
-            <Text style={{ color: m.direction < 0 ? th.ink : th.ok.text, fontWeight: m.direction < 0 ? '400' : '600', fontVariant: ['tabular-nums'] }}>{m.direction < 0 ? '−' : '+'} {formatINR(m.amount)}</Text>
+            <Text style={{ color: m.direction < 0 ? '#DC2626' : '#16A34A', fontWeight: '800', fontVariant: ['tabular-nums'] }}>{m.direction < 0 ? '−' : '+'} {formatINR(m.amount)}</Text>
             {!locked && !m.sourceType && MANUAL.includes(m.txnType) && (
-              <Pressable disabled={busy} onPress={() => cancelMove(m.id)} accessibilityLabel="Cancel entry" style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: th.border, borderRadius: 10 }}>
-                <Text style={{ color: th.muted }}>✕</Text>
+              <Pressable disabled={busy} onPress={() => cancelMove(m.id)} accessibilityLabel="Cancel entry" style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: th.brandLight }}>
+                <Feather name="x" size={16} color={th.muted} />
               </Pressable>
             )}
           </View>
         ))}
       </Card>
 
-      {/* the count */}
-      <Card>
-        <H3>Cash count</H3>
+      {/* the count: one tile per note or coin, with what it adds up to */}
+      <Card style={{ gap: 14 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <H3>Cash count</H3>
+          <Text style={{ color: th.muted, fontSize: 12 }}>Enter how many of each</Text>
+        </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {DENOMS.map((d) => (
-            <View key={d} style={{ width: '30.5%' }}>
-              <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600', marginBottom: 4 }}>₹{d}</Text>
-              <TextInput
-                keyboardType="number-pad" placeholder="0" placeholderTextColor={th.faint} editable={!locked}
-                value={counts[d] ?? ''} onChangeText={(v) => { setOverride(''); setCounts((c) => ({ ...c, [d]: v.replace(/\D/g, '').slice(0, 5) })); }}
-                style={{ minHeight: 48, borderWidth: 1, borderColor: th.border, borderRadius: 12, backgroundColor: th.fieldBg, color: th.ink, fontSize: 18, textAlign: 'center' }}
-              />
-            </View>
-          ))}
+          {DENOMS.map((d) => {
+            const n = Number(counts[d] || 0);
+            return (
+              <View key={d} style={{ width: '30.5%', borderRadius: 14, borderWidth: 1, borderColor: n ? th.brand : th.border, backgroundColor: th.fieldBg, overflow: 'hidden' }}>
+                <View style={{ paddingVertical: 5, alignItems: 'center', backgroundColor: n ? th.brandLight : th.neutral.bg }}>
+                  <Text style={{ color: th.ink, fontSize: 14, fontWeight: '800' }}>₹{d}</Text>
+                </View>
+                <TextInput
+                  keyboardType="number-pad" placeholder="0" placeholderTextColor={th.faint} editable={!locked}
+                  value={counts[d] ?? ''} onChangeText={(v) => { setOverride(''); setCounts((c) => ({ ...c, [d]: v.replace(/\D/g, '').slice(0, 5) })); }}
+                  style={{ minHeight: 46, color: th.ink, fontSize: 20, fontWeight: '700', textAlign: 'center', paddingVertical: 4 }}
+                />
+                <Text style={{ textAlign: 'center', paddingBottom: 6, color: n ? th.brand : th.faint, fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{n ? `= ₹${(n * d).toLocaleString('en-IN')}` : '—'}</Text>
+              </View>
+            );
+          })}
         </View>
         <MoneyField label="Or type the total" value={override} onChange={(v) => setOverride(cleanAmount(v))} disabled={locked} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: th.neutral.bg, borderRadius: 12, padding: 12 }}>
-          <Text style={{ color: th.ink, fontWeight: '600' }}>Actual cash</Text>
-          <Text style={{ color: th.ink, fontWeight: '700', fontSize: 18, fontVariant: ['tabular-nums'] }}>{hasCount ? formatINR(actual) : '—'}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: hasCount ? th.ok.bg : th.neutral.bg, borderWidth: 1, borderColor: hasCount ? th.ok.border : th.border, borderRadius: 14, padding: 14 }}>
+          <Text style={{ color: th.ink, fontWeight: '700', fontSize: 15 }}>Actual cash counted</Text>
+          <Text style={{ color: hasCount ? th.ok.text : th.muted, fontWeight: '800', fontSize: 22, fontVariant: ['tabular-nums'] }}>{hasCount ? formatINR(actual) : '—'}</Text>
         </View>
       </Card>
 
@@ -196,7 +223,7 @@ export function CashRecon({ locationId, date, onContinue }: { locationId: string
           <Text style={{ color: th[vt.key].text, fontWeight: '600' }}>{vt.icon} {vt.text}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ color: th[vt.key].text, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatINR(variance.abs())}</Text>
-            {savedHasVariance && approval ? <Chip text={approval === 'APPROVED' ? 'Approved' : approval === 'REJECTED' ? 'Rejected' : 'Sent'} tone={approval === 'APPROVED' ? 'ok' : approval === 'REJECTED' ? 'bad' : 'warn'} /> : null}
+            {savedHasVariance && approval ? <Chip text={approval === 'APPROVED' ? 'Approved' : approval === 'REJECTED' ? 'Rejected' : 'Waiting'} tone={approval === 'APPROVED' ? 'ok' : approval === 'REJECTED' ? 'bad' : 'warn'} /> : null}
           </View>
         </View>
       )}
@@ -219,7 +246,7 @@ export function CashRecon({ locationId, date, onContinue }: { locationId: string
               )}
             </View>
           </View>
-          {approval === 'SUBMITTED' && <Banner tone="warn">◔ Sent for approval</Banner>}
+          {approval === 'SUBMITTED' && <Banner tone="warn">◔ Waiting for approval</Banner>}
           {approval === 'APPROVED' && <Banner tone="ok">✓ Approved by {cash.approvedBy ?? '—'}</Banner>}
         </Card>
       )}

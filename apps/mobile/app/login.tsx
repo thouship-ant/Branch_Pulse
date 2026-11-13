@@ -1,13 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text as PlainText, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text as PlainText, TextInput, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ErrorBox, Field, Muted } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { useLang } from '@/lib/language';
 import { useSession, type SignInMethod } from '@/lib/session';
+import { OtpInput } from '@/components/OtpInput';
 import { useTheme } from '@/lib/theme';
 
 type Step = 'id' | 'password' | 'otp';
@@ -59,7 +60,9 @@ export default function LoginScreen() {
       const signedIn = await fn();
       if (!signedIn) setBusy(false);
     } catch (err) {
-      setError(friendly(err));
+      // "wait 30 seconds before another OTP" is not an error to read: the button simply counts down
+      if (err instanceof ApiError && err.code === 'OTP_TOO_SOON') setWait(Number(/(\d+)\s*second/.exec(err.message)?.[1]) || RESEND_SECONDS);
+      else setError(friendly(err));
       setBusy(false);
     }
   }
@@ -92,7 +95,7 @@ export default function LoginScreen() {
 
   const back = () => { setStep('id'); setPassword(''); setOtp(''); setError(null); setWait(0); };
 
-  const masked = isMobile ? `${id.slice(0, 2)}******${id.slice(-2)}` : id;
+  const masked = isMobile ? `+91 ${id.slice(0, 2)}******${id.slice(-2)}` : id;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#1e2a8a' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -129,19 +132,29 @@ export default function LoginScreen() {
           <View style={[{ backgroundColor: th.surface, borderRadius: 20, padding: 20, gap: 16 }, th.dark ? { borderWidth: 1, borderColor: th.border } : { shadowColor: '#1e2a8a', shadowOpacity: 0.09, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3 }]}>
             {step === 'id' && (
               <>
-                <Field
-                  label="Mobile number" value={identifier} onChangeText={(v) => setIdentifier(v.replace(/\s/g, ''))} autoCapitalize="none" autoCorrect={false}
-                  keyboardType="default" textContentType="username" onSubmitEditing={onIdentify} returnKeyType="next"
-                />
+                <View style={{ gap: 6 }}>
+                  <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>Mobile number</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, borderRadius: 12, borderWidth: 1.5, borderColor: identifier ? th.brand : th.border, backgroundColor: th.fieldBg, overflow: 'hidden' }}>
+                    <View style={{ paddingHorizontal: 14, alignSelf: 'stretch', justifyContent: 'center', backgroundColor: th.brandLight, borderRightWidth: 1, borderRightColor: th.border }}>
+                      <Text style={{ color: th.ink, fontWeight: '800', fontSize: 16 }}>+91</Text>
+                    </View>
+                    <TextInput
+                      value={identifier} onChangeText={(v) => setIdentifier(v.replace(/\D/g, '').slice(0, 10))}
+                      keyboardType="number-pad" maxLength={10} textContentType="telephoneNumber" autoComplete="tel" autoFocus
+                      placeholder="10-digit number" placeholderTextColor={th.faint} onSubmitEditing={onIdentify} returnKeyType="next"
+                      style={{ flex: 1, paddingHorizontal: 14, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: th.ink, paddingVertical: 10 }}
+                    />
+                  </View>
+                </View>
                 <ErrorBox error={error} />
-                <Button title="Continue" onPress={onIdentify} loading={busy} disabled={!id} />
+                <Button title={wait > 0 ? `Try again in ${wait}s` : 'Continue'} onPress={onIdentify} loading={busy} disabled={!isMobile || wait > 0} />
               </>
             )}
 
             {step === 'password' && (
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: th.brandLight, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
-                  <Text numberOfLines={1} style={{ color: th.ink, fontWeight: '700', fontVariant: ['tabular-nums'], flexShrink: 1 }}>{id}</Text>
+                  <Text numberOfLines={1} style={{ color: th.ink, fontWeight: '700', fontVariant: ['tabular-nums'], flexShrink: 1 }}>{isMobile ? `+91 ${id}` : id}</Text>
                   <Pressable onPress={back} disabled={busy} hitSlop={8}><Text style={{ color: th.brand, fontWeight: '700' }}>Use a different number</Text></Pressable>
                 </View>
                 <View>
@@ -155,17 +168,16 @@ export default function LoginScreen() {
                 </View>
                 {method === 'PASSWORD_OTP' && <Muted small>An OTP will be sent to your mobile next.</Muted>}
                 <ErrorBox error={error} />
-                <Button title={method === 'PASSWORD_OTP' ? 'Send OTP' : 'Sign in'} onPress={onPassword} loading={busy} disabled={!password} />
+                <Button title={wait > 0 && step === 'password' ? `Try again in ${wait}s` : method === 'PASSWORD_OTP' ? 'Send OTP' : 'Sign in'} onPress={onPassword} loading={busy} disabled={!password || (step === 'password' && wait > 0)} />
               </>
             )}
 
             {step === 'otp' && (
               <>
-                <Field
-                  label="OTP" value={otp} onChangeText={(v) => setOtp(v.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" maxLength={6}
-                  textContentType="oneTimeCode" autoComplete="sms-otp" autoFocus onSubmitEditing={onOtp}
-                  style={{ fontSize: 24, letterSpacing: 8, textAlign: 'center' }}
-                />
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>OTP</Text>
+                  <OtpInput value={otp} onChange={setOtp} />
+                </View>
                 <ErrorBox error={error} />
                 <Button title="Verify and sign in" onPress={onOtp} loading={busy} disabled={otp.length !== 6} />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

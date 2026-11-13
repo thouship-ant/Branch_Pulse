@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -51,11 +52,19 @@ export default function ClosingScreen() {
   const locked = status === 'SUBMITTED' || status === 'APPROVED';
   const tot = screen?.totals;
 
-  const stepChip = (n: 1 | 2, label: string) => (
-    <View style={{ borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, borderColor: step === n ? th.brand : th.border, backgroundColor: step === n ? th.brand : th.surface }}>
-      <Text style={{ color: step === n ? th.onBrand : th.ink, fontWeight: '600', fontSize: 13 }}>{n} · {label}</Text>
-    </View>
-  );
+  // two numbered steps joined by a line; a finished step shows a tick
+  const stepDot = (n: 1 | 2, label: string) => {
+    const on = step === n;
+    const done = step > n;
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: on || done ? th.brand : th.surface, borderWidth: on || done ? 0 : 1.5, borderColor: th.border }}>
+          {done ? <Feather name="check" size={15} color="#fff" /> : <Text style={{ color: on ? '#fff' : th.muted, fontWeight: '800', fontSize: 13 }}>{n}</Text>}
+        </View>
+        <Text style={{ color: on ? th.ink : th.muted, fontWeight: on ? '800' : '600', fontSize: 14 }}>{label}</Text>
+      </View>
+    );
+  };
 
   return (
     <Screen onRefresh={load}>
@@ -63,7 +72,7 @@ export default function ClosingScreen() {
         <Heading onBlue sub={prettyDate(date)} title="Closing" />
         <StatusPill status={status} />
       </View>
-      <View style={{ flexDirection: 'row', gap: 8 }}>{stepChip(1, 'Cash count')}{stepChip(2, 'Submit')}</View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: th.surface, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10 }}>{stepDot(1, 'Cash count')}<View style={{ flex: 1, height: 2, borderRadius: 1, backgroundColor: step > 1 ? th.brand : th.border }} />{stepDot(2, 'Submit')}</View>
 
       {step === 1 && <CashRecon locationId={locationId} date={date} onContinue={() => setStep(2)} />}
 

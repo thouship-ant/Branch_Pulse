@@ -36,7 +36,7 @@ export function PeriodPicker({ period, label, presets: presetsOverride }: { peri
   const order = presetsOverride ?? (['7', '30', '90', 'month', 'custom'] as Preset[]);
   const presets: Array<[Preset, string]> = order.map((id) => [id, labels[id]]);
   return (
-    <div className="flex flex-wrap items-end gap-2">
+    <div className="flex min-w-0 max-w-full flex-wrap items-end gap-2">
       <div className="seg" role="radiogroup" aria-label={label}>
         {presets.map(([id, text]) => (
           <button

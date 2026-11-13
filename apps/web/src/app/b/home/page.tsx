@@ -1,5 +1,6 @@
 'use client';
 
+import { ClosingTimer } from '@/components/ClosingTimer';
 import { BackdateRequests } from '@/components/BackdateRequests';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -64,6 +65,25 @@ export default function BranchHome() {
   return (
     <div className="space-y-4">
       <BackdateRequests locationId={locationId} />
+      <ul className="space-y-3">
+        <li>
+          <Link href="/b/stock" className="card flex min-h-[72px] items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-light text-brand-dark"><Icon name="box" size={22} /></span>
+            <div className="min-w-0 flex-1"><p className="text-lg font-bold">{t('stock')}</p></div>
+            <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
+          </Link>
+        </li>
+        {can('staff:view') && (
+          <li>
+            <Link href="/b/staff" className="card flex min-h-[72px] items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><Icon name="user" size={22} /></span>
+              <div className="min-w-0 flex-1"><p className="font-semibold">{t('employeesTitle')}</p></div>
+              <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
+            </Link>
+          </li>
+        )}
+      </ul>
+
       <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef1ff] to-[#f6f7ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
         <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-brand/10 blur-2xl" aria-hidden />
         <p className="text-sm font-medium text-slate-600">{t('today')} · {prettyDate(date)}</p>
@@ -71,6 +91,7 @@ export default function BranchHome() {
           <h2 className="text-xl font-extrabold tracking-tight">{t('checklist')}</h2>
           <p className="text-sm font-semibold tabular-nums text-brand-dark">{stepsDone}/{stepsTotal} <span className="font-medium text-slate-600">{t('stepsDone')}</span></p>
         </div>
+        <ClosingTimer locationId={locationId} done={submitted} />
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70 dark:bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={stepsTotal} aria-valuenow={stepsDone}>
           <div className="h-full rounded-full bg-gradient-to-r from-brand to-[#4a5bd8] transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
         </div>
@@ -136,15 +157,6 @@ export default function BranchHome() {
             <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
           </Link>
         </li>
-        {can('staff:view') && (
-          <li>
-            <Link href="/b/staff" className="card flex min-h-[72px] items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><Icon name="user" size={22} /></span>
-              <div className="min-w-0 flex-1"><p className="font-semibold">{t('employeesTitle')}</p></div>
-              <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
-            </Link>
-          </li>
-        )}
       </ul>
     </div>
   );

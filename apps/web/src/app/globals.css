@@ -12,7 +12,7 @@
   --slate-100: 237 240 246;
   --slate-200: 226 231 240;
   --slate-300: 203 213 225;
-  --slate-400: 148 163 184;
+  --slate-400: 106 121 144;  /* helper text: 4.6:1 on white */
   --slate-500: 100 116 139;
   --slate-600: 71 85 105;
   --slate-700: 51 65 85;
@@ -145,15 +145,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
   .dark .nav-item-active::before { background: #8b9cff; }
   .dark .nav-item-active, .dark .nav-item-active:hover { background-color: rgb(110 125 255 / 0.16); color: #c7d0ff; }
 
-  /* ---- sidebar (navy panel): icon tile + label, glowing white pill for the current page ---- */
-  .side-item { @apply relative flex min-h-[46px] items-center gap-3 rounded-2xl px-2 text-[15px] font-medium text-white/75 transition duration-200 hover:bg-white/10 hover:text-white; }
-  .side-item .side-ico { @apply grid h-[34px] w-[34px] shrink-0 place-items-center rounded-xl bg-white/[0.07] text-white/80 transition duration-200; }
-  .side-item:hover .side-ico { @apply bg-white/15 text-white; transform: scale(1.06); }
-  .side-item-active, .side-item-active:hover { @apply bg-white font-bold text-[#1e2a8a]; box-shadow: 0 10px 22px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.6) inset; }
-  .side-item-active .side-ico, .side-item-active:hover .side-ico { background: linear-gradient(135deg, #1e2a8a, #3a4bd0); color: #fff; box-shadow: 0 6px 14px -6px rgba(30,42,138,0.9); transform: none; }
-  .side-item-active::after { content: ''; position: absolute; right: 10px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 999px; background: #3a4bd0; box-shadow: 0 0 0 4px rgb(58 75 208 / 0.18); }
+  /* ---- sidebar: one flat colour, one marker (a tint and a bar) for the open page ---- */
+  .side-item { @apply relative flex min-h-[40px] items-center gap-3 rounded-lg px-3 text-[14.5px] font-medium text-slate-700 transition duration-150 hover:bg-slate-100 hover:text-ink; }
+  .side-item .side-ico { display: grid; width: 20px; height: 20px; flex-shrink: 0; place-items: center; background: transparent; color: rgb(var(--slate-600)); }
+  .side-item:hover .side-ico { color: rgb(var(--ink)); }
+  .side-item-active, .side-item-active:hover { @apply bg-brand-light font-semibold text-brand; }
+  .side-item-active .side-ico, .side-item-active:hover .side-ico { color: #1e2a8a; }
+  .side-item-active::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: #1e2a8a; }
+  .dark .side-item-active, .dark .side-item-active:hover { background-color: rgb(110 125 255 / 0.16); color: #c7d0ff; }
+  .dark .side-item-active .side-ico, .dark .side-item-active:hover .side-ico { color: #c7d0ff; }
+  .dark .side-item-active::before { background: #8b9cff; }
   .side-collapsed .side-item { @apply justify-center px-0; }
-  .side-collapsed .side-item-active::after { display: none; }
 }
 
 /* ---- tables: one standard look - small bold uppercase headers, 15px rows, comfortable padding, figures lined up ---- */
@@ -212,19 +214,24 @@ table tfoot td, table tfoot th { border-top: 1px solid rgb(var(--slate-200)); fo
 
 /* ---- segmented controls (tabs, period presets, small option groups): a soft inset track, the chosen segment a lifted navy pill ---- */
 [role='tablist'], .seg {
-  display: inline-flex; max-width: 100%; gap: 4px; padding: 4px; overflow-x: auto; border-radius: 16px; margin-left: 0; margin-right: 0;
+  display: flex; width: fit-content; min-width: 0; max-width: 100%; flex-shrink: 1; gap: 4px; padding: 4px 4px 8px; overflow-x: auto; overflow-y: hidden; border-radius: 16px; margin-left: 0; margin-right: 0;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: thin;
   background: rgb(var(--slate-100)); border: 1px solid rgb(var(--slate-200)); box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.05);
 }
 [role='tablist'] > [role='tab'], .seg > button {
-  min-height: 40px; padding: 0 18px; border: 0; border-radius: 12px; white-space: nowrap; font-size: 0.9375rem; font-weight: 600; background: transparent;
+  flex-shrink: 0; scroll-snap-align: start; min-height: 40px; padding: 0 18px; border: 0; border-radius: 12px; white-space: nowrap; font-size: 0.9375rem; font-weight: 600; background: transparent;
   color: rgb(var(--slate-600)); transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 [role='tablist'] > [role='tab']:hover, .seg > button:hover { color: rgb(var(--ink)); background: rgb(var(--surface) / 0.85); }
+/* a selection is a light tint with a ring: solid indigo is kept for the one main action on a screen */
 [role='tablist'] > [role='tab'][aria-selected='true'], .seg > button[aria-checked='true'] {
-  background: linear-gradient(135deg, #1e2a8a, #3446c8); color: #fff; box-shadow: 0 8px 16px -8px rgb(30 42 138 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.18);
+  background: rgb(var(--surface)); color: #1e2a8a; box-shadow: 0 0 0 1px rgb(30 42 138 / 0.28), 0 2px 6px -2px rgb(30 42 138 / 0.25);
 }
 [role='tablist'] > [role='tab']:active, .seg > button:active { transform: scale(0.97); }
-.dark [role='tablist'] > [role='tab'][aria-selected='true'], .dark .seg > button[aria-checked='true'] { background: linear-gradient(135deg, #3a4bd0, #5667e6); }
+.dark [role='tablist'] > [role='tab'][aria-selected='true'], .dark .seg > button[aria-checked='true'] { background: rgb(110 125 255 / 0.18); color: #c7d0ff; box-shadow: 0 0 0 1px rgb(139 156 255 / 0.4); }
+
+[role='tablist']::-webkit-scrollbar, .seg::-webkit-scrollbar { height: 5px; }
+[role='tablist']::-webkit-scrollbar-thumb, .seg::-webkit-scrollbar-thumb { background: rgb(var(--slate-400) / 0.6); border-radius: 5px; }
 
 /* ---- option pills (Daily / Weekly / Monthly ...) ---- */
 .pill {
@@ -232,7 +239,8 @@ table tfoot td, table tfoot th { border-top: 1px solid rgb(var(--slate-200)); fo
   font-size: 0.9375rem; font-weight: 600; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); transition: all 0.18s ease;
 }
 .pill:hover { border-color: rgb(30 42 138 / 0.45); color: #1e2a8a; transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgb(30 42 138 / 0.5); }
-.pill[aria-checked='true'] { border-color: transparent; color: #fff; background: linear-gradient(135deg, #1e2a8a, #3446c8); box-shadow: 0 10px 18px -10px rgb(30 42 138 / 0.8); transform: none; }
+.pill[aria-checked='true'] { border-color: rgb(30 42 138 / 0.45); color: #1e2a8a; background: #eef1ff; box-shadow: 0 0 0 1px rgb(30 42 138 / 0.18); transform: none; font-weight: 700; }
+.dark .pill[aria-checked='true'] { color: #c7d0ff; background: rgb(110 125 255 / 0.18); border-color: rgb(139 156 255 / 0.5); }
 .dark .pill:hover { color: #b4c0ff; }
 
 /* ---- dropdown: soft field with a chevron badge, navy ring while open ---- */
@@ -259,4 +267,12 @@ main > * { animation: rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .anim-loader { animation: loader-slide 1.1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* phone view of a few-tab row (Approvals): separate pills, the open one solid navy - no inset track */
+@media (max-width: 767px) {
+  [role='tablist'].tabs-pills { width: 100%; gap: 8px; padding: 2px 2px 6px; background: transparent; border: 0; box-shadow: none; border-radius: 0; }
+  [role='tablist'].tabs-pills > [role='tab'] { min-height: 44px; padding: 0 20px; border-radius: 999px; background: rgb(var(--surface)); color: rgb(var(--ink)); font-weight: 700; box-shadow: 0 1px 2px rgb(15 23 42 / 0.06); }
+  [role='tablist'].tabs-pills > [role='tab'][aria-selected='true'] { background: #1e2a8a; color: #fff; box-shadow: 0 4px 10px -3px rgb(30 42 138 / 0.5); }
+  .dark [role='tablist'].tabs-pills > [role='tab'][aria-selected='true'] { background: #4a5bd8; color: #fff; box-shadow: 0 4px 10px -3px rgb(74 91 216 / 0.5); }
 }

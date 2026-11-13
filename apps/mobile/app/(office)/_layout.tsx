@@ -1,24 +1,15 @@
-import { Feather } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { HeaderProvider } from '@/components/HeaderContext';
-import { tr } from '@/lib/i18n';
+import { OfficeTabBar } from '@/components/OfficeTabBar';
 import { useSession } from '@/lib/session';
-import { useTabBarOptions } from '@/lib/tabbar';
 import { useTheme } from '@/lib/theme';
 
-type FeatherName = React.ComponentProps<typeof Feather>['name'];
-const TABS: Array<{ name: string; title: string; icon: FeatherName; perm?: string }> = [
-  { name: 'dashboard', title: 'Dashboard', icon: 'bar-chart-2', perm: 'dashboard:view' },
-  { name: 'approvals', title: 'Approvals', icon: 'check-circle', perm: 'expense:approve' },
-  { name: 'more', title: 'More', icon: 'grid' },
-  { name: 'account', title: 'Account', icon: 'user' },
-];
+const ROUTES = ['dashboard', 'approvals', 'more', 'account'];
 
 /** Back-office layout for Admin, Accountant and Stock Manager. */
 export default function OfficeLayout() {
   const th = useTheme();
-  const tabBar = useTabBarOptions();
-  const { me, loading, isBranchUser, can } = useSession();
+  const { me, loading, isBranchUser } = useSession();
   if (loading) return null;
   if (!me) return <Redirect href="/login" />;
   if (me.isSuper || isBranchUser) return <Redirect href="/" />;
@@ -26,20 +17,15 @@ export default function OfficeLayout() {
   return (
     <HeaderProvider value={{ title: me.fullName, subtitle: me.company?.name }}>
     <Tabs
+      tabBar={() => <OfficeTabBar />}
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: th.bg },
         tabBarActiveTintColor: th.brand,
         tabBarInactiveTintColor: th.faint,
-        ...tabBar,
       }}
     >
-      {TABS.map((t) => (
-        <Tabs.Screen
-          key={t.name} name={t.name}
-          options={{ title: tr(t.title), href: !t.perm || can(t.perm) ? undefined : null, tabBarIcon: ({ color }) => <Feather name={t.icon} size={22} color={color} /> }}
-        />
-      ))}
+      {ROUTES.map((name) => <Tabs.Screen key={name} name={name} />)}
     </Tabs>
     </HeaderProvider>
   );

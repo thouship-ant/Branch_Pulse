@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
 import { BackdateRequests } from '@/components/BackdateRequests';
+import { ClosingTimer } from '@/components/ClosingTimer';
 import { Banner, Card, Chip, ErrorBox, HeroCard, LinkCard, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime, todayIST } from '@/lib/dates';
@@ -56,6 +57,8 @@ export default function BranchHome() {
   return (
     <Screen hero onRefresh={load}>
       <BackdateRequests locationId={locationId} />
+      <LinkCard icon="box" title="Stock" detail="Count, wastage, purchases" onPress={() => router.push('/stock')} />
+      {can('staff:view') ? <LinkCard icon="users" title="Employee" detail="Attendance, advances" onPress={() => router.push('/staff')} /> : null}
       <HeroCard
         icon="check-square" label={`Today · ${prettyDate(date)}`} value={`${stepsDone}/${stepsTotal}`} sub="steps done"
         columns={[
@@ -63,6 +66,7 @@ export default function BranchHome() {
           { label: 'Expenses', value: formatINR(String(total), { decimals: false }), color: th.warn.text },
         ]}
       >
+        <ClosingTimer locationId={locationId} done={submitted} />
         <View style={{ gap: 6 }}>
           <View style={{ height: 8, borderRadius: 4, backgroundColor: th.brandLight, overflow: 'hidden' }}>
             <View style={{ width: `${(stepsDone / stepsTotal) * 100}%`, height: '100%', backgroundColor: th.brand, borderRadius: 4 }} />
@@ -82,13 +86,10 @@ export default function BranchHome() {
           right={<Chip text={c.done ? 'Done' : 'Not done'} tone={c.done ? 'ok' : 'neutral'} icon={c.done ? '✓' : '○'} />}
         />
       ))}
-      <LinkCard icon="box" title="Stock" detail="Count, wastage, purchases" onPress={() => router.push('/stock')} />
-      {can('staff:view') ? <LinkCard icon="users" title="Staff" detail="Attendance, advances" onPress={() => router.push('/staff')} /> : null}
       <LinkCard
         icon="check-square" title="Closing" onPress={() => router.push('/closing')}
         detail={closing?.submittedAt ? prettyTime(closing.submittedAt) : undefined} right={<StatusPill status={status} />}
       />
-      <LinkCard icon="user" title="Account" detail="Language, sign out" onPress={() => router.push('/account')} />
       <Text style={{ color: th.faint, fontSize: 12, textAlign: 'center' }}>Pull down to refresh. Entries save to the server straight away, so you need a connection.</Text>
     </Screen>
   );

@@ -12,8 +12,7 @@ type Tab = 'general' | 'limits' | 'roles' | 'units';
 export default function SettingsScreen() {
   const [tab, setTab] = useState<Tab>('general');
   return (
-    <Screen title="Settings">
-      <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'general', label: 'General' }, { key: 'limits', label: 'Approval limits' }, { key: 'roles', label: 'Roles' }, { key: 'units', label: 'Units' }]} />
+    <Screen title="Settings" top={<SegTabs value={tab} onChange={setTab} tabs={[{ key: 'general', label: 'General' }, { key: 'limits', label: 'Approval limits' }, { key: 'roles', label: 'Roles' }, { key: 'units', label: 'Units' }]} />}>
       {tab === 'general' ? <General /> : tab === 'limits' ? <Limits /> : tab === 'roles' ? <Roles /> : <Units />}
     </Screen>
   );
