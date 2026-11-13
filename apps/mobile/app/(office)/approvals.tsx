@@ -12,6 +12,7 @@ import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
 import { hideToast, showToast } from '@/lib/toast';
 import { useTheme } from '@/lib/theme';
+import { useLive } from '@/lib/live';
 
 function age(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
@@ -71,9 +72,10 @@ export default function ApprovalsScreen() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
   }, []);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useLive(load, ['EXPENSE', 'DAILY_CLOSING', 'BACKDATE_REQUEST']);
 
   // opened from a notification: show the Closing tab, or the reject box of one expense
-  useEffect(() => { if ((params.tab === 'closing' && showClosing) || (params.tab === 'backdate' && showBackdate)) setTab(params.tab as any); }, [params.tab, showClosing, showBackdate]);
+  useEffect(() => { if ((params.tab === 'closing' && showClosing) || (params.tab === 'backdate' && showBackdate) || params.tab === 'expenses') setTab(params.tab as any); }, [params.tab, showClosing, showBackdate]);
   useEffect(() => {
     if (!params.reject || !rows) return;
     const e = rows.find((x) => x.id === params.reject);

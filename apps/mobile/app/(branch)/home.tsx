@@ -4,12 +4,14 @@ import { View } from 'react-native';
 import { Text } from '@/components/Text';
 import { BackdateRequests } from '@/components/BackdateRequests';
 import { ClosingTimer } from '@/components/ClosingTimer';
-import { Banner, Card, Chip, ErrorBox, HeroCard, LinkCard, Loading, Screen, StatusPill } from '@/components/ui';
+import { Banner, Button, Card, Chip, ErrorBox, HeroCard, LinkCard, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { prettyDate, prettyTime, todayIST } from '@/lib/dates';
 import { formatINR } from '@/lib/money';
 import { useBranch, useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
+import { useLive } from '@/lib/live';
+import { startEntry } from '@/lib/workDate';
 
 /** Today's checklist for the branch: sales, expenses, cash count, closing. */
 export default function BranchHome() {
@@ -20,20 +22,23 @@ export default function BranchHome() {
   const date = todayIST();
   const [screen, setScreen] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!locationId) return;
     try {
-      const [s, e] = await Promise.all([
+      const [s, e, p] = await Promise.all([
         api.get(`/closings/${locationId}/${date}`),
         api.get(`/expenses?locationId=${locationId}&from=${date}&to=${date}&pageSize=100`),
+        api.get<any[]>(`/purchases?locationId=${locationId}&from=${date}&to=${date}&pageSize=50`).catch(() => [] as any[]),
       ]);
-      setScreen(s); setExpenses(e); setError(null);
+      setScreen(s); setExpenses(e); setPurchases(p); setError(null);
     } catch (err: any) { setError(err.message); }
   }, [locationId, date]);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useLive(load);
 
   if (!screen && !error) return <Screen hero><Card><Loading /></Card></Screen>;
 
@@ -43,11 +48,13 @@ export default function BranchHome() {
   const live = expenses.filter((e) => e.status === 'ACTIVE');
   const total = live.reduce((a, e) => a + Number(e.amount), 0);
   const counted = cash?.actualClosing != null;
+  const livePurchases = purchases.filter((p) => p.status === 'ACTIVE');
   const status = closing?.status ?? 'PENDING';
   const submitted = ['SUBMITTED', 'APPROVED'].includes(status);
 
   const cards = [
     { path: '/sales', icon: 'trending-up', title: 'Sales', detail: sales ? formatINR(sales.totalSales) : '—', done: !!sales },
+    { path: '/purchases', icon: 'shopping-bag', title: 'Purchases', detail: `${formatINR(String(livePurchases.reduce((a, p) => a + Number(p.totalAmount), 0)), { decimals: false })} (${livePurchases.length})`, done: livePurchases.length > 0 },
     { path: '/expense', icon: 'credit-card', title: 'Expenses', detail: `${formatINR(String(total), { decimals: false })} (${live.length})`, done: live.length > 0 },
     { path: '/cash', icon: 'dollar-sign', title: 'Cash reconciliation', detail: counted ? formatINR(cash.actualClosing) : '—', done: counted },
   ] as const;
@@ -57,7 +64,7 @@ export default function BranchHome() {
   return (
     <Screen hero onRefresh={load}>
       <BackdateRequests locationId={locationId} />
-      <LinkCard icon="box" title="Stock" detail="Count, wastage, purchases" onPress={() => router.push('/stock')} />
+      <LinkCard icon="box" title="Stock" detail="Count, wastage, stock levels" onPress={() => router.push('/stock')} />
       {can('staff:view') ? <LinkCard icon="users" title="Employee" detail="Attendance, advances" onPress={() => router.push('/staff')} /> : null}
       <HeroCard
         icon="check-square" label={`Today · ${prettyDate(date)}`} value={`${stepsDone}/${stepsTotal}`} sub="steps done"
@@ -73,6 +80,7 @@ export default function BranchHome() {
           </View>
           <Text style={{ color: th.muted, fontSize: 12, fontWeight: '500' }}>{stepsDone === stepsTotal ? '✓ All done for today' : 'Keep going'}</Text>
         </View>
+        {!submitted ? <Button title="Enter step by step" icon="arrow-right" onPress={() => void startEntry(date)} /> : null}
       </HeroCard>
 
       <ErrorBox error={error} />

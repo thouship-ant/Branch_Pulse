@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { unregisterPush } from './push';
+import { connectLive, disconnectLive } from './live';
 import { api, ApiError, clientInfo, endSession, loadStoredRefresh, refreshSession, setAuthLostHandler, startSession } from './api';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
@@ -47,6 +48,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     })();
     return () => setAuthLostHandler(null);
   }, []);
+
+  // live updates run while someone is signed in
+  useEffect(() => { if (me) connectLive(); else disconnectLive(); }, [!!me]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const start = async (res: any) => { await startSession(res); setMe(res.user); };
 

@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, useWindowDimensions, View, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, useWindowDimensions, View, type ListRenderItem, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,8 @@ import { useHeader } from './HeaderContext';
 import { useLang } from '@/lib/language';
 import { tr } from '@/lib/i18n';
 import { cleanAmount } from '@/lib/money';
-import { RADIUS, TOUCH, useTheme, type Theme } from '@/lib/theme';
+import { useEntryDay } from '@/lib/workDate';
+import { RADIUS, TOUCH, useTheme, useThemeMode, type Theme } from '@/lib/theme';
 
 export type IconName = keyof typeof Feather.glyphMap;
 type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
@@ -20,7 +21,10 @@ type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
  * `hero`: the header stays fixed behind the page and the first card (HeroCard) sits over it - scrolling up, the cards
  * slide over the header. Without it the header is a normal bar above the page.
  */
-export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight, title, top }: { children: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode; title?: string; top?: ReactNode }) {
+/** A long list drawn by the screen itself: only the rows near the screen are built (children become the list header). */
+export interface ScreenList { data: any[]; renderItem: ListRenderItem<any>; keyExtractor: (item: any) => string; empty?: ReactNode }
+
+export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight, title, top, list }: { children?: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode; title?: string; top?: ReactNode; list?: ScreenList }) {
   const th = useTheme();
   const header = useHeader();
   const [headerH, setHeaderH] = useState(190);
@@ -41,6 +45,17 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
       {bar && overlap ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>{bar}</View> : null}
       {top ? <View style={{ paddingHorizontal: 16, paddingTop: overlap ? headerH - 30 : 16, paddingBottom: 4, gap: 12, backgroundColor: overlap ? 'transparent' : th.bg }}>{top}</View> : null}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {list ? (
+          <FlatList
+            data={list.data} renderItem={list.renderItem} keyExtractor={list.keyExtractor}
+            initialNumToRender={10} maxToRenderPerBatch={10} windowSize={7} removeClippedSubviews
+            ListHeaderComponent={children ? <View style={{ gap: 16 }}>{children}</View> : null}
+            ListEmptyComponent={list.empty ? <View>{list.empty}</View> : null}
+            contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap ? '#fff' : th.brand} progressViewOffset={overlap ? headerH - 60 : 0} /> : undefined}
+          />
+        ) : (
         <ScrollView
           contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
           keyboardShouldPersistTaps="handled"
@@ -48,6 +63,7 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
         >
           {children}
         </ScrollView>
+        )}
       </KeyboardAvoidingView>
       {/* the fixed part of the header (logo, greeting, name, company + its buttons) is drawn again above the scroll view: the page
           slides over the curved edge below, and disappears under this part once it reaches the company name */}
@@ -143,8 +159,9 @@ export function HeroCard({
 }
 
 /** `onBlue`: the page's top heading, which sits over the header's blue curve, so it is white. */
-export function Heading({ title, sub, onBlue }: { title: string; sub?: string; onBlue?: boolean }) {
+export function Heading({ title, sub, onBlue: onBlueProp }: { title: string; sub?: string; onBlue?: boolean }) {
   const th = useTheme();
+  const onBlue = onBlueProp && !useEntryDay().date; // a missed day is entered in a plain sheet, not under the blue header
   return (
     // title and date on one line: "Expense · 13 Nov 2026"
     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: onBlue ? '#fff' : th.ink, fontSize: 22, fontWeight: '700' }}>
@@ -572,6 +589,40 @@ export function ToggleRow({ label, value, onChange }: { label: string; value: bo
 }
 
 /** English | தமிழ் switch (the choice is remembered on the phone). */
+/** Light / Dark / System: three tiles, each with a small preview of how the app will look; the choice is remembered. */
+export function ThemeSwitch() {
+  const [mode, setMode] = useThemeMode();
+  const th = useTheme();
+  const PREVIEW = { light: { bg: '#f2f4f8', bar: '#ffffff', ink: '#cbd5e1' }, dark: { bg: '#0f1729', bar: '#172033', ink: '#334155' } };
+  const half = (k: 'light' | 'dark') => (
+    <View style={{ flex: 1, backgroundColor: PREVIEW[k].bg, padding: 6, gap: 4, justifyContent: 'center' }}>
+      <View style={{ height: 8, borderRadius: 4, backgroundColor: PREVIEW[k].bar, borderWidth: 1, borderColor: PREVIEW[k].ink }} />
+      <View style={{ height: 8, borderRadius: 4, width: '60%', backgroundColor: PREVIEW[k].ink }} />
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', gap: 10 }}>
+      {([['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as const).map(([key, label]) => {
+        const on = mode === key;
+        return (
+          <Pressable
+            key={key} onPress={() => setMode(key)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={label}
+            style={{ flex: 1, borderRadius: 16, borderWidth: on ? 2 : 1, borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brandLight : th.surface, padding: 8, gap: 8 }}
+          >
+            <View style={{ height: 56, borderRadius: 10, overflow: 'hidden', flexDirection: 'row', borderWidth: 1, borderColor: th.border }}>
+              {key === 'system' ? <>{half('light')}{half('dark')}</> : half(key)}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              {on ? <Feather name="check-circle" size={14} color={th.brand} /> : null}
+              <Text style={{ color: on ? th.brand : th.ink, fontWeight: '800', fontSize: 14 }}>{label}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function LanguageSwitch() {
   const { lang, setLang } = useLang();
   const th = useTheme();

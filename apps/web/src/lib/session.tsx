@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { connectLive, disconnectLive } from './live';
 import { api, ApiError, refreshSession, setAccessToken, setAuthLostHandler } from './api';
 import { clearLocalData } from './outbox';
 
@@ -64,6 +65,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
     return { client: isMobile ? 'mobile' : 'desktop', deviceLabel: navigator.userAgent.slice(0, 60) };
   };
+  // live updates run while someone is signed in
+  useEffect(() => { if (me) connectLive(); else disconnectLive(); }, [!!me]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const start = (res: any) => { setAccessToken(res.accessToken); setMe(res.user); };
 
   const identify = useCallback(async (identifier: string) => (await api.post('/auth/identify', { identifier })).method as SignInMethod, []);

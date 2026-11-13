@@ -15,6 +15,7 @@ import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { EXCEPTION_KEY } from '@/lib/labels';
 import { dec, formatINR } from '@/lib/money';
+import { useLive } from '@/lib/live';
 
 interface Exc { code: string; severity: 'CRITICAL' | 'WARNING' | 'INFO'; group: string; groupKey: string; groupParam?: number; title: string; locationId?: string; locationName?: string; locationNameTa?: string | null; businessDate?: string; metric?: string; link: { type: string; locationId?: string; date?: string } }
 interface PendingClosing { locationId: string; locationName: string; locationNameTa: string | null; businessDate: string; status: string }
@@ -61,6 +62,7 @@ export default function Dashboard() {
     const timer = setInterval(load, 60_000); // auto-refresh 60 s
     return () => clearInterval(timer);
   }, [load]);
+  useLive(load);
 
   const rows = useMemo(() => {
     const list = [...(summary?.branches ?? [])];

@@ -5,6 +5,7 @@ import { DateInput } from '@/components/DateNav';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BackdateRequests } from '@/components/BackdateRequests';
+import { useApprovedDays } from '@/lib/useApprovedDays';
 import { Chips, ErrorBox, MoneyInput, Skeleton, TextField, Warnings } from '@/components/ui';
 import { api, type Warning } from '@/lib/api';
 import { addDays, prettyDate } from '@/lib/dates';
@@ -14,6 +15,7 @@ import { MODE_KEY, STATUS_KEY } from '@/lib/labels';
 import { dec, formatINR } from '@/lib/money';
 import { cacheMaster, readMaster, submitOffline, useOutbox } from '@/lib/outbox';
 import { useBranch } from '@/lib/useBranch';
+import { useLive } from '@/lib/live';
 
 interface Category { id: string; nameEn: string; nameTa?: string; requiresReceiptAbove?: string | null; requiresSupplier?: boolean; parentId?: string | null }
 interface Supplier { id: string; code: string; name: string }
@@ -23,7 +25,8 @@ const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'] as const;
 
 export default function ExpensePage() {
   const { t, pick } = useT();
-  const { locationId, date: today } = useBranch();
+  const { locationId, today: realToday, date: today } = useBranch();
+  const approved = useApprovedDays();
   const [date, setDate] = useState(today); // the day the expense belongs to (today, or back-dated within the allowed window)
   const { ops, waiting } = useOutbox(locationId, date);
   const [boot, setBoot] = useState<Bootstrap | null>(null);
@@ -67,6 +70,7 @@ export default function ExpensePage() {
     } catch { /* offline: show only queued entries */ }
   }, [locationId, date]);
   useEffect(() => { void loadList(); }, [loadList, waiting]);
+  useLive(loadList);
 
   const category = boot?.categories.find((c) => c.id === categoryId);
   const receiptAbove = dec(category?.requiresReceiptAbove ?? boot?.rules.receiptAbove ?? 500);
@@ -124,12 +128,10 @@ export default function ExpensePage() {
       <BackdateRequests locationId={locationId} />
 
       <section className="card space-y-4" aria-label={t('category')}>
-        {backdate > 0 && (
-          <div>
-            <label htmlFor="edate" className="label">{t('dateLabel')}</label>
-            <DateInput id="edate" value={date} min={addDays(today, -backdate)} max={today} onChange={(v) => setDate(v || today)} />
-          </div>
-        )}
+        <div>
+          <label htmlFor="edate" className="label">{t('dateLabel')}</label>
+          <DateInput id="edate" value={date} min={addDays(realToday, -14)} max={realToday} allowed={[...new Set([realToday, ...approved, date])]} onChange={(v) => setDate(v || today)} />
+        </div>
         <span className="label">{t('category')}</span>
         <div className="grid grid-cols-3 gap-2">
           {top.map((c) => (

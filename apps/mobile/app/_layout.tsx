@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AndroidBottomInset } from '@/components/AndroidBottomInset';
@@ -7,10 +8,11 @@ import { PushProvider } from '@/components/PushProvider';
 import { ToastHost } from '@/lib/toast';
 import { LanguageProvider } from '@/lib/language';
 import { SessionProvider } from '@/lib/session';
-import { useTheme } from '@/lib/theme';
+import { applySavedThemeMode, useTheme } from '@/lib/theme';
 
 function Shell() {
   const th = useTheme();
+  useEffect(() => { void applySavedThemeMode(); }, []);
   return (
     <>
       <StatusBar style="light" />

@@ -4,6 +4,7 @@ import { Image, Pressable, View } from 'react-native';
 import { Text } from './Text';
 import { api, ApiError, uploadAttachment } from '@/lib/api';
 import { prettyDate, todayIST, uuid } from '@/lib/dates';
+import { useWorkDate } from '@/lib/workDate';
 import { approvalTone, MODE_LABEL, STATUS_LABEL } from '@/lib/labels';
 import { amt, cleanAmount, dec, formatINR } from '@/lib/money';
 import { pickPhoto, type Photo } from '@/lib/photo';
@@ -136,6 +137,7 @@ const blank = (): Line => ({ itemId: '', unitId: '', qty: '', rate: '' });
 
 /** Purchase entry: supplier, items with quantity / unit / rate, payment (cash, part payment or credit with a due date), invoice photo. */
 export function PurchaseForm({ fixedLocationId, onSaved }: { fixedLocationId?: string; onSaved: (warnings: any[]) => void }) {
+  const workDate = useWorkDate();
   const branches = useBranches();
   const [locationId, setLocationId] = useState(fixedLocationId ?? '');
   const [boot, setBoot] = useState<any>(null);
@@ -173,7 +175,7 @@ export function PurchaseForm({ fixedLocationId, onSaved }: { fixedLocationId?: s
     try {
       const attachmentKeys = photo ? [await uploadAttachment(photo.uri, photo.name, locationId)] : undefined;
       const res = await api.full.post('/purchases', {
-        locationId, businessDate: todayIST(), supplierId, supplierRefNo: refNo.trim() || undefined,
+        locationId, businessDate: workDate, supplierId, supplierRefNo: refNo.trim() || undefined,
         items: valid.map((l) => ({ itemId: l.itemId, unitId: l.unitId, quantity: dec(l.qty).toString(), rate: dec(l.rate).toString() })),
         otherCharges: other ? amt(other) : undefined, discount: discount ? amt(discount) : undefined,
         paymentMode: mode, paidAmount: mode === 'CREDIT' ? undefined : effectivePaid.toFixed(2), dueDate: credit.greaterThan(0) ? due : undefined, remarks: remarks.trim() || undefined, attachmentKeys, clientUuid: uuid(),

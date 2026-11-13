@@ -10,6 +10,7 @@ import { addDays, prettyDate, prettyTime } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { useDateParam } from '@/lib/useDateParam';
 import { dec, formatINR } from '@/lib/money';
+import { useLive } from '@/lib/live';
 
 export default function ClosingBoard() {
   const { t, pick } = useT();
@@ -22,6 +23,7 @@ export default function ClosingBoard() {
     try { setRows(await api.get(`/closings?date=${date}`)); setError(null); } catch (e: any) { setError(e.message); }
   }, [date]);
   useEffect(() => { if (!ready) return; setRows(null); void load(); }, [load, ready]);
+  useLive(load, ['DAILY_CLOSING', 'DAILY_SALES', 'CASH_RECONCILIATION']);
 
   return (
     <div className="space-y-4">

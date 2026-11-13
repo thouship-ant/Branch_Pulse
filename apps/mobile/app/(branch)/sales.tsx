@@ -4,10 +4,11 @@ import { View } from 'react-native';
 import { Text } from '@/components/Text';
 import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, MoneyField, Screen, Warnings } from '@/components/ui';
 import { api, ApiError, type Warning } from '@/lib/api';
-import { prettyDate, todayIST } from '@/lib/dates';
+import { prettyDate } from '@/lib/dates';
 import { amt, dec, formatINR, sumDec } from '@/lib/money';
 import { useBranch } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
+import { useWorkDate } from '@/lib/workDate';
 
 interface Form { total: string; cash: string; upi: string; card: string; credit: string; comp: string; other: string; remarks: string }
 const EMPTY: Form = { total: '', cash: '', upi: '', card: '', credit: '', comp: '', other: '', remarks: '' };
@@ -15,7 +16,7 @@ const EMPTY: Form = { total: '', cash: '', upi: '', card: '', credit: '', comp: 
 export default function SalesScreen() {
   const th = useTheme();
   const { branch, locationId } = useBranch();
-  const date = todayIST();
+  const date = useWorkDate();
   const [form, setForm] = useState<Form>(EMPTY);
   const [version, setVersion] = useState<number | undefined>();
   const [loading, setLoading] = useState(true);

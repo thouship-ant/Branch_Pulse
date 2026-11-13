@@ -6,6 +6,9 @@ import { ErrorBox, Sheet } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
+import { resumeStep, startEntry } from '@/lib/entry';
+import { useBranch } from '@/lib/useBranch';
+import { useLive } from '@/lib/live';
 
 interface Day { date: string; request: { id: string; status: 'PENDING' | 'APPROVED' | 'REJECTED'; reason: string; decisionNote?: string | null } | null }
 
@@ -15,6 +18,7 @@ interface Day { date: string; request: { id: string; status: 'PENDING' | 'APPROV
  */
 export function BackdateRequests({ locationId }: { locationId: string }) {
   const { t } = useT();
+  const { entering } = useBranch(); // the sheet that enters a missed day shows these pages too: no card inside it
   const [days, setDays] = useState<Day[] | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [reason, setReason] = useState('');
@@ -26,6 +30,7 @@ export function BackdateRequests({ locationId }: { locationId: string }) {
     try { setDays(await api.get<Day[]>(`/backdate-requests/eligible?locationId=${locationId}`)); } catch { setDays([]); }
   }, [locationId]);
   useEffect(() => { void load(); }, [load]);
+  useLive(load, ['BACKDATE_REQUEST', 'DAILY_CLOSING']);
 
   async function send() {
     if (!asking) return;
@@ -35,7 +40,7 @@ export function BackdateRequests({ locationId }: { locationId: string }) {
     finally { setBusy(false); }
   }
 
-  if (!days || days.length === 0) return null;
+  if (entering || !days || days.length === 0) return null;
   return (
     <section className="card space-y-3 border-amber-300 bg-amber-50/60" aria-label={t('bdTitle')}>
       <div className="flex items-start gap-3">
@@ -57,7 +62,7 @@ export function BackdateRequests({ locationId }: { locationId: string }) {
             ) : d.request.status === 'PENDING' ? (
               <span className="chip border-amber-300 bg-amber-100 text-amber-900"><span aria-hidden>◔</span>{t('bdWaiting')}</span>
             ) : (
-              <span className="chip border-emerald-300 bg-emerald-50 text-emerald-800"><span aria-hidden>✓</span>{t('bdApproved')}</span>
+              <button type="button" className="chip min-h-[38px] border-emerald-300 bg-emerald-50 font-bold text-emerald-800 transition hover:brightness-95" onClick={() => startEntry(d.date, resumeStep(d.date) ?? 0)}><span aria-hidden>✓</span>{resumeStep(d.date) !== null ? t('bdContinue') : t('bdEnterDay')} →</button>
             )}
           </li>
         ))}

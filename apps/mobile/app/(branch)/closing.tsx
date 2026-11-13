@@ -6,16 +6,17 @@ import { Text } from '@/components/Text';
 import { CashRecon } from '@/components/CashRecon';
 import { Button, Card, Chip, ErrorBox, Field, H3, Heading, Loading, Row, Screen, StatusPill } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
-import { prettyDate, todayIST } from '@/lib/dates';
+import { prettyDate } from '@/lib/dates';
 import { formatINR } from '@/lib/money';
 import { useBranch } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
+import { useWorkDate } from '@/lib/workDate';
 
 /** Closing: step 1 the cash count, step 2 the summary, pre-checks and submit. */
 export default function ClosingScreen() {
   const th = useTheme();
   const { locationId } = useBranch();
-  const date = todayIST();
+  const date = useWorkDate();
   const [step, setStep] = useState<1 | 2>(1);
   const [cash, setCash] = useState<any>(null);
   const [screen, setScreen] = useState<any>(null);

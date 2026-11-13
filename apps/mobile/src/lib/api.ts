@@ -39,6 +39,7 @@ export class ApiError extends Error {
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
+export const getAccessToken = () => accessToken;
 let onAuthLost: (() => void) | null = null;
 export const setAuthLostHandler = (fn: (() => void) | null) => { onAuthLost = fn; };
 

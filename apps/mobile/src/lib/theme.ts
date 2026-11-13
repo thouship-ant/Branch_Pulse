@@ -1,3 +1,5 @@
+import * as SecureStore from 'expo-secure-store';
+import { useSyncExternalStore } from 'react';
 import { useColorScheme } from 'react-native';
 
 /** Same tokens as the web app's globals.css (deep navy brand, slate neutrals), resolved for light and dark. */
@@ -36,7 +38,38 @@ const dark: Theme = {
   series: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300'],
 };
 
-export const useTheme = (): Theme => (useColorScheme() === 'dark' ? dark : light);
+/** The appearance the person chose: light, dark, or follow the phone. Remembered on the phone. */
+export type ThemeMode = 'system' | 'light' | 'dark';
+const MODE_KEY = 'bp.themeMode';
+
+// a tiny shared store, so every screen redraws when the choice changes (works on phone and web alike)
+let current: ThemeMode = 'system';
+const listeners = new Set<() => void>();
+const setCurrent = (m: ThemeMode) => { current = m; listeners.forEach((l) => l()); };
+const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
+const getMode = () => current;
+
+export function useTheme(): Theme {
+  const system = useColorScheme();
+  const mode = useSyncExternalStore(subscribe, getMode, getMode);
+  return (mode === 'system' ? system === 'dark' : mode === 'dark') ? dark : light;
+}
+
+export async function loadThemeMode(): Promise<ThemeMode> {
+  try { const v = await SecureStore.getItemAsync(MODE_KEY); return v === 'light' || v === 'dark' ? v : 'system'; } catch { return 'system'; }
+}
+/** Call once at start-up: puts the saved choice into effect. */
+export async function applySavedThemeMode() { setCurrent(await loadThemeMode()); }
+
+export async function setThemeMode(m: ThemeMode) {
+  setCurrent(m);
+  try { await SecureStore.setItemAsync(MODE_KEY, m); } catch { /* storage unavailable */ }
+}
+
+export function useThemeMode(): [ThemeMode, (m: ThemeMode) => void] {
+  const mode = useSyncExternalStore(subscribe, getMode, getMode);
+  return [mode, (m) => { void setThemeMode(m); }];
+}
 
 export const RADIUS = 16;
 export const TOUCH = 48; // >= 48 px touch targets, as on the web

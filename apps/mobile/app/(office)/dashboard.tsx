@@ -13,6 +13,7 @@ import { periodLabel, periodQuery, resolvePeriod, type Period } from '@/lib/peri
 import { dec, formatINR } from '@/lib/money';
 import { useTheme } from '@/lib/theme';
 import { useBranches } from '@/lib/useLookups';
+import { useLive } from '@/lib/live';
 
 interface Exc { code: string; severity: 'CRITICAL' | 'WARNING' | 'INFO'; title: string; locationName?: string; businessDate?: string; metric?: string }
 interface PendingClosing { locationId: string; locationName: string; businessDate: string; status: string }
@@ -62,6 +63,7 @@ export default function DashboardScreen() {
   }, [period]);
 
   useFocusEffect(useCallback(() => { setSummary(null); void load(); }, [load]));
+  useLive(load);
 
   const tl = summary?.tiles;
   const change = summary?.vsLastWeek.salesChangePct;
@@ -93,9 +95,9 @@ export default function DashboardScreen() {
         const oldestUnclosed = [...pendingDates].sort()[0] ?? null;
         const unclosedBranches = new Set(pending.map((p) => p.locationId)).size;
         const lines: Array<{ key: string; dot: string; text: string; age: number; cta: string; go: () => void }> = [];
-        if (wait.closings > 0) lines.push({ key: 'c', dot: '#dc2626', text: `${wait.closings} closing${wait.closings === 1 ? '' : 's'} wait for your approval`, age: days(wait.oldestClosing), cta: 'Review', go: () => router.push('/approvals' as any) });
-        if (wait.expenses > 0) lines.push({ key: 'e', dot: '#dc2626', text: `${wait.expenses} expense${wait.expenses === 1 ? '' : 's'} wait for your approval, ${whole(wait.amount)}`, age: days(wait.oldestExpense), cta: 'Review', go: () => router.push('/approvals' as any) });
-        if (wait.requests > 0) lines.push({ key: 'r', dot: '#f59e0b', text: `${wait.requests} request${wait.requests === 1 ? '' : 's'} to enter a missed day`, age: 0, cta: 'Review', go: () => router.push('/approvals' as any) });
+        if (wait.closings > 0) lines.push({ key: 'c', dot: '#dc2626', text: `${wait.closings} closing${wait.closings === 1 ? '' : 's'} wait for your approval`, age: days(wait.oldestClosing), cta: 'Review', go: () => router.push('/approvals?tab=closing' as any) });
+        if (wait.expenses > 0) lines.push({ key: 'e', dot: '#dc2626', text: `${wait.expenses} expense${wait.expenses === 1 ? '' : 's'} wait for your approval, ${whole(wait.amount)}`, age: days(wait.oldestExpense), cta: 'Review', go: () => router.push('/approvals?tab=expenses' as any) });
+        if (wait.requests > 0) lines.push({ key: 'r', dot: '#f59e0b', text: `${wait.requests} request${wait.requests === 1 ? '' : 's'} to enter a missed day`, age: 0, cta: 'Review', go: () => router.push('/approvals?tab=backdate' as any) });
         if (unclosedBranches > 0) lines.push({ key: 'u', dot: '#f59e0b', text: `${unclosedBranches} branch${unclosedBranches === 1 ? '' : 'es'} not closed since ${prettyDate(oldestUnclosed!)}`, age: days(oldestUnclosed), cta: 'View', go: () => { setPendingPage(1); setPendingOpen(true); } });
         if (wait.overdue > 0) lines.push({ key: 'd', dot: '#dc2626', text: `${lakh(wait.overdue)} overdue to suppliers`, age: 0, cta: 'Plan', go: () => router.push('/more/purchases' as any) });
         if (lines.length === 0) return null;

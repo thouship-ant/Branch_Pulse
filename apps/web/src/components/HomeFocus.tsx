@@ -43,7 +43,7 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
   const lines = useMemo(() => {
     const out: Array<{ key: string; tone: 'red' | 'amber'; text: string; age: number; href: string; cta: string }> = [];
     if (att.closings > 0) out.push({ key: 'c', tone: 'red', text: `${att.closings} ${t('attClosingsWait')}`, age: ageDays(att.oldestClosing), href: '/approvals?tab=closing', cta: t('attReview') });
-    if (att.expenses > 0) out.push({ key: 'e', tone: 'red', text: `${att.expenses} ${t('attExpenses')}, ${formatINR(String(att.expenseAmount), { decimals: false })}`, age: ageDays(att.oldestExpense), href: '/approvals', cta: t('attReview') });
+    if (att.expenses > 0) out.push({ key: 'e', tone: 'red', text: `${att.expenses} ${t('attExpenses')}, ${formatINR(String(att.expenseAmount), { decimals: false })}`, age: ageDays(att.oldestExpense), href: '/approvals?tab=expenses', cta: t('attReview') });
     if (att.requests > 0) out.push({ key: 'r', tone: 'amber', text: `${att.requests} ${t('attRequests')}`, age: 0, href: '/approvals?tab=backdate', cta: t('attReview') });
     if (att.unclosedBranches > 0) out.push({ key: 'u', tone: 'amber', text: `${att.unclosedBranches} ${t('attBranchesNotClosed')}${att.oldestUnclosed ? ` ${prettyDate(att.oldestUnclosed)}` : ''}`, age: ageDays(att.oldestUnclosed), href: '/closings', cta: t('attView') });
     if (dues && dues.overdue > 0) out.push({ key: 'd', tone: 'red', text: `${lakh(dues.overdue)} ${t('attOverdue')}`, age: 0, href: '/purchases', cta: t('attPlan') });

@@ -1,5 +1,6 @@
 'use client';
 
+import { BackdateEntry } from '@/components/BackdateEntry';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -78,11 +79,12 @@ function useGuard(kind: 'branch' | 'office') {
   return { ready, me };
 }
 
-// ------------------------------------------------------------------ branch: 5-tab bottom navigation
+// ------------------------------------------------------------------ branch: bottom navigation
 const BRANCH_TABS: Array<{ href: string; key: MessageKey; icon: IconName }> = [
   { href: '/b/home', key: 'home', icon: 'home' },
   { href: '/b/stock', key: 'stock', icon: 'box' },
   { href: '/b/sales', key: 'sales', icon: 'trend' },
+  { href: '/b/purchases', key: 'purchases', icon: 'bag' },
   { href: '/b/expense', key: 'expense', icon: 'card' },
   { href: '/b/closing', key: 'closing', icon: 'check' },
 ];
@@ -126,6 +128,7 @@ export function BranchShell({ children }: { children: ReactNode }) {
       </header>
       <SyncBanner locationId={branch?.id} />
       <main className="flex-1 space-y-4 p-4 pb-28">{children}</main>
+      <BackdateEntry />
       <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg border-t border-slate-200/80 bg-[var(--glass)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl" aria-label="Main">
         <div className="flex px-1.5 pt-1">
           {BRANCH_TABS.map((tab) => {

@@ -11,6 +11,7 @@ import { useT } from '@/lib/i18n';
 import { MODE_KEY } from '@/lib/labels';
 import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
+import { useLive } from '@/lib/live';
 
 function age(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
@@ -72,6 +73,7 @@ export default function Approvals() {
     } catch (e: any) { setError(e.message); }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useLive(load, ['EXPENSE', 'DAILY_CLOSING', 'BACKDATE_REQUEST']);
 
   const branch = (id: string) => {
     const l = me?.locations.find((x) => x.id === id);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from './api';
+import { useLive } from './live';
 import { useSession } from './session';
 
 export interface Attention {
@@ -61,5 +62,6 @@ export function useAttention(): Attention {
     return () => { clearInterval(timer); window.removeEventListener('bp:attention', on); };
   }, [load]);
 
+  useLive(load); // another person's change updates the counts at once
   return a;
 }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { PurchaseList } from '@/components/Purchasing';
 import { StockCount } from '@/components/StockCount';
 import { StockLevels } from '@/components/StockLevels';
 import { StockVariancePanel, TransfersPanel, WastagePanel } from '@/components/StockOps';
@@ -7,7 +6,7 @@ import { DateStepper, Loading, Screen, SegTabs } from '@/components/ui';
 import { useDay } from '@/lib/useDate';
 import { useBranch, useSession } from '@/lib/session';
 
-type Tab = 'count' | 'wastage' | 'purchases' | 'stock' | 'transfers' | 'variance';
+type Tab = 'count' | 'wastage' | 'stock' | 'transfers' | 'variance';
 
 /** The branch manager's stock desk: daily count, wastage, purchases, stock on hand, transfers to receive, this branch's variances. */
 export default function BranchStockScreen() {
@@ -16,7 +15,7 @@ export default function BranchStockScreen() {
   const [tab, setTab] = useState<Tab>('count');
   const day = useDay();
   if (!locationId) return <Screen><Loading /></Screen>;
-  const tabs: Array<{ key: Tab; label: string }> = [{ key: 'count', label: 'Count' }, { key: 'wastage', label: 'Wastage' }, { key: 'purchases', label: 'Purchases' }, { key: 'stock', label: 'Stock' }, { key: 'transfers', label: 'Transfers' }];
+  const tabs: Array<{ key: Tab; label: string }> = [{ key: 'count', label: 'Count' }, { key: 'wastage', label: 'Wastage' }, { key: 'stock', label: 'Stock' }, { key: 'transfers', label: 'Transfers' }];
   if (can('count:view')) tabs.push({ key: 'variance', label: 'Variance' });
   return (
     <Screen
@@ -27,7 +26,7 @@ export default function BranchStockScreen() {
         </>
       )}
     >
-      {tab === 'count' ? <StockCount fixedLocationId={locationId} day={day} /> : tab === 'wastage' ? <WastagePanel fixedLocationId={locationId} /> : tab === 'purchases' ? <PurchaseList fixedLocationId={locationId} /> : tab === 'stock' ? <StockLevels fixedLocationId={locationId} /> : tab === 'transfers' ? <TransfersPanel fixedLocationId={locationId} /> : <StockVariancePanel fixedLocationId={locationId} />}
+      {tab === 'count' ? <StockCount fixedLocationId={locationId} day={day} /> : tab === 'wastage' ? <WastagePanel fixedLocationId={locationId} /> : tab === 'stock' ? <StockLevels fixedLocationId={locationId} /> : tab === 'transfers' ? <TransfersPanel fixedLocationId={locationId} /> : <StockVariancePanel fixedLocationId={locationId} />}
     </Screen>
   );
 }

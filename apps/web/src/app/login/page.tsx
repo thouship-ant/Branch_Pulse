@@ -115,7 +115,7 @@ export default function LoginPage() {
   const points = [t('loginP1'), t('loginP2'), t('loginP3')];
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+    <main className="grid min-h-dvh grid-cols-[minmax(0,1fr)] overflow-x-hidden lg:grid-cols-[1.05fr_1fr]">
       {/* brand panel: full height on desktop, a compact banner on a phone */}
       <section className="relative isolate flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-6 pb-16 pt-8 text-white lg:px-14 lg:py-14">
         <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden />
@@ -142,7 +142,7 @@ export default function LoginPage() {
       </section>
 
       {/* sign-in card overlaps the banner on a phone */}
-      <section className="relative -mt-8 flex flex-col justify-center rounded-t-[28px] bg-[rgb(var(--slate-50))] px-6 pb-10 pt-8 lg:mt-0 lg:rounded-none lg:px-16">
+      <section className="relative -mt-8 flex min-w-0 flex-col justify-center rounded-t-[28px] bg-[rgb(var(--slate-50))] px-6 pb-10 pt-8 lg:mt-0 lg:rounded-none lg:px-16">
         <div className="mx-auto w-full max-w-sm space-y-6">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight">{step === 'otp' ? t('enterOtp') : t('loginTitle')}</h2>

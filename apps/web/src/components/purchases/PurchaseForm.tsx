@@ -4,7 +4,9 @@ import { Select } from '@/components/Select';
 import { DateInput } from '@/components/DateNav';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, type Warning } from '@/lib/api';
-import { addDays, prettyDate, todayIST } from '@/lib/dates';
+import { addDays, prettyDate } from '@/lib/dates';
+import { useApprovedDays } from '@/lib/useApprovedDays';
+import { useBranch } from '@/lib/useBranch';
 import { useT } from '@/lib/i18n';
 import { compressImage } from '@/lib/image';
 import { MODE_KEY } from '@/lib/labels';
@@ -33,7 +35,8 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
   locations: LocationOption[]; fixedLocationId?: string; onSaved: (r: { queued: boolean; warnings: Warning[] }) => void;
 }) {
   const { t, pick } = useT();
-  const today = todayIST();
+  const { today: realToday, date: today } = useBranch(); // `today` is the day being entered: today, or the missed day of the sheet
+  const approved = useApprovedDays();
   const [boot, setBoot] = useState<Boot | null>(null);
   const [locationId, setLocationId] = useState(fixedLocationId ?? '');
   const [date, setDate] = useState(today);
@@ -157,7 +160,7 @@ export function PurchaseForm({ locations, fixedLocationId, onSaved }: {
         )}
         <div>
           <label htmlFor="pd" className="label">{t('purchaseDate')}</label>
-          <DateInput id="pd" value={date} max={today} min={backdate > 0 ? addDays(today, -backdate) : undefined} onChange={(v) => setDate(v || today)} />
+          <DateInput id="pd" value={date} max={realToday} min={addDays(realToday, -14)} allowed={[...new Set([realToday, ...approved, date])]} onChange={(v) => setDate(v || today)} />
         </div>
         <div>
           <label htmlFor="ps" className="label">{t('supplier')} *</label>

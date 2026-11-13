@@ -13,25 +13,30 @@ import { formatINR } from '@/lib/money';
 import { discard, keepMine, useOutbox } from '@/lib/outbox';
 import { useSession } from '@/lib/session';
 import { useBranch } from '@/lib/useBranch';
+import { useLive } from '@/lib/live';
+import { resumeStep, startEntry } from '@/lib/entry';
 
 export default function BranchHome() {
   const { t } = useT();
   const { can } = useSession();
-  const { locationId, date } = useBranch();
+  const { locationId, today: date } = useBranch();
   const [screen, setScreen] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { ops, needsAttention, waiting } = useOutbox(locationId, date);
 
   const load = useCallback(async () => {
     if (!locationId) return;
     try {
-      const [s, e] = await Promise.all([
+      const [s, e, p] = await Promise.all([
         api.get(`/closings/${locationId}/${date}`),
         api.get(`/expenses?locationId=${locationId}&from=${date}&to=${date}&pageSize=100`),
+        api.get<any[]>(`/purchases?locationId=${locationId}&from=${date}&to=${date}&pageSize=50`).catch(() => [] as any[]),
       ]);
       setScreen(s);
       setExpenses(e);
+      setPurchases(p);
       setError(null);
     } catch (err: any) {
       if (!err.isNetwork) setError(err.message);
@@ -39,6 +44,7 @@ export default function BranchHome() {
   }, [locationId, date]);
 
   useEffect(() => { void load(); }, [load, ops.length, waiting]);
+  useLive(load);
 
   if (!screen && !error) return <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div>;
 
@@ -49,9 +55,15 @@ export default function BranchHome() {
   const total = live.reduce((a, e) => a + Number(e.amount), 0);
   const queuedExpenses = ops.filter((o) => o.entityType === 'EXPENSE' && o.state !== 'DONE').length;
   const counted = cash?.actualClosing != null;
+  const livePurchases = purchases.filter((p) => p.status === 'ACTIVE');
+  const queuedPurchases = ops.filter((o) => o.entityType === 'PURCHASE' && o.state !== 'DONE').length;
 
   const cards: Array<{ href: string; title: string; detail: string; done: boolean; icon: IconName }> = [
     { href: '/b/sales', title: t('sales'), detail: sales ? formatINR(sales.totalSales) : '—', done: !!sales, icon: 'trend' },
+    {
+      href: '/b/purchases', icon: 'bag', title: t('purchases'),
+      detail: `${formatINR(String(livePurchases.reduce((a, p) => a + Number(p.totalAmount), 0)), { decimals: false })} (${livePurchases.length + queuedPurchases})`, done: livePurchases.length + queuedPurchases > 0,
+    },
     {
       href: '/b/expense', icon: 'card', title: t('expenses'),
       detail: `${formatINR(String(total), { decimals: false })} (${live.length + queuedExpenses})`, done: live.length + queuedExpenses > 0,
@@ -96,6 +108,7 @@ export default function BranchHome() {
           <div className="h-full rounded-full bg-gradient-to-r from-brand to-[#4a5bd8] transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
         </div>
         <p className="mt-2 text-xs font-medium text-slate-600">{stepsDone === stepsTotal ? `✓ ${t('allDoneToday')}` : t('keepGoing')}</p>
+        {!submitted && <button type="button" className="btn-primary mt-3 w-full" onClick={() => startEntry(date, resumeStep(date) ?? 0)}>{t('stepByStep')} →</button>}
       </div>
       <ErrorBox error={error} />
 

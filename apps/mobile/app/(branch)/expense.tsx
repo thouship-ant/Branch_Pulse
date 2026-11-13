@@ -6,12 +6,14 @@ import { tAlert } from '@/lib/i18n';
 import { Text } from '@/components/Text';
 import { ACCENT, type AccentName, Banner, Button, Card, Chips, ErrorBox, Field, H3, Heading, Loading, Muted, MoneyField, Screen, Warnings } from '@/components/ui';
 import { api, ApiError, uploadAttachment, type Warning } from '@/lib/api';
-import { prettyDate, todayIST, uuid } from '@/lib/dates';
+import { prettyDate, uuid } from '@/lib/dates';
 import { MODE_LABEL, STATUS_LABEL } from '@/lib/labels';
 import { dec, formatINR } from '@/lib/money';
 import { pickPhoto, type Photo } from '@/lib/photo';
 import { useBranch } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
+import { useWorkDate } from '@/lib/workDate';
+import { useLive } from '@/lib/live';
 
 interface Category { id: string; nameEn: string; requiresReceiptAbove?: string | null; requiresSupplier?: boolean; parentId?: string | null }
 interface Supplier { id: string; code: string; name: string }
@@ -70,7 +72,7 @@ function Tiles<T extends string>({ options, value, onChange, cols = 3 }: { optio
 export default function ExpenseScreen() {
   const th = useTheme();
   const { locationId } = useBranch();
-  const date = todayIST();
+  const date = useWorkDate();
   const [boot, setBoot] = useState<Bootstrap | null>(null);
   const [list, setList] = useState<any[]>([]);
   const [categoryId, setCategoryId] = useState('');
@@ -99,6 +101,7 @@ export default function ExpenseScreen() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
   }, [locationId, date]);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useLive(load, ['EXPENSE', 'PURCHASE']);
 
   const category = boot?.categories.find((c) => c.id === categoryId);
   const receiptAbove = dec(category?.requiresReceiptAbove ?? boot?.rules.receiptAbove ?? 500);

@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from './api';
 import { useSession } from './session';
+import { useLive } from './live';
 
 /** Counts for the tab-bar badges: things waiting for approval, and branches with unclosed days. */
 export function useAttention() {
@@ -19,6 +20,7 @@ export function useAttention() {
     setA({ waiting, unclosedBranches });
   }, [can]);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useLive(load);
   useEffect(() => { const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   return a;
 }

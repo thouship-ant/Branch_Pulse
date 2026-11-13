@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { ReqCtx } from './auth-user';
 import { Tx } from './prisma.service';
+import { RealtimeService } from './realtime.service';
 
 export type AuditAction =
   | 'CREATE' | 'UPDATE' | 'STATUS_CHANGE' | 'APPROVE' | 'REJECT' | 'REOPEN' | 'CANCEL' | 'REVERSE'
@@ -44,6 +45,8 @@ function jsonSafe(v: unknown): Prisma.InputJsonValue | null {
  */
 @Injectable()
 export class AuditService {
+  constructor(@Optional() private readonly live?: RealtimeService) {}
+
   async log(tx: Tx, ctx: ReqCtx | null, e: AuditEntry) {
     const before = e.before ?? null;
     const after = e.after ?? null;
@@ -92,5 +95,9 @@ export class AuditService {
         source: ctx?.source ?? 'SYSTEM',
       },
     });
+    // tell the other signed-in screens (not for sign-ins and exports, which change nothing they show)
+    if (!['LOGIN', 'LOGIN_FAILED', 'LOGOUT', 'EXPORT'].includes(e.action)) {
+      this.live?.announce(e.companyId ?? ctx?.user.companyId, e.entityType, e.action, e.locationId);
+    }
   }
 }

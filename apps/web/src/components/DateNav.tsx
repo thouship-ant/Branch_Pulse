@@ -17,7 +17,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
  * Month-grid popover: pick a day, then Done to apply (Reset jumps to today). Days outside min..max are disabled.
  * Rendered in a portal with fixed positioning under `anchor`, so a modal or scroll container never clips it.
  */
-function DatePopover({ anchor, value, min, max, onApply, onClose }: { anchor: HTMLElement; value: string; min?: string; max?: string; onApply: (d: string) => void; onClose: () => void }) {
+function DatePopover({ anchor, value, min, max, allowed, onApply, onClose }: { anchor: HTMLElement; value: string; min?: string; max?: string; allowed?: string[]; onApply: (d: string) => void; onClose: () => void }) {
   const today = todayIST();
   const start = value || max || today;
   const [picked, setPicked] = useState(value);
@@ -88,7 +88,7 @@ function DatePopover({ anchor, value, min, max, onApply, onClose }: { anchor: HT
           const sel = v === picked;
           return (
             <button
-              key={d} type="button" disabled={(!!max && v > max) || (!!min && v < min)} onClick={() => setPicked(v)}
+              key={d} type="button" disabled={(!!max && v > max) || (!!min && v < min) || (!!allowed && !allowed.includes(v))} onClick={() => setPicked(v)}
               onDoubleClick={() => { onApply(v); onClose(); }} aria-pressed={sel}
               className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm tabular-nums transition ${
                 sel ? 'bg-[#1e2a8a] font-semibold text-white shadow-md' : v === today ? 'font-semibold text-brand ring-1 ring-brand/40 hover:bg-brand-light' : 'text-slate-700 hover:bg-slate-100'
@@ -107,7 +107,8 @@ function DatePopover({ anchor, value, min, max, onApply, onClose }: { anchor: HT
 }
 
 /** Drop-in replacement for <input type="date">: same value/min/max semantics, styled like the app's other fields, opens the month-grid popover. */
-export function DateInput({ id, value, onChange, min, max, className = '' }: { id?: string; value: string; onChange: (d: string) => void; min?: string; max?: string; className?: string }) {
+/** `allowed`, when given, lists the only days that can be chosen (the others are greyed out). */
+export function DateInput({ id, value, onChange, min, max, allowed, className = '' }: { id?: string; value: string; onChange: (d: string) => void; min?: string; max?: string; allowed?: string[]; className?: string }) {
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   return (
@@ -119,7 +120,7 @@ export function DateInput({ id, value, onChange, min, max, className = '' }: { i
         <span className={value ? '' : 'text-slate-400'}>{value ? prettyDate(value) : 'Select date'}</span>
         <span className="text-brand"><Svg d={CAL_ICON} size={18} /></span>
       </button>
-      {open && btn.current && <DatePopover anchor={btn.current} value={value} min={min} max={max} onApply={onChange} onClose={() => setOpen(false)} />}
+      {open && btn.current && <DatePopover anchor={btn.current} value={value} min={min} max={max} allowed={allowed} onApply={onChange} onClose={() => setOpen(false)} />}
     </>
   );
 }

@@ -1,6 +1,21 @@
 {
   "cli": { "version": ">= 12.0.0", "appVersionSource": "local" },
   "build": {
+    "production": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-branchpulse.antstockpulse.pro"
+      }
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-branchpulse.antstockpulse.pro"
+      }
+    },
     "branch_pulse": {
       "distribution": "internal",
       "android": {

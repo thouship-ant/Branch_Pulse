@@ -8,6 +8,7 @@ import { prettyTime } from '@/lib/dates';
 import { dec, formatINR } from '@/lib/money';
 import { useTheme } from '@/lib/theme';
 import { useDay } from '@/lib/useDate';
+import { useLive } from '@/lib/live';
 
 /** Every branch's closing for one day: status, sales, cash variance. Tap one to review it. */
 export default function ClosingsScreen() {
@@ -22,6 +23,7 @@ export default function ClosingsScreen() {
     try { setRows(await api.get(`/closings?date=${day.date}`)); setError(null); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
   }, [day.date]);
   useEffect(() => { setRows(null); void load(); }, [load]);
+  useLive(load, ['DAILY_CLOSING', 'DAILY_SALES', 'CASH_RECONCILIATION']);
 
   return (
     <Screen

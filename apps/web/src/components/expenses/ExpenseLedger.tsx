@@ -10,6 +10,7 @@ import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
 import { PeriodPicker, usePeriod } from '../PeriodPicker';
 import { ErrorBox, Sheet, Skeleton, StatusPill } from '../ui';
+import { useLive } from '@/lib/live';
 
 const PAGE = 25;
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT'];
@@ -72,6 +73,7 @@ export function ExpenseLedger({ fixedLocationId }: { fixedLocationId?: string })
     finally { setLoading(false); }
   }, [qs, page, valid]);
   useEffect(() => { void load(); }, [load]);
+  useLive(load, ['EXPENSE']);
 
   const top = categories.filter((c) => !c.parentId);
   const subs = categories.filter((c) => c.parentId === categoryId);

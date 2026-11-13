@@ -10,6 +10,7 @@ import { useT } from '@/lib/i18n';
 import { REASON_KEY } from '@/lib/labels';
 import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
+import { useLive } from '@/lib/live';
 
 type Action = 'approve' | 'reject' | 'reopen';
 
@@ -33,6 +34,7 @@ export default function ClosingDetail() {
     } catch (e: any) { setError(e.message); }
   }, [locationId, date]);
   useEffect(() => { void load(); }, [load]);
+  useLive(load);
 
   async function run() {
     if (!action) return;

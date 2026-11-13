@@ -11,6 +11,7 @@ import { useSession } from '@/lib/session';
 import { PeriodPicker, usePeriod } from '../PeriodPicker';
 import { ErrorBox, Sheet, Skeleton, StatusPill } from '../ui';
 import type { LocationOption } from './PurchaseForm';
+import { useLive } from '@/lib/live';
 
 const PAGE = 25;
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT'];
@@ -73,6 +74,7 @@ export function PurchaseLedger({ locations, fixedLocationId, fixedSupplierId, in
     finally { setLoading(false); }
   }, [qs, page, valid]);
   useEffect(() => { void load(); }, [load, refreshKey]);
+  useLive(load, ['PURCHASE', 'SUPPLIER_PAYMENT']);
 
   async function open(id: string) {
     try { setDetail(await api.get(`/purchases/${id}`)); } catch (e: any) { setError(e.message); }
