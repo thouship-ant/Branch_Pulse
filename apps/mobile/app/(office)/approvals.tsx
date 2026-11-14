@@ -19,6 +19,48 @@ function age(iso: string) {
   return h < 1 ? '<1h' : h < 48 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
 
+/** Two buttons joined into one pill: the chosen half is filled. */
+function JoinedTabs<T extends string>({ value, onChange, tabs }: { value: T; onChange: (v: T) => void; tabs: Array<{ key: T; label: string }> }) {
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', borderRadius: 999, borderWidth: 1, borderColor: th.brand, overflow: 'hidden', backgroundColor: th.surface }}>
+      {tabs.map((t, i) => {
+        const on = t.key === value;
+        return (
+          <Pressable
+            key={t.key} onPress={() => onChange(t.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
+            style={{ flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? th.brand : 'transparent', borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: th.brand }}
+          >
+            <Text style={{ color: on ? th.onBrand : th.brand, fontWeight: '800', fontSize: 14 }}>{t.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** One decided missed-day request: what was asked, the decision, who decided and when. */
+function HistoryCard({ r }: { r: any }) {
+  const th = useTheme();
+  const ok = r.status === 'APPROVED';
+  const tone = ok ? th.ok : th.bad;
+  const when = r.decidedAt ?? r.createdAt;
+  return (
+    <Card style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Text style={{ flex: 1, color: th.ink, fontWeight: '700' }}>{r.locationName} · {prettyDate(String(r.businessDate).slice(0, 10))}</Text>
+        <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: tone.bg, borderWidth: 1, borderColor: tone.border }}>
+          <Text style={{ color: tone.text, fontSize: 12, fontWeight: '800' }}>{ok ? 'Approved' : 'Rejected'}</Text>
+        </View>
+      </View>
+      <Text style={{ color: th.muted, fontSize: 13 }}>{r.requestedByName} ({r.requestedByUsername})</Text>
+      <Text style={{ color: th.ink }}>“{r.reason}”</Text>
+      {r.decisionNote ? <Text style={{ color: th.muted, fontSize: 13 }}>Note: {r.decisionNote}</Text> : null}
+      <Text style={{ color: th.faint, fontSize: 12 }}>{ok ? 'Approved' : 'Rejected'}{r.decidedByUsername ? ` by ${r.decidedByUsername}` : ''} · {prettyDate(String(when).slice(0, 10))}</Text>
+    </Card>
+  );
+}
+
 /** Round thumbs-up / thumbs-down button: the whole approve / reject decision in one tap. */
 function Thumb({ up, onPress, disabled, label, size = 48 }: { up: boolean; onPress: () => void; disabled?: boolean; label: string; size?: number }) {
   const th = useTheme();
@@ -44,6 +86,8 @@ export default function ApprovalsScreen() {
   const showBackdate = can('closing:reopen');
   const router = useRouter();
   const [requests, setRequests] = useState<any[] | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [bdSub, setBdSub] = useState<'requests' | 'history'>('requests');
   const [deciding, setDeciding] = useState<{ r: any; approve: boolean } | null>(null);
   const [note, setNote] = useState('');
   // tick boxes + bulk actions (a separate selection per tab)
@@ -67,8 +111,10 @@ export default function ApprovalsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [ex, cl, bd] = await Promise.all([api.get<any[]>('/expenses?status=SUBMITTED&pageSize=100'), api.get<any[]>('/closings/awaiting').catch(() => [] as any[]), api.get<any[]>('/backdate-requests?status=PENDING').catch(() => [] as any[])]);
-      setRows(ex); setClosings(cl); setRequests(bd); setError(null);
+      const [ex, cl, bd] = await Promise.all([api.get<any[]>('/expenses?status=SUBMITTED&pageSize=100'), api.get<any[]>('/closings/awaiting').catch(() => [] as any[]), api.get<any[]>('/backdate-requests').catch(() => [] as any[])]);
+      setRows(ex); setClosings(cl); setError(null);
+      setRequests(bd.filter((r) => r.status === 'PENDING'));
+      setHistory(bd.filter((r) => r.status !== 'PENDING').sort((a, b) => String(b.decidedAt ?? b.createdAt).localeCompare(String(a.decidedAt ?? a.createdAt))));
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
   }, []);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
@@ -150,6 +196,10 @@ export default function ApprovalsScreen() {
   return (
     <Screen
       onRefresh={load}
+      list={tab === 'backdate' && bdSub === 'history' ? {
+        data: history, keyExtractor: (r) => r.id, renderItem: ({ item }) => <HistoryCard r={item} />,
+        empty: <Banner tone="neutral">No decided requests yet</Banner>,
+      } : undefined}
       top={(
         <>
       <Heading onBlue title={tab === 'expenses' ? 'Approvals · Expenses' : tab === 'closing' ? 'Approvals · Closing' : 'Approvals · Date requests'} />
@@ -157,6 +207,12 @@ export default function ApprovalsScreen() {
         value={tab} onChange={setTab}
         tabs={[{ key: 'expenses' as const, label: `Expenses${rows?.length ? ` (${rows.length})` : ''}` }, ...(showClosing ? [{ key: 'closing' as const, label: `Closing${closings?.length ? ` (${closings.length})` : ''}` }] : []), ...(showBackdate ? [{ key: 'backdate' as const, label: `Date requests${requests?.length ? ` (${requests.length})` : ''}` }] : [])]}
       />
+      {tab === 'backdate' ? (
+        <JoinedTabs
+          value={bdSub} onChange={setBdSub}
+          tabs={[{ key: 'requests', label: `Requests${requests?.length ? ` (${requests.length})` : ''}` }, { key: 'history', label: 'History' }]}
+        />
+      ) : null}
       <ErrorBox error={error} />
       {ids.length > 0 ? (
         <Card style={{ paddingVertical: 8, paddingHorizontal: 12 }}>
@@ -187,7 +243,7 @@ export default function ApprovalsScreen() {
       )}
     >
       {tab === 'backdate' ? (
-        !requests ? <Loading /> : requests.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : requests.map((r) => (
+        bdSub === 'history' ? null : !requests ? <Loading /> : requests.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : requests.map((r) => (
           <Card key={r.id} style={{ gap: 6 }}>
             <Text style={{ color: th.ink, fontWeight: '700' }}>{r.locationName} · {prettyDate(String(r.businessDate).slice(0, 10))}</Text>
             <Text style={{ color: th.muted, fontSize: 13 }}>{r.requestedByName} ({r.requestedByUsername}) · ⏱ {age(r.createdAt)}</Text>
