@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { PurchasesTab } from '@/components/branch/PurchasesTab';
 import ClosingPage from '@/app/b/closing/page';
 import ExpensePage from '@/app/b/expense/page';
 import SalesPage from '@/app/b/sales/page';
 import { api } from '@/lib/api';
+import { useLive } from '@/lib/live';
 import { DateInput } from '@/components/DateNav';
 import { addDays } from '@/lib/dates';
 import { leaveEntry, setEntryStep, startEntry, useEntry } from '@/lib/entry';
@@ -36,6 +37,23 @@ export function BackdateEntry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationId]);
 
+  // a step is ticked only when something was really saved for it: sales entered, a purchase, an expense, the closing submitted
+  const [done, setDone] = useState<boolean[]>([false, false, false, false]);
+  const day = entry.date;
+  const refresh = useCallback(async () => {
+    if (!locationId || !day) return;
+    try {
+      const [s, e, p] = await Promise.all([
+        api.get<any>(`/closings/${locationId}/${day}`),
+        api.get<any[]>(`/expenses?locationId=${locationId}&from=${day}&to=${day}&pageSize=100`),
+        api.get<any[]>(`/purchases?locationId=${locationId}&from=${day}&to=${day}&pageSize=50`).catch(() => [] as any[]),
+      ]);
+      setDone([!!s?.sales, p.some((x) => x.status === 'ACTIVE'), e.some((x) => x.status === 'ACTIVE'), ['SUBMITTED', 'APPROVED'].includes(s?.closing?.status ?? 'PENDING')]);
+    } catch { /* keep what is shown */ }
+  }, [locationId, day]);
+  useEffect(() => { void refresh(); }, [refresh, entry.step]);
+  useLive(refresh);
+
   if (!mounted || !entry.date) return null;
   const steps = [
     { key: 'sales', label: t('sales'), icon: 'trend' },
@@ -60,13 +78,13 @@ export function BackdateEntry() {
           <div className="grid grid-cols-4 gap-1.5" role="tablist">
             {steps.map((s, i) => {
               const on = i === step;
-              const done = i < step;
+              const isDone = done[i];
               return (
                 <button
                   key={s.key} type="button" role="tab" aria-selected={on} onClick={() => setEntryStep(i)}
-                  className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-extrabold transition ${on ? 'bg-brand text-white' : done ? 'bg-emerald-50 text-emerald-800' : 'bg-brand-light text-slate-600'}`}
+                  className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-extrabold transition ${on ? 'bg-brand text-white' : isDone ? 'bg-emerald-50 text-emerald-800' : 'bg-brand-light text-slate-600'}`}
                 >
-                  <span aria-hidden className="text-base leading-none">{done ? '✓' : <Icon name={s.icon as any} size={16} />}</span>
+                  <span aria-hidden className="text-base leading-none">{isDone ? '✓' : <Icon name={s.icon as any} size={16} />}</span>
                   <span className="max-w-full truncate px-1">{s.label}</span>
                 </button>
               );
@@ -81,7 +99,7 @@ export function BackdateEntry() {
         <div className="grid grid-cols-2 gap-3 border-t border-slate-200 bg-surface p-3">
           <button type="button" className="btn-secondary" disabled={step === 0} onClick={() => setEntryStep(step - 1)}>{t('bdBack')}</button>
           {last
-            ? <button type="button" className="btn-primary" onClick={leaveEntry}>{t('bdDone')}</button>
+            ? <button type="button" className="btn-primary" disabled={!done.every(Boolean)} onClick={leaveEntry}>{t('bdDone')}</button>
             : <button type="button" className="btn-primary" onClick={() => setEntryStep(step + 1)}>{t('bdNext')}: {steps[step + 1].label}</button>}
         </div>
       </div>

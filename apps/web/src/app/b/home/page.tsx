@@ -16,6 +16,9 @@ import { useBranch } from '@/lib/useBranch';
 import { useLive } from '@/lib/live';
 import { resumeStep, startEntry } from '@/lib/entry';
 
+// the step of the day's entry each checklist row opens (Sales, Purchases, Expense, then the cash count and closing)
+const STEP: Record<string, number> = { '/b/sales': 0, '/b/purchases': 1, '/b/expense': 2, '/b/cash': 3, '/b/closing': 3 };
+
 export default function BranchHome() {
   const { t } = useT();
   const { can } = useSession();
@@ -77,25 +80,6 @@ export default function BranchHome() {
   return (
     <div className="space-y-4">
       <BackdateRequests locationId={locationId} />
-      <ul className="space-y-3">
-        <li>
-          <Link href="/b/stock" className="card flex min-h-[72px] items-center gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-light text-brand-dark"><Icon name="box" size={22} /></span>
-            <div className="min-w-0 flex-1"><p className="text-lg font-bold">{t('stock')}</p></div>
-            <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
-          </Link>
-        </li>
-        {can('staff:view') && (
-          <li>
-            <Link href="/b/staff" className="card flex min-h-[72px] items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><Icon name="user" size={22} /></span>
-              <div className="min-w-0 flex-1"><p className="font-semibold">{t('employeesTitle')}</p></div>
-              <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
-            </Link>
-          </li>
-        )}
-      </ul>
-
       <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef1ff] to-[#f6f7ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
         <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-brand/10 blur-2xl" aria-hidden />
         <p className="text-sm font-medium text-slate-600">{t('today')} · {prettyDate(date)}</p>
@@ -146,7 +130,7 @@ export default function BranchHome() {
       <ul className="space-y-3">
         {cards.map((c) => (
           <li key={c.href}>
-            <Link href={c.href} className="card flex min-h-[72px] items-center gap-3">
+            <button type="button" onClick={() => startEntry(date, STEP[c.href] ?? 0)} className="card flex min-h-[72px] w-full items-center gap-3 text-left">
               <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${c.done ? 'bg-emerald-50 text-emerald-800' : 'bg-brand-light text-brand-dark'}`}><Icon name={c.icon} size={22} /></span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{c.title}</p>
@@ -156,11 +140,11 @@ export default function BranchHome() {
                 <span aria-hidden>{c.done ? '✓' : '○'}</span>{c.done ? t('done') : t('notDone')}
               </span>
               <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
-            </Link>
+            </button>
           </li>
         ))}
         <li>
-          <Link href="/b/closing" className="card flex min-h-[72px] items-center gap-3">
+          <button type="button" onClick={() => startEntry(date, 3)} className="card flex min-h-[72px] w-full items-center gap-3 text-left">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-800"><Icon name="check" size={22} /></span>
             <div className="min-w-0 flex-1">
               <p className="font-semibold">{t('closing')}</p>
@@ -168,7 +152,7 @@ export default function BranchHome() {
             </div>
             <StatusPill status={closing?.status ?? 'PENDING'} />
             <Icon name="chevron" size={18} className="shrink-0 text-slate-400" />
-          </Link>
+          </button>
         </li>
       </ul>
     </div>

@@ -13,6 +13,9 @@ import { useTheme } from '@/lib/theme';
 import { useLive } from '@/lib/live';
 import { startEntry } from '@/lib/workDate';
 
+// the step of the day's entry each checklist row opens (Sales, Purchases, Expense, then the cash count and closing)
+const STEP: Record<string, number> = { '/sales': 0, '/purchases': 1, '/expense': 2, '/cash': 3 };
+
 /** Today's checklist for the branch: sales, expenses, cash count, closing. */
 export default function BranchHome() {
   const th = useTheme();
@@ -64,8 +67,6 @@ export default function BranchHome() {
   return (
     <Screen hero onRefresh={load}>
       <BackdateRequests locationId={locationId} />
-      <LinkCard icon="box" title="Stock" detail="Count, wastage, stock levels" onPress={() => router.push('/stock')} />
-      {can('staff:view') ? <LinkCard icon="users" title="Employee" detail="Attendance, advances" onPress={() => router.push('/staff')} /> : null}
       <HeroCard
         icon="check-square" label={`Today · ${prettyDate(date)}`} value={`${stepsDone}/${stepsTotal}`} sub="steps done"
         columns={[
@@ -90,12 +91,12 @@ export default function BranchHome() {
       <Text style={{ color: th.ink, fontSize: 20, fontWeight: '800' }}>Checklist</Text>
       {cards.map((c) => (
         <LinkCard
-          key={c.path} icon={c.icon} title={c.title} detail={c.detail} done={c.done} onPress={() => router.push(c.path)}
+          key={c.path} icon={c.icon} title={c.title} detail={c.detail} done={c.done} onPress={() => void startEntry(date, STEP[c.path] ?? 0)}
           right={<Chip text={c.done ? 'Done' : 'Not done'} tone={c.done ? 'ok' : 'neutral'} icon={c.done ? '✓' : '○'} />}
         />
       ))}
       <LinkCard
-        icon="check-square" title="Closing" onPress={() => router.push('/closing')}
+        icon="check-square" title="Closing" onPress={() => void startEntry(date, 3)}
         detail={closing?.submittedAt ? prettyTime(closing.submittedAt) : undefined} right={<StatusPill status={status} />}
       />
       <Text style={{ color: th.faint, fontSize: 12, textAlign: 'center' }}>Pull down to refresh. Entries save to the server straight away, so you need a connection.</Text>

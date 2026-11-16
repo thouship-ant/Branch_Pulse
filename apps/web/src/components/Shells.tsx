@@ -1,6 +1,8 @@
 'use client';
 
 import { BackdateEntry } from '@/components/BackdateEntry';
+import { resumeStep, startEntry, useEntry } from '@/lib/entry';
+import { todayIST } from '@/lib/dates';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -83,17 +85,15 @@ function useGuard(kind: 'branch' | 'office') {
 const BRANCH_TABS: Array<{ href: string; key: MessageKey; icon: IconName }> = [
   { href: '/b/home', key: 'home', icon: 'home' },
   { href: '/b/stock', key: 'stock', icon: 'box' },
-  { href: '/b/sales', key: 'sales', icon: 'trend' },
-  { href: '/b/purchases', key: 'purchases', icon: 'bag' },
-  { href: '/b/expense', key: 'expense', icon: 'card' },
-  { href: '/b/closing', key: 'closing', icon: 'check' },
 ];
 
 export function BranchShell({ children }: { children: ReactNode }) {
   const { ready, me } = useGuard('branch');
   const { t, pick } = useT();
-  const { logout } = useSession();
+  const { logout, can } = useSession();
   const path = usePathname();
+  const entry = useEntry();
+  const today = todayIST();
   // warm the five branch screens so they open with no signal (service worker caches the page shells)
   useEffect(() => {
     if (!ready) return;
@@ -146,6 +146,24 @@ export function BranchShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
+          {/* sales, purchases, expense and closing are one step-by-step entry for the day */}
+          <button
+            type="button" aria-current={entry.date ? 'page' : undefined} onClick={() => startEntry(today, resumeStep(today) ?? 0)}
+            className={`flex min-h-[58px] flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition ${entry.date ? 'text-brand' : 'text-slate-500'}`}
+          >
+            <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-all duration-200 ${entry.date ? 'bg-brand-light' : ''}`}>
+              <Icon name="pencil" size={21} strokeWidth={entry.date ? 2.3 : 1.9} />
+            </span>
+            {t('navEntry')}
+          </button>
+          {can('staff:view') && (
+            <Link href="/b/staff" aria-current={path.startsWith('/b/staff') ? 'page' : undefined} className={`flex min-h-[58px] flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition ${path.startsWith('/b/staff') ? 'text-brand' : 'text-slate-500'}`}>
+              <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-all duration-200 ${path.startsWith('/b/staff') ? 'bg-brand-light' : ''}`}>
+                <Icon name="user" size={21} strokeWidth={path.startsWith('/b/staff') ? 2.3 : 1.9} />
+              </span>
+              {t('employeesTitle')}
+            </Link>
+          )}
         </div>
       </nav>
     </div>
