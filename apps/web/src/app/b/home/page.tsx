@@ -2,6 +2,7 @@
 
 import { ClosingTimer } from '@/components/ClosingTimer';
 import { BackdateRequests } from '@/components/BackdateRequests';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
@@ -18,6 +19,17 @@ import { resumeStep, startEntry } from '@/lib/entry';
 
 // the step of the day's entry each checklist row opens (Sales, Purchases, Expense, then the cash count and closing)
 const STEP: Record<string, number> = { '/b/sales': 0, '/b/purchases': 1, '/b/expense': 2, '/b/cash': 3, '/b/closing': 3 };
+const GUIDE_STEPS = [
+  { title: 'sales', detail: 'guideSalesNote', image: '/branch-guide/sales-collage.jpg' },
+  { title: 'purchases', detail: 'guidePurchasesNote', image: '/branch-guide/purchases-collage.jpg' },
+  { title: 'expenses', detail: 'guideExpensesNote', image: '/branch-guide/expenses-collage.jpg' },
+  { title: 'closing', detail: 'guideClosingNote', image: '/branch-guide/closing-collage.jpg' },
+  {
+    title: 'submit',
+    detail: 'guideSubmitNote',
+    checks: ['guideCheckEntries', 'guideCheckExpenses', 'guideCheckPayments', 'guideCheckReady'],
+  },
+] as const;
 
 export default function BranchHome() {
   const { t } = useT();
@@ -28,6 +40,7 @@ export default function BranchHome() {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { ops, needsAttention, waiting } = useOutbox(locationId, date);
+  const [guideIndex, setGuideIndex] = useState(0);
 
   const load = useCallback(async () => {
     if (!locationId) return;
@@ -48,6 +61,12 @@ export default function BranchHome() {
 
   useEffect(() => { void load(); }, [load, ops.length, waiting]);
   useLive(load);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setGuideIndex((index) => (index + 1) % GUIDE_STEPS.length);
+    }, 3500);
+    return () => window.clearInterval(timer);
+  }, []);
 
   if (!screen && !error) return <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div>;
 
@@ -76,11 +95,12 @@ export default function BranchHome() {
   const submitted = ['SUBMITTED', 'APPROVED'].includes(closing?.status ?? 'PENDING');
   const stepsDone = cards.filter((c) => c.done).length + (submitted ? 1 : 0);
   const stepsTotal = cards.length + 1;
+  const guideStep = GUIDE_STEPS[guideIndex];
 
   return (
     <div className="space-y-4">
       <BackdateRequests locationId={locationId} />
-      <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-[#eef1ff] to-[#f6f7ff] p-4 dark:from-[#1a2747] dark:to-[#24204a]">
+      <div className="card relative overflow-hidden border-0 bg-gradient-to-br from-brand-light to-surface p-4">
         <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-brand/10 blur-2xl" aria-hidden />
         <p className="text-sm font-medium text-slate-600">{t('today')} · {prettyDate(date)}</p>
         <div className="mt-0.5 flex items-end justify-between gap-3">
@@ -89,7 +109,7 @@ export default function BranchHome() {
         </div>
         <ClosingTimer locationId={locationId} done={submitted} />
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70 dark:bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={stepsTotal} aria-valuenow={stepsDone}>
-          <div className="h-full rounded-full bg-gradient-to-r from-brand to-[#4a5bd8] transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-brand to-brand-dark transition-all duration-500" style={{ width: `${(stepsDone / stepsTotal) * 100}%` }} />
         </div>
         <p className="mt-2 text-xs font-medium text-slate-600">{stepsDone === stepsTotal ? `✓ ${t('allDoneToday')}` : t('keepGoing')}</p>
         {!submitted && <button type="button" className="btn-primary mt-3 w-full" onClick={() => startEntry(date, resumeStep(date) ?? 0)}>{t('stepByStep')} →</button>}
@@ -126,6 +146,48 @@ export default function BranchHome() {
           ))}
         </div>
       )}
+
+      <section className="card space-y-3 border border-brand-light" aria-label={t('guideTitle')}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-extrabold">{t('guideTitle')}</h3>
+            <p className="mt-1 text-xs text-slate-600">{t('guideLead')}</p>
+          </div>
+          <span className="shrink-0 text-xs font-extrabold text-brand" aria-hidden="true">{guideIndex + 1}/{GUIDE_STEPS.length}</span>
+        </div>
+        <div className="overflow-hidden rounded-2xl" role="group" aria-label={`${guideIndex + 1}/${GUIDE_STEPS.length}: ${t(guideStep.title)}`}>
+          {'image' in guideStep ? (
+            <div className="relative h-[152px] bg-[#e9f1e7]">
+              <Image
+                src={guideStep.image}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 600px"
+                className="object-contain"
+                priority={guideIndex === 0}
+              />
+            </div>
+          ) : (
+            <div className="flex h-[152px] flex-col justify-center gap-2 bg-emerald-50 px-4 dark:bg-emerald-950">
+              {guideStep.checks.map((check) => (
+                <div key={check} className="flex items-center gap-2">
+                  <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-emerald-300 bg-white text-xs font-black text-emerald-700" aria-hidden="true">✓</span>
+                  <span className="text-xs font-bold">{t(check)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="min-h-[58px] bg-slate-900/80 px-3 py-2 text-white">
+            <p className="font-extrabold">{t(guideStep.title)}</p>
+            <p className="text-xs text-slate-100">{t(guideStep.detail)}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-1.5" aria-hidden="true">
+          {GUIDE_STEPS.map((step, index) => (
+            <span key={step.title} className={`h-1.5 rounded-full transition-all ${index === guideIndex ? 'w-[18px] bg-brand' : 'w-1.5 bg-slate-300'}`} />
+          ))}
+        </div>
+      </section>
 
       <ul className="space-y-3">
         {cards.map((c) => (

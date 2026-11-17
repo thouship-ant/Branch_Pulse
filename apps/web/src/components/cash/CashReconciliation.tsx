@@ -150,8 +150,8 @@ export function CashReconciliation({ locationId, date, onContinue }: Props) {
 
       {/* 1. the expected cash up front, then how it is worked out */}
       <section aria-label={t('expectedCash')} className="space-y-3">
-        <div className="rounded-2xl bg-[#1e2a8a] px-5 py-4 text-white shadow-md shadow-[#1e2a8a]/25">
-          <p className="text-sm font-semibold text-white/80">{t('expectedCash')}</p>
+        <div className="rounded-2xl bg-brand px-5 py-4 text-on-brand shadow-md shadow-brand/25">
+          <p className="text-sm font-semibold opacity-80">{t('expectedCash')}</p>
           <p className="text-4xl font-extrabold tabular-nums">{formatINR(cash.expectedClosing, { decimals: false })}</p>
         </div>
         <ul className="card divide-y divide-slate-200 !p-0 text-[15px]">

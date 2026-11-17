@@ -11,7 +11,12 @@ export default {
     extend: {
       fontFamily: { sans: ['var(--font-inter)', 'var(--font-tamil)', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
       colors: {
-        brand: { DEFAULT: '#1e2a8a', dark: '#18236f', light: '#eef1ff' }, // deep navy primary, pale lavender tint; AAA contrast with white text
+        brand: {
+          DEFAULT: 'rgb(var(--brand) / <alpha-value>)',
+          dark: 'rgb(var(--brand-dark) / <alpha-value>)',
+          light: 'rgb(var(--brand-light) / <alpha-value>)',
+          'on-brand': 'rgb(var(--on-brand) / <alpha-value>)',
+        },
         surface: 'rgb(var(--surface) / <alpha-value>)', // cards, sidebar, inputs
         ink: 'rgb(var(--ink) / <alpha-value>)',
         slate: v('slate', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]),

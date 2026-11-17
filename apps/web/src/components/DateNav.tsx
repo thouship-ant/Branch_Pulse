@@ -91,15 +91,15 @@ function DatePopover({ anchor, value, min, max, allowed, onApply, onClose }: { a
               key={d} type="button" disabled={(!!max && v > max) || (!!min && v < min) || (!!allowed && !allowed.includes(v))} onClick={() => setPicked(v)}
               onDoubleClick={() => { onApply(v); onClose(); }} aria-pressed={sel}
               className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm tabular-nums transition ${
-                sel ? 'bg-[#1e2a8a] font-semibold text-white shadow-md' : v === today ? 'font-semibold text-brand ring-1 ring-brand/40 hover:bg-brand-light' : 'text-slate-700 hover:bg-slate-100'
+                sel ? 'bg-brand font-semibold text-on-brand shadow-md' : v === today ? 'font-semibold text-brand ring-1 ring-brand/40 hover:bg-brand-light' : 'text-slate-700 hover:bg-slate-100'
               } disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent`}
             >{d}</button>
           );
         })}
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <button type="button" onClick={() => goTo(resetTo)} className="h-11 rounded-xl bg-[#eef1ff] text-sm font-semibold text-[#1e2a8a] transition hover:bg-[#e0e5ff] active:scale-[0.98]">Reset</button>
-        <button type="button" disabled={!picked} onClick={() => { onApply(picked); onClose(); }} className="h-11 rounded-xl bg-[#1e2a8a] text-sm font-semibold text-white shadow-md transition hover:bg-[#18236f] active:scale-[0.98] disabled:opacity-50">Done</button>
+        <button type="button" onClick={() => goTo(resetTo)} className="h-11 rounded-xl bg-brand-light text-sm font-semibold text-brand transition hover:brightness-95 active:scale-[0.98]">Reset</button>
+        <button type="button" disabled={!picked} onClick={() => { onApply(picked); onClose(); }} className="h-11 rounded-xl bg-brand text-sm font-semibold text-on-brand shadow-md transition hover:bg-brand-dark active:scale-[0.98] disabled:opacity-50">Done</button>
       </div>
     </div>,
     document.body,

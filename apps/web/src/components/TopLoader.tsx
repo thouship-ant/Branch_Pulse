@@ -38,13 +38,13 @@ export function TopLoader() {
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-[100] h-[3px] overflow-hidden bg-transparent" role="status" aria-label="Loading">
-        <div className="anim-loader h-full w-1/3 rounded-full bg-gradient-to-r from-[#18236f] via-[#1e2a8a] to-[#4a5bd8]" />
+        <div className="anim-loader h-full w-1/3 rounded-full bg-gradient-to-r from-brand-dark via-brand to-brand-dark" />
       </div>
       {/* the page mask covers navigation only; once the page is up, API calls show just the top bar */}
       {navigating && (
         <div className="anim-fade fixed inset-0 z-[99] flex items-center justify-center bg-slate-900/30" aria-hidden="true">
           <div className="rounded-full bg-white p-3 shadow-xl ring-1 ring-black/5">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1e2a8a]/25 border-t-[#1e2a8a]" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand/25 border-t-brand" />
           </div>
         </div>
       )}

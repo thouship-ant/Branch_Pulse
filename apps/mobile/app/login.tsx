@@ -98,24 +98,24 @@ export default function LoginScreen() {
   const masked = isMobile ? `+91 ${id.slice(0, 2)}******${id.slice(-2)}` : id;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#1e2a8a' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: th.brand }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-        {/* brand banner (same look as the web sign-in): navy, soft glows, a faint pulse line */}
-        <View style={{ backgroundColor: '#1e2a8a', overflow: 'hidden', minHeight: 300, paddingTop: insets.top + 28, paddingBottom: 64, paddingHorizontal: 24, justifyContent: 'space-between' }}>
+        {/* brand banner with soft glows and a faint pulse line */}
+        <View style={{ backgroundColor: th.brand, overflow: 'hidden', minHeight: 300, paddingTop: insets.top + 28, paddingBottom: 64, paddingHorizontal: 24, justifyContent: 'space-between' }}>
           <View pointerEvents="none" style={{ position: 'absolute', left: -90, top: -90, width: 290, height: 290, borderRadius: 145, backgroundColor: 'rgba(255,255,255,0.10)' }} />
-          <View pointerEvents="none" style={{ position: 'absolute', right: -110, bottom: -150, width: 360, height: 360, borderRadius: 180, backgroundColor: 'rgba(165,180,252,0.20)' }} />
+          <View pointerEvents="none" style={{ position: 'absolute', right: -110, bottom: -150, width: 360, height: 360, borderRadius: 180, backgroundColor: 'rgba(255,255,255,0.16)' }} />
           <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 40, height: 56, opacity: 0.16, flexDirection: 'row', alignItems: 'flex-end' }}>
-            <View style={{ flex: 0.26, height: 3, backgroundColor: '#fff', borderRadius: 2 }} />
-            <View style={{ width: 3, height: 54, backgroundColor: '#fff', borderRadius: 2, transform: [{ rotate: '14deg' }] }} />
-            <View style={{ width: 3, height: 44, backgroundColor: '#fff', borderRadius: 2, marginLeft: 10, transform: [{ rotate: '-16deg' }] }} />
-            <View style={{ flex: 1, height: 3, backgroundColor: '#fff', borderRadius: 2 }} />
+            <View style={{ flex: 0.26, height: 3, backgroundColor: th.onBrand, borderRadius: 2 }} />
+            <View style={{ width: 3, height: 54, backgroundColor: th.onBrand, borderRadius: 2, transform: [{ rotate: '14deg' }] }} />
+            <View style={{ width: 3, height: 44, backgroundColor: th.onBrand, borderRadius: 2, marginLeft: 10, transform: [{ rotate: '-16deg' }] }} />
+            <View style={{ flex: 1, height: 3, backgroundColor: th.onBrand, borderRadius: 2 }} />
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Image source={require('../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#fff' }} />
-            <Text style={{ color: '#fff', fontSize: 24, fontWeight: '800', letterSpacing: -0.4 }}>Branch Pulse</Text>
+            <Text style={{ color: th.onBrand, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 }}>Branch Pulse</Text>
           </View>
-          <Text style={{ color: '#fff', fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.6, maxWidth: 300 }}>Every branch. One pulse.</Text>
+          <Text style={{ color: th.onBrand, fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.6, maxWidth: 300 }}>Every branch. One pulse.</Text>
         </View>
 
         {/* the sign-in sheet overlaps the banner */}
@@ -129,7 +129,7 @@ export default function LoginScreen() {
             )}
           </View>
 
-          <View style={[{ backgroundColor: th.surface, borderRadius: 20, padding: 20, gap: 16 }, th.dark ? { borderWidth: 1, borderColor: th.border } : { shadowColor: '#1e2a8a', shadowOpacity: 0.09, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3 }]}>
+          <View style={[{ backgroundColor: th.surface, borderRadius: 20, padding: 20, gap: 16 }, th.dark ? { borderWidth: 1, borderColor: th.border } : { shadowColor: th.brand, shadowOpacity: 0.09, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3 }]}>
             {step === 'id' && (
               <>
                 <View style={{ gap: 6 }}>

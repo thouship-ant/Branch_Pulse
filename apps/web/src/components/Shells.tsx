@@ -19,7 +19,7 @@ function LangSwitch({ onDark = false }: { onDark?: boolean }) {
   const { lang, setLang, t } = useT();
   return (
     <button
-      className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition ${onDark ? 'text-white/90 hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100'}`}
+      className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition ${onDark ? 'text-on-brand/90 hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100'}`}
       onClick={() => setLang(lang === 'en' ? 'ta' : 'en')} aria-label="Language"
     >
       <Icon name="globe" size={16} />{t('language')}
@@ -31,7 +31,7 @@ function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
   const { theme, toggle } = useTheme();
   return (
     <button
-      className={`flex h-10 w-10 items-center justify-center rounded-full transition ${onDark ? 'text-white/90 hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100'}`}
+      className={`flex h-10 w-10 items-center justify-center rounded-full transition ${onDark ? 'text-on-brand/90 hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100'}`}
       onClick={toggle} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
     >
       <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={19} />
@@ -42,7 +42,7 @@ function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
 function Avatar({ name, className = '' }: { name: string; className?: string }) {
   const initials = name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
   return (
-    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-[#3a4bd0] text-sm font-bold text-white shadow-sm ${className}`} aria-hidden>{initials}</span>
+    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark text-sm font-bold text-on-brand shadow-sm ${className}`} aria-hidden>{initials}</span>
   );
 }
 
@@ -54,7 +54,7 @@ function Logo({ compact, onDark = false }: { compact?: boolean; onDark?: boolean
   return (
     <div className="flex items-center gap-2.5">
       <LogoMark size={compact ? 34 : 36} />
-      {!compact && <span className={`text-[19px] font-extrabold tracking-tight ${onDark ? 'text-white' : 'text-ink'}`}>{t('appName')}</span>}
+      {!compact && <span className={`text-[19px] font-extrabold tracking-tight ${onDark ? 'text-on-brand' : 'text-ink'}`}>{t('appName')}</span>}
     </div>
   );
 }
@@ -107,14 +107,14 @@ export function BranchShell({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col">
       {/* branded header: the branch is the first thing you see */}
-      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-[#18236f] via-[#1e2a8a] to-[#2f3fb5] px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(30,42,138,0.55)]">
+      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-brand-dark via-brand to-brand-dark px-4 py-2.5 text-on-brand shadow-lg shadow-brand/25">
         <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="relative flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold ring-2 ring-white/30" aria-hidden>
             {me.fullName.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-xs text-white/75">{me.fullName}</p>
+            <p className="truncate text-xs text-on-brand/75">{me.fullName}</p>
             <h1 className="truncate text-lg font-bold leading-tight">{branch ? pick(branch.name, branch.nameTa) : t('appName')}</h1>
           </div>
         </div>

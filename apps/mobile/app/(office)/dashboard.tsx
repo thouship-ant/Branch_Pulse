@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ImageBackground, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { DashboardOrders } from '@/components/DashboardOrders';
@@ -20,10 +20,21 @@ interface PendingClosing { locationId: string; locationName: string; businessDat
 
 const SEV = { CRITICAL: { tone: 'bad', icon: '⛔' }, WARNING: { tone: 'warn', icon: '⚠' }, INFO: { tone: 'sky', icon: 'ⓘ' } } as const;
 const whole = (v: string | number | null | undefined) => formatINR(v == null ? null : String(v), { decimals: false });
+const TEA_SHOP_IMAGES = [
+  { image: require('../../assets/tea-shop/tea-1.jpg'), title: 'Chai & cookies', caption: 'A little tea-time favourite' },
+  { image: require('../../assets/tea-shop/bread-omelette.png'), title: 'Bread omelette', caption: 'A filling tea-time bite' },
+  { image: require('../../assets/tea-shop/tea-3.jpg'), title: 'Iced tea', caption: 'A refreshing shop special' },
+  { image: require('../../assets/tea-shop/tea-4.jpg'), title: 'Ginger tea', caption: 'Fresh ginger with warm tea' },
+  { image: require('../../assets/tea-shop/vada.jpg'), title: 'Medhu Vada', caption: 'A crisp, savoury snack' },
+  { image: require('../../assets/tea-shop/samosa.jpg'), title: 'Samosa', caption: 'A golden, flaky favourite' },
+  { image: require('../../assets/tea-shop/fries.jpg'), title: 'French fries', caption: 'Hot and crispy' },
+  { image: require('../../assets/tea-shop/tea-2.jpg'), title: 'Freshly brewed', caption: 'Made for a relaxing break' },
+];
 
 export default function DashboardScreen() {
   const th = useTheme();
   const today = todayIST();
+  const [teaShopIndex, setTeaShopIndex] = useState(0);
   const [period, setPeriod] = useState<Period>(() => resolvePeriod('today', today));
   const [summary, setSummary] = useState<any>(null);
   const [exceptions, setExceptions] = useState<Exc[]>([]);
@@ -65,6 +76,13 @@ export default function DashboardScreen() {
   useFocusEffect(useCallback(() => { setSummary(null); void load(); }, [load]));
   useLive(load);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTeaShopIndex((index) => (index + 1) % TEA_SHOP_IMAGES.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, []);
+
   const tl = summary?.tiles;
   const change = summary?.vsLastWeek.salesChangePct;
   const pendingDates = [...new Set(pending.map((p) => p.businessDate))];
@@ -86,6 +104,28 @@ export default function DashboardScreen() {
       ) : (
         <Card><Loading /></Card>
       )}
+
+      <View style={{ gap: 10 }}>
+        <Text style={{ color: th.ink, fontSize: 18, fontWeight: '800' }}>Tea shop</Text>
+        <Card style={{ width: '100%', padding: 0, gap: 0, overflow: 'hidden' }}>
+          <ImageBackground
+            source={TEA_SHOP_IMAGES[teaShopIndex].image}
+            resizeMode="cover"
+            style={{ width: '100%', height: 160, justifyContent: 'flex-end' }}
+            accessibilityLabel={TEA_SHOP_IMAGES[teaShopIndex].title}
+          >
+            <View style={{ width: '100%', paddingHorizontal: 12, paddingVertical: 9, backgroundColor: 'rgba(15, 23, 42, 0.64)' }}>
+              <Text style={{ width: '100%', color: '#fff', fontSize: 15, fontWeight: '800' }}>{TEA_SHOP_IMAGES[teaShopIndex].title}</Text>
+              <Text style={{ width: '100%', color: '#f1f5f9', fontSize: 12 }}>{TEA_SHOP_IMAGES[teaShopIndex].caption}</Text>
+            </View>
+          </ImageBackground>
+        </Card>
+        <View accessibilityLabel={`Image ${teaShopIndex + 1} of ${TEA_SHOP_IMAGES.length}`} style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+          {TEA_SHOP_IMAGES.map((item, index) => (
+            <View key={item.title} style={{ width: index === teaShopIndex ? 16 : 6, height: 6, borderRadius: 3, backgroundColor: index === teaShopIndex ? th.brand : th.border }} />
+          ))}
+        </View>
+      </View>
 
       <ErrorBox error={error} />
 

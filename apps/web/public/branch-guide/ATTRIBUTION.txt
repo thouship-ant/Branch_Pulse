@@ -1,0 +1,113 @@
+Checklist guide photos
+
+expense-card.jpg
+Title: Credit card terminal in Laos
+Author: Basile Morin
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Credit_card_terminal_in_Laos.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+filter-coffee.jpg
+Title: Filter Coffee from Saravana Bhavan
+Author: Aashita Kawatra
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Filter_Coffee_from_Saravana_Bhavan.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+milk-pack.jpg
+Derived from: Milk carton.jpg
+Author: USDA
+License: Public domain
+Source: https://commons.wikimedia.org/wiki/File:Milk_carton.jpg
+
+cow-milk.jpg
+Title: Good Morning from India!
+Author: VinothChandar
+License: CC BY 2.0
+Source: https://www.flickr.com/photos/44345361@N06/4386685356
+License: https://creativecommons.org/licenses/by/2.0/
+
+vegetables-market.jpg
+Title: Vegetable Market
+Author: Harshit Gohil
+License: CC BY-SA 3.0
+Source: https://commons.wikimedia.org/wiki/File:Vegetable_Market.JPG
+License: https://creativecommons.org/licenses/by-sa/3.0/
+
+coffee-powder.jpg
+Title: Coffee powdered
+Author: Kulmalukko
+License: CC BY-SA 3.0
+Source: https://commons.wikimedia.org/wiki/File:Coffee_powdered.jpg
+License: https://creativecommons.org/licenses/by-sa/3.0/
+
+eggs-basket.jpg
+Title: A Basket of Chicken Eggs at Tuen Mun
+Author: Peachyeung316
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:A_Basket_of_Chicken_Eggs_at_Tuen_Mun.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+electricity-bill.jpg
+Title: Electricity bill
+Author: Kai Hendry
+License: CC BY 2.0
+Source: https://www.flickr.com/photos/16105436@N00/2508376346
+License: https://creativecommons.org/licenses/by/2.0/
+
+electricity-meter.jpg
+Title: Electricity meter
+Author: kevin dooley
+License: CC BY 2.0
+Source: https://www.flickr.com/photos/12836528@N00/17027433107
+License: https://creativecommons.org/licenses/by/2.0/
+
+gas-cylinders.jpg
+Title: Gas Cylinders
+Author: andrewasmith
+License: CC BY-SA 2.0
+Source: https://www.flickr.com/photos/40165565@N03/3716269552
+License: https://creativecommons.org/licenses/by-sa/2.0/
+
+maintenance-tools.jpg
+Title: Workshop Wrench
+Author: The World is a Stage
+License: CC0 1.0
+Source: https://stocksnap.io/photo/workshop-wrench-O8DVPXYOIY
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
+shop-rent.jpg
+Title: The Store 1
+Author: Tim Green aka atoach
+License: CC BY 2.0
+Source: https://www.flickr.com/photos/93416311@N00/4743473784
+License: https://creativecommons.org/licenses/by/2.0/
+
+milk-packet-user.png, cow-milk-user.png, tea-sales-user.png
+Source: User-provided images.
+
+rupee-500.jpg
+Title: India new 500 INR, MG series, 2016, obverse
+Author: Reserve Bank of India
+License: Government Open Data License - India
+Source: https://commons.wikimedia.org/wiki/File:India_new_500_INR,_MG_series,_2016,_obverse.jpg
+License: https://data.gov.in/sites/default/files/Gazette_Notification_OGDL.pdf
+
+rupee-200.jpg
+Title: 200 rupee note
+Author: WISDOMurali
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:200_rupee_note.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+rupee-100.jpg
+Title: 100 Rupee of India - T
+Author: Windrain
+License: CC0
+Source: https://commons.wikimedia.org/wiki/File:100_Rupee_of_India_-_T.jpg
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
+Composite checklist banners
+
+sales-collage.jpg, purchases-collage.jpg, expenses-collage.jpg, closing-collage.jpg
+Text-free collages made from the source photos above, Tea Shop assets, and the user-provided images noted above.

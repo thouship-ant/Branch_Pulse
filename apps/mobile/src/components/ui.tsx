@@ -10,7 +10,7 @@ import { useLang } from '@/lib/language';
 import { tr } from '@/lib/i18n';
 import { cleanAmount } from '@/lib/money';
 import { useEntryDay } from '@/lib/workDate';
-import { RADIUS, TOUCH, useTheme, useThemeMode, type Theme } from '@/lib/theme';
+import { RADIUS, TOUCH, useTheme, useThemeColor, useThemeMode, type Theme, type ThemeColor } from '@/lib/theme';
 
 export type IconName = keyof typeof Feather.glyphMap;
 type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
@@ -616,6 +616,42 @@ export function ThemeSwitch() {
               {on ? <Feather name="check-circle" size={14} color={th.brand} /> : null}
               <Text style={{ color: on ? th.brand : th.ink, fontWeight: '800', fontSize: 14 }}>{label}</Text>
             </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const THEME_COLORS: Array<{ value: ThemeColor; label: string; swatch: string }> = [
+  { value: 'red', label: 'Red', swatch: '#7a1e2c' },
+  { value: 'green', label: 'Green', swatch: '#386641' },
+  { value: 'blue', label: 'Blue', swatch: '#1e2a8a' },
+];
+
+export function ThemeColorSwitch() {
+  const [color, setColor] = useThemeColor();
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {THEME_COLORS.map((option) => {
+        const selected = color === option.value;
+        return (
+          <Pressable
+            key={option.value}
+            onPress={() => setColor(option.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            accessibilityLabel={`${option.label} theme color`}
+            style={{
+              flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+              paddingHorizontal: 6, borderRadius: 14, borderWidth: selected ? 2 : 1,
+              borderColor: selected ? th.brand : th.border, backgroundColor: selected ? th.brandLight : th.surface,
+            }}
+          >
+            <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: option.swatch }} />
+            <Text style={{ color: selected ? th.brand : th.ink, fontSize: 14, fontWeight: '800' }}>{option.label}</Text>
+            {selected ? <Feather name="check" size={14} color={th.brand} /> : null}
           </Pressable>
         );
       })}

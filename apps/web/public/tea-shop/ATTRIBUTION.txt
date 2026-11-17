@@ -1,0 +1,27 @@
+Wikimedia Commons images
+
+tea-4.jpg
+Title: Ginger Tea
+Author: Trupti.gauns
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Ginger_Tea_.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+vada.jpg
+Title: Aesthetic Medu Vadai
+Author: Thamizhpparithi Maari
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Aesthetic_Medu_Vadai.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+fries.jpg
+Title: Hesburger French fries on a plate
+Author: JIP
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Hesburger_French_fries_on_a_plate.jpg
+License: https://creativecommons.org/licenses/by-sa/4.0/
+
+User-provided image
+
+bread-omelette.png
+Source: Supplied by the user.

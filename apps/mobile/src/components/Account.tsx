@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Text } from './Text';
-import { ACCENT, type AccentName, Banner, Button, Card, Heading, Screen, SelectField, ThemeSwitch, ToggleRow } from '@/components/ui';
+import { ACCENT, type AccentName, Banner, Button, Card, Heading, Screen, SelectField, ThemeColorSwitch, ThemeSwitch, ToggleRow } from '@/components/ui';
 import { roleLabel } from '@/lib/labels';
 import { pushEnabled, sendTestPush, setPushEnabled } from '@/lib/push';
 import { useSession } from '@/lib/session';
@@ -91,6 +91,10 @@ export function Account() {
       <Card>
         <SectionTitle icon="sun" accent="rose" title="Appearance" sub="Light, dark, or follow your phone" />
         <ThemeSwitch />
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: th.ink, fontSize: 14, fontWeight: '700' }}>Theme color</Text>
+          <ThemeColorSwitch />
+        </View>
       </Card>
 
       <Button title="Sign out" variant="danger" icon="log-out" onPress={() => void logout()} />

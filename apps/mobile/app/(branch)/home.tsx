@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { BackdateRequests } from '@/components/BackdateRequests';
 import { ClosingTimer } from '@/components/ClosingTimer';
@@ -15,6 +15,39 @@ import { startEntry } from '@/lib/workDate';
 
 // the step of the day's entry each checklist row opens (Sales, Purchases, Expense, then the cash count and closing)
 const STEP: Record<string, number> = { '/sales': 0, '/purchases': 1, '/expense': 2, '/cash': 3 };
+const GUIDE_COLLAGE_BACKGROUND = '#e9f1e7';
+const GUIDE_STEPS = [
+  {
+    title: 'Sales Entry',
+    kind: 'photo',
+    image: require('../../assets/branch-guide/sales-collage.jpg'),
+    detail: "Record today's sales.",
+  },
+  {
+    title: 'Purchase Entry',
+    kind: 'photo',
+    image: require('../../assets/branch-guide/purchases-collage.jpg'),
+    detail: 'Record ingredients and stock.',
+  },
+  {
+    title: 'Expenses',
+    kind: 'photo',
+    image: require('../../assets/branch-guide/expenses-collage.jpg'),
+    detail: "Record today's shop costs.",
+  },
+  {
+    title: 'Closing',
+    kind: 'photo',
+    image: require('../../assets/branch-guide/closing-collage.jpg'),
+    detail: 'Reconcile cash and digital payments.',
+  },
+  {
+    title: 'Submit',
+    kind: 'verification',
+    detail: "Review today's entries, then submit the closing.",
+    checks: ['Sales and purchases entered', 'Expenses reviewed', 'Cash and payments reconciled', 'Closing ready to submit'],
+  },
+] as const;
 
 /** Today's checklist for the branch: sales, expenses, cash count, closing. */
 export default function BranchHome() {
@@ -27,6 +60,7 @@ export default function BranchHome() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [guideIndex, setGuideIndex] = useState(0);
 
   const load = useCallback(async () => {
     if (!locationId) return;
@@ -42,6 +76,12 @@ export default function BranchHome() {
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
   useLive(load);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setGuideIndex((index) => (index + 1) % GUIDE_STEPS.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, []);
 
   if (!screen && !error) return <Screen hero><Card><Loading /></Card></Screen>;
 
@@ -54,6 +94,7 @@ export default function BranchHome() {
   const livePurchases = purchases.filter((p) => p.status === 'ACTIVE');
   const status = closing?.status ?? 'PENDING';
   const submitted = ['SUBMITTED', 'APPROVED'].includes(status);
+  const guideStep = GUIDE_STEPS[guideIndex];
 
   const cards = [
     { path: '/sales', icon: 'trending-up', title: 'Sales', detail: sales ? formatINR(sales.totalSales) : '—', done: !!sales },
@@ -87,6 +128,43 @@ export default function BranchHome() {
       <ErrorBox error={error} />
       {status === 'REJECTED' && <Banner tone="bad">✕ Closing rejected{closing?.reviewComment ? `: ${closing.reviewComment}` : ''}</Banner>}
       {status === 'REOPENED' && <Banner tone="violet">↺ Closing reopened{closing?.reviewComment ? `: ${closing.reviewComment}` : ''}</Banner>}
+
+      <Card style={{ gap: 12, borderWidth: 1, borderColor: th.brandLight }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={{ color: th.ink, fontSize: 15, fontWeight: '800' }}>How to complete today's checklist</Text>
+            <Text style={{ color: th.muted, fontSize: 12 }}>Enter each section, then submit your closing.</Text>
+          </View>
+          <Text style={{ color: th.brand, fontSize: 12, fontWeight: '800' }}>{guideIndex + 1}/{GUIDE_STEPS.length}</Text>
+        </View>
+        <View accessibilityLabel={`Step ${guideIndex + 1} of ${GUIDE_STEPS.length}: ${guideStep.title}`} style={{ height: 210, borderRadius: 16, overflow: 'hidden', backgroundColor: th.surface }}>
+          {guideStep.kind === 'photo' ? (
+            <Image source={guideStep.image} resizeMode="contain" style={{ width: '100%', height: 152, backgroundColor: GUIDE_COLLAGE_BACKGROUND }} />
+          ) : (
+            <View style={{ flex: 1, justifyContent: 'center', backgroundColor: th.ok.bg }}>
+              <View style={{ paddingHorizontal: 16, gap: 7 }}>
+                {guideStep.checks.map((check) => (
+                  <View key={check} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ width: 18, height: 18, borderRadius: 5, borderWidth: 1, borderColor: th.ok.border, alignItems: 'center', justifyContent: 'center', backgroundColor: th.surface }}>
+                      <Text style={{ color: th.ok.text, fontSize: 13, fontWeight: '900' }}>✓</Text>
+                    </View>
+                    <Text style={{ color: th.ink, fontSize: 12, fontWeight: '700' }}>{check}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          <View style={{ paddingHorizontal: 12, paddingVertical: 9, backgroundColor: 'rgba(15, 23, 42, 0.78)' }}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>{guideStep.title}</Text>
+            <Text numberOfLines={2} style={{ color: '#f1f5f9', fontSize: 12 }}>{guideStep.detail}</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+          {GUIDE_STEPS.map((step) => (
+            <View key={step.title} style={{ width: step.title === guideStep.title ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: step.title === guideStep.title ? th.brand : th.border }} />
+          ))}
+        </View>
+      </Card>
 
       <Text style={{ color: th.ink, fontSize: 20, fontWeight: '800' }}>Checklist</Text>
       {cards.map((c) => (

@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useSyncExternalStore } from 'react';
 import { useColorScheme } from 'react-native';
 
-/** Same tokens as the web app's globals.css (deep navy brand, slate neutrals), resolved for light and dark. */
+/** Shared app-wide palette tokens with selectable brand colors and light/dark variants. */
 type Tone = { bg: string; border: string; text: string };
 export interface Theme {
   dark: boolean;
@@ -38,32 +38,96 @@ const dark: Theme = {
   series: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300'],
 };
 
+const teaShopLight: Theme = {
+  ...light,
+  bg: '#f5f0e7', surface: '#fffdf8', ink: '#2f251c', muted: '#65584b', faint: '#988a7a', border: '#e6d8cc', fieldBg: '#fffefa',
+  brand: '#386641', brandDark: '#2c5034', brandLight: '#e7f0e4', onBrand: '#ffffff',
+  series: ['#386641', '#d28c45', '#b85c38', '#8a6f45', '#71917a', '#d6ad45'],
+};
+
+const teaShopDark: Theme = {
+  ...dark,
+  bg: '#161b14', surface: '#20271d', ink: '#f3ebdd', muted: '#ccbeaa', faint: '#a1957f', border: '#3a4435', fieldBg: '#272f23',
+  brand: '#8fbf78', brandDark: '#a8d294', brandLight: '#2b3d2b', onBrand: '#172015',
+  series: ['#8fbf78', '#e0ad63', '#dc8060', '#bca477', '#91b89a', '#e5c777'],
+};
+
+const redLight: Theme = {
+  ...light,
+  bg: '#f8f1f2', surface: '#fffdfd', ink: '#302124', muted: '#6f555a', faint: '#9b8085', border: '#ead9dc', fieldBg: '#fffdfd',
+  brand: '#7a1e2c', brandDark: '#5c1621', brandLight: '#f3e4e7', onBrand: '#ffffff',
+  series: ['#7a1e2c', '#d28c45', '#527d59', '#8a6f45', '#b85c63', '#d6ad45'],
+};
+
+const redDark: Theme = {
+  ...dark,
+  bg: '#1d1417', surface: '#281b1f', ink: '#f6e8ea', muted: '#d4b8bd', faint: '#ab8b90', border: '#493037', fieldBg: '#312127',
+  brand: '#d17a8a', brandDark: '#f2a5b1', brandLight: '#46262d', onBrand: '#2c1017',
+  series: ['#d17a8a', '#e0ad63', '#91b89a', '#bca477', '#dc8060', '#e5c777'],
+};
+
 /** The appearance the person chose: light, dark, or follow the phone. Remembered on the phone. */
 export type ThemeMode = 'system' | 'light' | 'dark';
+export type ThemeColor = 'red' | 'green' | 'blue';
 const MODE_KEY = 'bp.themeMode';
+const COLOR_KEY = 'bp.themeColor';
 
 // a tiny shared store, so every screen redraws when the choice changes (works on phone and web alike)
-let current: ThemeMode = 'system';
+type BusinessType = 'TEA_SHOP' | 'OTHER';
+interface ThemeState { mode: ThemeMode; businessType: BusinessType; color: ThemeColor | null }
+let current: ThemeState = { mode: 'system', businessType: 'OTHER', color: null };
 const listeners = new Set<() => void>();
-const setCurrent = (m: ThemeMode) => { current = m; listeners.forEach((l) => l()); };
+const notify = () => listeners.forEach((l) => l());
+const setCurrent = (m: ThemeMode) => { if (current.mode !== m) { current = { ...current, mode: m }; notify(); } };
+export const setBusinessType = (type: string | null | undefined) => {
+  const businessType: BusinessType = type === 'TEA_SHOP' ? 'TEA_SHOP' : 'OTHER';
+  if (current.businessType !== businessType) { current = { ...current, businessType }; notify(); }
+};
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
-const getMode = () => current;
+const getState = () => current;
+const getMode = () => current.mode;
+const defaultColor = () => current.businessType === 'TEA_SHOP' ? 'green' : 'blue';
 
 export function useTheme(): Theme {
   const system = useColorScheme();
-  const mode = useSyncExternalStore(subscribe, getMode, getMode);
-  return (mode === 'system' ? system === 'dark' : mode === 'dark') ? dark : light;
+  const state = useSyncExternalStore(subscribe, getState, getState);
+  const isDark = (state.mode === 'system' ? system === 'dark' : state.mode === 'dark');
+  const color = state.color ?? defaultColor();
+  if (color === 'red') return isDark ? redDark : redLight;
+  if (color === 'green') return isDark ? teaShopDark : teaShopLight;
+  return isDark ? dark : light;
+}
+
+export function useThemeColor(): [ThemeColor, (color: ThemeColor) => void] {
+  const state = useSyncExternalStore(subscribe, getState, getState);
+  const color = state.color ?? defaultColor();
+  return [color, (value) => { void setThemeColor(value); }];
 }
 
 export async function loadThemeMode(): Promise<ThemeMode> {
   try { const v = await SecureStore.getItemAsync(MODE_KEY); return v === 'light' || v === 'dark' ? v : 'system'; } catch { return 'system'; }
 }
-/** Call once at start-up: puts the saved choice into effect. */
-export async function applySavedThemeMode() { setCurrent(await loadThemeMode()); }
+async function loadThemeColor(): Promise<ThemeColor | null> {
+  try {
+    const value = await SecureStore.getItemAsync(COLOR_KEY);
+    return value === 'red' || value === 'green' || value === 'blue' ? value : null;
+  } catch { return null; }
+}
+/** Call once at start-up: restores the saved appearance and brand color. */
+export async function applySavedThemeMode() {
+  const [mode, color] = await Promise.all([loadThemeMode(), loadThemeColor()]);
+  current = { ...current, mode, color };
+  notify();
+}
 
 export async function setThemeMode(m: ThemeMode) {
   setCurrent(m);
   try { await SecureStore.setItemAsync(MODE_KEY, m); } catch { /* storage unavailable */ }
+}
+
+export async function setThemeColor(color: ThemeColor) {
+  if (current.color !== color) { current = { ...current, color }; notify(); }
+  try { await SecureStore.setItemAsync(COLOR_KEY, color); } catch { /* storage unavailable */ }
 }
 
 export function useThemeMode(): [ThemeMode, (m: ThemeMode) => void] {

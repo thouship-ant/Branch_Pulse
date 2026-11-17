@@ -4,6 +4,7 @@ import { Select } from '@/components/Select';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT, type MessageKey } from '@/lib/i18n';
+import { useTheme } from '@/lib/theme';
 import { ErrorBox, Skeleton, TextField } from '../ui';
 
 type Kind = 'string' | 'number' | 'boolean' | 'business_type' | 'time';
@@ -62,6 +63,7 @@ const responseKey = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c
  * so every field here already has a working API - this just gives it a screen. */
 export function GeneralSettings() {
   const { t } = useT();
+  const { setBusinessType } = useTheme();
   const [values, setValues] = useState<Record<string, unknown> | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +97,7 @@ export function GeneralSettings() {
     setBusyKey(f.key);
     try {
       await api.put(`/settings/${f.key}`, { value });
+      if (f.key === 'business.type') setBusinessType(raw);
       setEdits((e) => { const n = { ...e }; delete n[f.key]; return n; });
       setErrors((e) => { const n = { ...e }; delete n[f.key]; return n; });
       setNotice(t('settingSaved'));

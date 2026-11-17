@@ -4,7 +4,7 @@ import { Text } from '@/components/Text';
 import { Banner, Button, Card, Chips, ErrorBox, Field, Heading, ListRow, Loading, Muted, MultiChips, MoneyField, Screen, SectionTitle, SegTabs, Sheet, ToggleRow } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { amt } from '@/lib/money';
-import { useTheme } from '@/lib/theme';
+import { setBusinessType, useTheme } from '@/lib/theme';
 
 type Tab = 'general' | 'limits' | 'roles' | 'units';
 
@@ -71,6 +71,7 @@ function General() {
     setBusyKey(f.key);
     try {
       await api.put(`/settings/${f.key}`, { value });
+      if (f.key === 'business.type') setBusinessType(raw);
       drop(); setErrors((e) => { const n = { ...e }; delete n[f.key]; return n; });
       setNotice('Saved'); setTimeout(() => setNotice(null), 2000);
       await load();

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { connectLive, disconnectLive } from './live';
 import { api, ApiError, refreshSession, setAccessToken, setAuthLostHandler } from './api';
 import { clearLocalData } from './outbox';
+import { useTheme } from './theme';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
 
@@ -22,7 +23,7 @@ export interface Me {
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;
-  company?: { id: string; code: string; name: string } | null;
+  company?: { id: string; code: string; name: string; businessType?: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 
@@ -47,6 +48,7 @@ interface SessionCtx {
 const Ctx = createContext<SessionCtx>(null as unknown as SessionCtx);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+  const { setBusinessType } = useTheme();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,6 +69,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
   // live updates run while someone is signed in
   useEffect(() => { if (me) connectLive(); else disconnectLive(); }, [!!me]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setBusinessType(me?.company?.businessType); }, [me?.company?.businessType, setBusinessType]);
 
   const start = (res: any) => { setAccessToken(res.accessToken); setMe(res.user); };
 

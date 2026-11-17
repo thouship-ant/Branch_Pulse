@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { unregisterPush } from './push';
 import { connectLive, disconnectLive } from './live';
 import { api, ApiError, clientInfo, endSession, loadStoredRefresh, refreshSession, setAuthLostHandler, startSession } from './api';
+import { setBusinessType } from './theme';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
 
@@ -11,7 +12,7 @@ export interface Me {
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;
-  company?: { id: string; code: string; name: string } | null;
+  company?: { id: string; code: string; name: string; businessType?: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 
@@ -51,6 +52,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // live updates run while someone is signed in
   useEffect(() => { if (me) connectLive(); else disconnectLive(); }, [!!me]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setBusinessType(me?.company?.businessType); }, [me?.company?.businessType]);
 
   const start = async (res: any) => { await startSession(res); setMe(res.user); };
 

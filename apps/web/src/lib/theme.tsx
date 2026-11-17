@@ -3,8 +3,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export type Theme = 'light' | 'dark';
-interface ThemeCtx { theme: Theme; toggle: () => void }
-const Ctx = createContext<ThemeCtx>({ theme: 'light', toggle: () => undefined });
+type BusinessType = 'TEA_SHOP' | 'OTHER';
+interface ThemeCtx {
+  theme: Theme;
+  toggle: () => void;
+  businessType: BusinessType;
+  setBusinessType: (type: string | null | undefined) => void;
+}
+const Ctx = createContext<ThemeCtx>({ theme: 'light', toggle: () => undefined, businessType: 'OTHER', setBusinessType: () => undefined });
 
 /** Inline script (see layout.tsx) sets the class before first paint; this keeps React state in sync. */
 export const THEME_SCRIPT =
@@ -12,9 +18,18 @@ export const THEME_SCRIPT =
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light');
+  const [businessType, setBusinessTypeState] = useState<BusinessType>('OTHER');
 
   useEffect(() => {
     setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('tea-shop', businessType === 'TEA_SHOP');
+  }, [businessType]);
+
+  const setBusinessType = useCallback((type: string | null | undefined) => {
+    setBusinessTypeState(type === 'TEA_SHOP' ? 'TEA_SHOP' : 'OTHER');
   }, []);
 
   const toggle = useCallback(() => {
@@ -26,7 +41,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const value = useMemo(() => ({ theme, toggle }), [theme, toggle]);
+  const value = useMemo(() => ({ theme, toggle, businessType, setBusinessType }), [theme, toggle, businessType, setBusinessType]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

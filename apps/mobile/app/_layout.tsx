@@ -15,7 +15,7 @@ function Shell() {
   useEffect(() => { void applySavedThemeMode(); }, []);
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={th.dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: th.bg } }} />
       <ChangePasswordModal />
       <PushProvider />
