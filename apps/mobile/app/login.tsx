@@ -1,15 +1,16 @@
 import { Feather } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text as PlainText, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text as PlainText, TextInput, View } from 'react-native';
+import { ThemeBackdrop } from '@/components/ThemeBackdrop';
 import { Text } from '@/components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, ErrorBox, Field, Muted } from '@/components/ui';
+import { Button, ErrorBox, Field, Muted, Sheet } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { useLang } from '@/lib/language';
 import { useSession, type SignInMethod } from '@/lib/session';
 import { OtpInput } from '@/components/OtpInput';
-import { useTheme } from '@/lib/theme';
+import { ThemeOverrideProvider, useTheme } from '@/lib/theme';
 
 type Step = 'id' | 'password' | 'otp';
 const RESEND_SECONDS = 30;
@@ -26,6 +27,14 @@ const friendly = (err: unknown) =>
  *   - everyone else          -> an OTP
  */
 export default function LoginScreen() {
+  return (
+    <ThemeOverrideProvider businessType="TEA_SHOP">
+      <LoginForm />
+    </ThemeOverrideProvider>
+  );
+}
+
+function LoginForm() {
   const th = useTheme();
   const insets = useSafeAreaInsets();
   const { lang, setLang } = useLang();
@@ -98,28 +107,15 @@ export default function LoginScreen() {
   const masked = isMobile ? `+91 ${id.slice(0, 2)}******${id.slice(-2)}` : id;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: th.brand }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-        {/* brand banner with soft glows and a faint pulse line */}
-        <View style={{ backgroundColor: th.brand, overflow: 'hidden', minHeight: 300, paddingTop: insets.top + 28, paddingBottom: 64, paddingHorizontal: 24, justifyContent: 'space-between' }}>
-          <View pointerEvents="none" style={{ position: 'absolute', left: -90, top: -90, width: 290, height: 290, borderRadius: 145, backgroundColor: 'rgba(255,255,255,0.10)' }} />
-          <View pointerEvents="none" style={{ position: 'absolute', right: -110, bottom: -150, width: 360, height: 360, borderRadius: 180, backgroundColor: 'rgba(255,255,255,0.16)' }} />
-          <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 40, height: 56, opacity: 0.16, flexDirection: 'row', alignItems: 'flex-end' }}>
-            <View style={{ flex: 0.26, height: 3, backgroundColor: th.onBrand, borderRadius: 2 }} />
-            <View style={{ width: 3, height: 54, backgroundColor: th.onBrand, borderRadius: 2, transform: [{ rotate: '14deg' }] }} />
-            <View style={{ width: 3, height: 44, backgroundColor: th.onBrand, borderRadius: 2, marginLeft: 10, transform: [{ rotate: '-16deg' }] }} />
-            <View style={{ flex: 1, height: 3, backgroundColor: th.onBrand, borderRadius: 2 }} />
-          </View>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Image source={require('../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#fff' }} />
-            <Text style={{ color: th.onBrand, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 }}>Branch Pulse</Text>
-          </View>
-          <Text style={{ color: th.onBrand, fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.6, maxWidth: 300 }}>Every branch. One pulse.</Text>
-        </View>
-
-        {/* the sign-in sheet overlaps the banner */}
-        <View style={{ flex: 1, marginTop: -32, backgroundColor: th.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 32, paddingBottom: insets.bottom + 28, gap: 22 }}>
+    <View style={{ flex: 1, width: '100%', backgroundColor: th.bg }}>
+      <ThemeBackdrop />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+        <View style={{ width: '100%', maxWidth: 480, alignSelf: 'center', backgroundColor: th.dark ? 'rgba(40,26,18,0.94)' : 'rgba(255,250,244,0.94)', borderRadius: 28, borderWidth: th.dark ? 1 : 0, borderColor: th.border, padding: 20, gap: 22, shadowColor: '#47210e', shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
           <View style={{ gap: 4 }}>
             <Text style={{ color: th.ink, fontSize: 26, fontWeight: '800', letterSpacing: -0.4 }}>{step === 'otp' ? 'Enter the OTP' : 'Welcome back'}</Text>
             {step === 'otp' ? (
@@ -146,7 +142,6 @@ export default function LoginScreen() {
                     />
                   </View>
                 </View>
-                <ErrorBox error={error} />
                 <Button title={wait > 0 ? `Try again in ${wait}s` : 'Continue'} onPress={onIdentify} loading={busy} disabled={!isMobile || wait > 0} />
               </>
             )}
@@ -167,7 +162,6 @@ export default function LoginScreen() {
                   </Pressable>
                 </View>
                 {method === 'PASSWORD_OTP' && <Muted small>An OTP will be sent to your mobile next.</Muted>}
-                <ErrorBox error={error} />
                 <Button title={wait > 0 && step === 'password' ? `Try again in ${wait}s` : method === 'PASSWORD_OTP' ? 'Send OTP' : 'Sign in'} onPress={onPassword} loading={busy} disabled={!password || (step === 'password' && wait > 0)} />
               </>
             )}
@@ -178,7 +172,6 @@ export default function LoginScreen() {
                   <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>OTP</Text>
                   <OtpInput value={otp} onChange={setOtp} />
                 </View>
-                <ErrorBox error={error} />
                 <Button title="Verify and sign in" onPress={onOtp} loading={busy} disabled={otp.length !== 6} />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Pressable onPress={back} disabled={busy} style={{ paddingVertical: 8 }}><Text style={{ color: th.brand, fontWeight: '600' }}>Use a different number</Text></Pressable>
@@ -199,7 +192,12 @@ export default function LoginScreen() {
             <PlainText style={{ color: th.brand, fontWeight: '700', fontSize: 16 }}>{lang === 'en' ? 'தமிழ்' : 'English'}</PlainText>
           </Pressable>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <Sheet open={!!error} onClose={() => setError(null)} title="Sign-in error">
+        <ErrorBox error={error} />
+        <Button title="OK" onPress={() => setError(null)} />
+      </Sheet>
+    </View>
   );
 }

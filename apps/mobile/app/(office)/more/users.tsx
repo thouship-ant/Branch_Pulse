@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { tAlert } from '@/lib/i18n';
 import { Text } from '@/components/Text';
 import { PasswordChecklist } from '@/components/PasswordChecklist';
-import { Banner, Button, Chip, ErrorBox, Field, ListRow, Loading, Muted, MultiChips, Screen, Sheet, ToggleRow } from '@/components/ui';
+import { Banner, Button, HeaderButton, Chip, ErrorBox, Field, ListRow, Loading, Muted, MultiChips, Screen, Sheet, ToggleRow } from '@/components/ui';
 import { api, ApiError, fieldErrors } from '@/lib/api';
 import { roleLabel } from '@/lib/labels';
 import { passwordOk } from '@/lib/password';
@@ -70,7 +70,7 @@ export default function UsersScreen() {
   const locName = (id: string) => locations.find((l) => l.id === id)?.name;
 
   return (
-    <Screen title="Users" onRefresh={load} headerRight={<Button small variant="secondary" icon="plus" title="Add" onPress={() => open()} />}>
+    <Screen title="Users" onRefresh={load} headerRight={<HeaderButton variant="secondary" icon="plus" title="Add" onPress={() => open()} />}>
       {notice ? <Banner tone="ok">✓ {notice}</Banner> : null}
       <ErrorBox error={error} />
       {!users ? <Loading /> : users.map((u) => (

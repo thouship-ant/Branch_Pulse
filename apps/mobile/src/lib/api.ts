@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/storage';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { uuid } from './dates';

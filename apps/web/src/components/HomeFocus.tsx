@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from './Icon';
 import { api } from '@/lib/api';
@@ -9,19 +8,7 @@ import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
-import { useTheme } from '@/lib/theme';
 import { useAttention } from '@/lib/useAttention';
-
-const TEA_SHOP_BANNERS = [
-  { image: 'tea-1.jpg', title: 'Chai & cookies', caption: 'A little tea-time favourite' },
-  { image: 'bread-omelette.png', title: 'Bread omelette', caption: 'A filling tea-time bite' },
-  { image: 'tea-3.jpg', title: 'Iced tea', caption: 'A refreshing shop special' },
-  { image: 'tea-4.jpg', title: 'Ginger tea', caption: 'Fresh ginger with warm tea' },
-  { image: 'vada.jpg', title: 'Medhu Vada', caption: 'A crisp, savoury snack' },
-  { image: 'samosa.jpg', title: 'Samosa', caption: 'A golden, flaky favourite' },
-  { image: 'fries.jpg', title: 'French fries', caption: 'Hot and crispy' },
-  { image: 'tea-2.jpg', title: 'Freshly brewed', caption: 'Made for a relaxing break' },
-] as const;
 
 const lakh = (v: number) => (Math.abs(v) >= 100000 ? `₹${(v / 100000).toFixed(1)} L` : formatINR(String(v), { decimals: false }));
 const ageDays = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso.length === 10 ? `${iso}T00:00:00` : iso).getTime()) / 86_400_000)) : 0);
@@ -33,11 +20,10 @@ const ageDays = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now(
 export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel: string }) {
   const { t, pick } = useT();
   const { me, can } = useSession();
-  const { businessType } = useTheme();
+  const isTeaShop = me?.company?.businessType === 'TEA_SHOP';
   const att = useAttention();
   const [pending, setPending] = useState<any[]>([]);
   const [awaiting, setAwaiting] = useState<any[]>([]);
-  const [bannerIndex, setBannerIndex] = useState(0);
   const [sales, setSales] = useState<{ dates: string[]; total: Array<string | null> } | null>(null);
   const [dues, setDues] = useState<{ total: number; overdue: number; suppliers: number } | null>(null);
   const today = todayIST();
@@ -50,14 +36,6 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
     if (can('purchase:view')) api.get(`/purchases/summary?from=${addDays(today, -29)}&to=${today}`).then((r: any) => alive && setDues({ total: Number(r.outstanding.total), overdue: Number(r.outstanding.overdue), suppliers: r.outstanding.suppliers })).catch(() => undefined);
     return () => { alive = false; };
   }, [can, today]);
-
-  useEffect(() => {
-    if (businessType !== 'TEA_SHOP') return;
-    const timer = window.setInterval(() => {
-      setBannerIndex((index) => (index + 1) % TEA_SHOP_BANNERS.length);
-    }, 3500);
-    return () => window.clearInterval(timer);
-  }, [businessType]);
 
   const tl = summary?.tiles;
   const greeting = new Date().getHours() < 12 ? t('goodMorning') : new Date().getHours() < 17 ? t('goodAfternoon') : t('goodEvening');
@@ -99,63 +77,32 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold">{greeting}, {me?.fullName}</h2>
-        <p className="text-sm text-slate-600">{prettyDate(today)} · {closedToday} / {branches} {t('attClosedToday')}</p>
-      </div>
+      {!isTeaShop && (
+        <>
+          <div>
+            <h2 className="text-2xl font-bold">{greeting}, {me?.fullName}</h2>
+            <p className="text-sm text-slate-600">{prettyDate(today)} · {closedToday} / {branches} {t('attClosedToday')}</p>
+          </div>
 
-      {/* one still summary line, with the button to act on it (UX-03) */}
-      {(att.waiting > 0 || att.unclosedBranches > 0) && (
-        <div role="status" className="flex flex-wrap items-center gap-3 rounded-card border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <Icon name="alert" size={18} className="shrink-0" />
-          <span className="min-w-0 flex-1">
-            {att.unclosedBranches > 0 && <b>{att.unclosedBranches} {t('attBranchesNotClosed')}{att.oldestUnclosed ? ` ${prettyDate(att.oldestUnclosed)}` : ''}. </b>}
-            {att.closings > 0 && `${att.closings} ${t('attClosingsWait')}. `}{att.expenses > 0 && `${att.expenses} ${t('attExpenses')}.`}
-          </span>
-          <Link href="/approvals" className="btn-primary min-h-[38px] px-4 text-sm">{t('attReview')}</Link>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {card(`${t('totalSales')} · ${periodLabel}`, tl ? lakh(Number(tl.totalSales)) : '—', tl ? undefined : undefined)}
-        {card(t('cash'), tl ? (tl.cash === null ? t('notCounted') : lakh(Number(tl.cash))) : '—', tl?.hasCashShortage ? t('shortage') : undefined, !!tl?.hasCashShortage)}
-        {card(`${t('expenses')} · ${periodLabel}`, tl ? lakh(Number(tl.totalExpenses)) : '—')}
-        {card(t('rOutstanding'), dues ? lakh(dues.total) : tl ? lakh(Number(tl.supplierOutstanding)) : '—', dues && dues.overdue > 0 ? `${lakh(dues.overdue)} ${t('attOverdue').split(' ')[0]}` : undefined, !!dues && dues.overdue > 0)}
-      </div>
-
-      {businessType === 'TEA_SHOP' && (
-        <section className="space-y-2" aria-label="Tea shop highlights">
-          <h3 className="text-lg font-bold">Tea shop</h3>
-          <div className="relative h-40 overflow-hidden rounded-card border border-slate-200 bg-slate-900 sm:h-52" role="region" aria-roledescription="carousel" aria-label="Tea shop menu images">
-            <Image
-              key={TEA_SHOP_BANNERS[bannerIndex].image}
-              src={`/tea-shop/${TEA_SHOP_BANNERS[bannerIndex].image}`}
-              alt={TEA_SHOP_BANNERS[bannerIndex].title}
-              fill
-              sizes="(min-width: 1280px) 1180px, 100vw"
-              priority={bannerIndex === 0}
-              className="object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-slate-950/65 px-4 py-2.5 text-white">
-              <p className="text-base font-extrabold leading-tight">{TEA_SHOP_BANNERS[bannerIndex].title}</p>
-              <p className="text-sm text-slate-100">{TEA_SHOP_BANNERS[bannerIndex].caption}</p>
+          {/* one still summary line, with the button to act on it (UX-03) */}
+          {(att.waiting > 0 || att.unclosedBranches > 0) && (
+            <div role="status" className="flex flex-wrap items-center gap-3 rounded-card border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <Icon name="alert" size={18} className="shrink-0" />
+              <span className="min-w-0 flex-1">
+                {att.unclosedBranches > 0 && <b>{att.unclosedBranches} {t('attBranchesNotClosed')}{att.oldestUnclosed ? ` ${prettyDate(att.oldestUnclosed)}` : ''}. </b>}
+                {att.closings > 0 && `${att.closings} ${t('attClosingsWait')}. `}{att.expenses > 0 && `${att.expenses} ${t('attExpenses')}.`}
+              </span>
+              <Link href="/approvals" className="btn-primary min-h-[38px] px-4 text-sm">{t('attReview')}</Link>
             </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {card(`${t('totalSales')} · ${periodLabel}`, tl ? lakh(Number(tl.totalSales)) : '—', tl ? undefined : undefined)}
+            {card(t('cash'), tl ? (tl.cash === null ? t('notCounted') : lakh(Number(tl.cash))) : '—', tl?.hasCashShortage ? t('shortage') : undefined, !!tl?.hasCashShortage)}
+            {card(`${t('expenses')} · ${periodLabel}`, tl ? lakh(Number(tl.totalExpenses)) : '—')}
+            {card(t('rOutstanding'), dues ? lakh(dues.total) : tl ? lakh(Number(tl.supplierOutstanding)) : '—', dues && dues.overdue > 0 ? `${lakh(dues.overdue)} ${t('attOverdue').split(' ')[0]}` : undefined, !!dues && dues.overdue > 0)}
           </div>
-          <div className="flex justify-center gap-1.5" role="group" aria-label="Choose tea shop image">
-            {TEA_SHOP_BANNERS.map((banner, index) => (
-              <button
-                key={banner.image}
-                type="button"
-                aria-label={`Show ${banner.title}`}
-                aria-current={index === bannerIndex ? 'true' : undefined}
-                onClick={() => setBannerIndex(index)}
-                className="grid h-8 w-8 place-items-center"
-              >
-                <span className={`h-1.5 rounded-full transition-all ${index === bannerIndex ? 'w-4 bg-brand' : 'w-1.5 bg-slate-300 hover:bg-slate-400'}`} />
-              </button>
-            ))}
-          </div>
-        </section>
+        </>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">

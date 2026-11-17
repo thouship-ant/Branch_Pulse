@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
-import { Banner, Button, Chip, Chips, ErrorBox, Field, ListRow, Loading, MoneyField, Muted, Screen, SegTabs, SelectField, Sheet } from '@/components/ui';
+import { Banner, Button, HeaderButton, Chip, Chips, ErrorBox, Field, ListRow, Loading, MoneyField, Muted, Screen, SegTabs, SelectField, Sheet } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { dec, formatINR } from '@/lib/money';
@@ -58,7 +58,7 @@ export default function OrdersScreen() {
     setBusy(true); setFormError(null);
     try {
       await api.post('/orders', {
-        locationId: adding.locationId || branches[0]?.id, customerName: adding.customerName.trim(), customerPhone: adding.customerPhone || undefined, eventType: adding.eventType, eventDate: adding.eventDate,
+        locationId: adding.locationId || branches[0]?.id, customerName: adding.customerName.trim(), customerPhone: adding.customerPhone, eventType: adding.eventType, eventDate: adding.eventDate,
         eventTime: adding.eventTime || undefined, venue: adding.venue || undefined, itemsSummary: adding.itemsSummary || undefined, peopleCount: adding.peopleCount ? Number(adding.peopleCount) : undefined,
         amount: dec(adding.amount).toFixed(2), advance: adding.advance ? dec(adding.advance).toFixed(2) : undefined, advanceMode: adding.advance ? adding.advanceMode : undefined, notes: adding.notes || undefined,
       });
@@ -82,7 +82,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <Screen title="Orders" onRefresh={load} headerRight={manage ? <Button small icon="plus" title="New" onPress={() => { setFormError(null); setAdding({ ...blank(), locationId: branches[0]?.id ?? '' }); }} /> : undefined} top={<SegTabs value={tab} onChange={setTab} tabs={[{ key: 'ALL', label: 'All' }, { key: 'PLANNED', label: 'Upcoming' }, { key: 'DELIVERED', label: 'Delivered' }, { key: 'CANCELLED', label: 'Cancelled' }]} />}>
+    <Screen title="Orders" onRefresh={load} headerRight={manage ? <HeaderButton icon="plus" title="New" onPress={() => { setFormError(null); setAdding({ ...blank(), locationId: branches[0]?.id ?? '' }); }} /> : undefined} top={<SegTabs value={tab} onChange={setTab} tabs={[{ key: 'ALL', label: 'All' }, { key: 'PLANNED', label: 'Upcoming' }, { key: 'DELIVERED', label: 'Delivered' }, { key: 'CANCELLED', label: 'Cancelled' }]} />}>
       <Muted>Meetings, functions and other outside-shop orders</Muted>
       <Chips label="Payment" value={pay as any} onChange={(v) => setPay(pay === v ? '' : v)} options={[{ value: 'UNPAID', label: 'Not paid' }, { value: 'PARTIAL', label: 'Partly paid' }, { value: 'PAID', label: 'Paid' }]} />
       <SelectField label="Branch" value={branch} onChange={setBranch} options={[{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} />
@@ -106,7 +106,7 @@ export default function OrdersScreen() {
         {adding ? (
           <>
             <Field label="Customer" required value={adding.customerName} onChangeText={(v) => setAdding({ ...adding, customerName: v })} maxLength={100} />
-            <Field label="Phone" value={adding.customerPhone} onChangeText={(v) => setAdding({ ...adding, customerPhone: v.replace(/\D/g, '').slice(0, 10) })} keyboardType="number-pad" />
+            <Field label="Phone" required value={adding.customerPhone} onChangeText={(v) => setAdding({ ...adding, customerPhone: v.replace(/\D/g, '').slice(0, 10) })} keyboardType="number-pad" />
             <Chips label="Event type" value={adding.eventType as any} onChange={(v) => setAdding({ ...adding, eventType: v })} options={TYPES} />
             <Chips label="Event date" value={adding.eventDate as any} onChange={(v) => setAdding({ ...adding, eventDate: v })} options={[0, 1, 2, 7].map((d) => ({ value: addDays(todayIST(), d), label: d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d === 2 ? 'In 2 days' : 'In a week' }))} />
             <Field label="Date (YYYY-MM-DD)" value={adding.eventDate} onChangeText={(v) => setAdding({ ...adding, eventDate: v })} />
@@ -119,7 +119,7 @@ export default function OrdersScreen() {
             <MoneyField label="Advance paid" value={adding.advance} onChange={(v) => setAdding({ ...adding, advance: v })} />
             {adding.advance ? <Chips label="Advance paid by" value={adding.advanceMode as any} onChange={(v) => setAdding({ ...adding, advanceMode: v })} options={MODES} /> : null}
             <ErrorBox error={formError} />
-            <Button title="Save order" onPress={create} loading={busy} disabled={!adding.customerName.trim() || !dec(adding.amount || '0').greaterThan(0)} />
+            <Button title="Save order" onPress={create} loading={busy} disabled={!adding.customerName.trim() || adding.customerPhone.length !== 10 || !dec(adding.amount || '0').greaterThan(0)} />
           </>
         ) : null}
       </Sheet>

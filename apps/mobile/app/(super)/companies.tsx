@@ -60,6 +60,8 @@ export default function CompaniesScreen() {
             </View>
             <Chip text={c.status === 'ACTIVE' ? 'Active' : 'Inactive'} tone={c.status === 'ACTIVE' ? 'ok' : 'neutral'} icon={c.status === 'ACTIVE' ? '●' : '○'} />
           </View>
+          <Detail label="Business name" value={c.businessName} />
+          <Detail label="Business type" value={BIZ_TYPES[c.businessType] ?? c.businessType} />
           <Detail label="Admin" value={c.admin ? `${c.admin.name} · ${c.admin.mobile}` : '—'} />
           <Detail label="Email" value={c.email ?? '—'} />
           <Detail label="GSTIN" value={c.gstin ?? '—'} />
@@ -86,6 +88,8 @@ export default function CompaniesScreen() {
     </Screen>
   );
 }
+
+const BIZ_TYPES: Record<string, string> = { TEA_SHOP: 'Tea shop', HOTEL: 'Hotel', BAKERY: 'Bakery', OTHER: 'Other' };
 
 function Detail({ label, value }: { label: string; value: string }) {
   const th = useTheme();

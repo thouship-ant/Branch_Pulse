@@ -1,0 +1,522 @@
+.teaShopHero {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 138px;
+  overflow: hidden;
+  padding: 18px clamp(22px, 4vw, 40px);
+  color: #fffaf4;
+  background: linear-gradient(120deg, #3c1708, #5c2b12 70%, #351407);
+  border-radius: 0 0 30px 30px;
+  isolation: isolate;
+  box-shadow: 0 8px 24px rgba(67, 29, 13, .18);
+}
+
+.teaShopHero::after { display: none; }
+.teaShopHero .teaShopBeans,
+.teaShopHero .teaShopCup { display: none; }
+
+.teaShopTopline,
+.teaShopBrandLockup {
+  display: flex;
+  align-items: center;
+}
+
+.teaShopTopline {
+  position: relative;
+  z-index: 3;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.teaShopBrandLockup {
+  min-width: 0;
+  gap: 16px;
+}
+
+.teaShopBrandMark {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b2c16;
+  background: #fff8ef;
+  border: 3px double #6a351c;
+  outline: 2px solid rgba(255, 255, 255, .85);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.teaShopBrandLogo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.teaShopBrandCopy {
+  min-width: 0;
+}
+
+.teaShopBrandCopy h1 {
+  margin: 0;
+  overflow: hidden;
+  font-size: clamp(21px, 2.4vw, 27px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teaShopBrandCopy p {
+  margin: 4px 0 0;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.teaShopActions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.teaShopDateControl {
+  flex: 0 0 auto;
+}
+
+.teaShopBranchHero {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 138px;
+  overflow: hidden;
+  padding: 18px clamp(14px, 3vw, 30px);
+  color: #fffaf4;
+  background: linear-gradient(120deg, #3c1708, #5c2b12 70%, #351407);
+  border-radius: 0 0 30px 30px;
+  isolation: isolate;
+  box-shadow: 0 8px 24px rgba(67, 29, 13, .18);
+}
+
+.teaShopBranchHero::after { display: none; }
+.teaShopBranchHero .teaShopBeans,
+.teaShopBranchHero .teaShopCup { display: none; }
+
+.teaShopBranchTop {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teaShopBranchTop .teaShopBrandLockup { gap: 16px; }
+.teaShopBranchTop .teaShopBrandMark { width: 88px; height: 88px; flex-basis: 88px; }
+.teaShopBranchTop .teaShopBrandCopy h1 { font-size: 23px; }
+.teaShopBranchTop .teaShopBrandCopy p { font-size: 15px; }
+
+.teaShopBranchActions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.teaShopBeans {
+  position: absolute;
+  right: 10%;
+  bottom: 37px;
+  color: #3c1d0e;
+  font-size: 18px;
+  letter-spacing: 4px;
+  transform: rotate(-12deg);
+  opacity: .8;
+}
+
+.teaShopCup {
+  position: absolute;
+  right: 5%;
+  bottom: 0;
+  z-index: 1;
+  width: 170px;
+  height: 145px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #63351d;
+}
+
+.cupSteam {
+  position: absolute;
+  top: 0;
+  color: #f5e4ce;
+  font-size: 30px;
+}
+
+.cupBowl {
+  position: absolute;
+  top: 35px;
+  left: 17px;
+  z-index: 2;
+  width: 125px;
+  height: 91px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid #e6d4bd;
+  border-radius: 18px 18px 48px 48px;
+  background: linear-gradient(110deg, #fff9ed, #e9d9c4);
+  box-shadow: 0 8px 12px rgba(53, 24, 9, .34);
+  transform: perspective(100px) rotateX(-4deg);
+}
+
+.cupLatteArt {
+  color: #a8794e;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.cupBrand {
+  max-width: 105px;
+  overflow: hidden;
+  font-family: Georgia, serif;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cupCafe {
+  margin-top: 3px;
+  font-size: 7px;
+  letter-spacing: 2px;
+}
+
+.cupHandle {
+  position: absolute;
+  top: 51px;
+  right: 0;
+  z-index: 1;
+  width: 45px;
+  height: 49px;
+  border: 9px solid #e8d7c1;
+  border-left: 0;
+  border-radius: 0 30px 30px 0;
+}
+
+.cupSaucer {
+  position: absolute;
+  bottom: 7px;
+  left: 0;
+  z-index: 1;
+  width: 165px;
+  height: 25px;
+  border-radius: 50%;
+  background: linear-gradient(#fffaf0, #c9b49a);
+  box-shadow: 0 8px 10px rgba(53, 24, 9, .27);
+}
+
+.dashboardContent {
+  width: 100%;
+  max-width: 1200px;
+  margin: 25px auto 0;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 22px;
+}
+
+.metricCard {
+  min-width: 0;
+  min-height: 128px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  position: relative;
+  padding: 22px;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  border: 1px solid #e8ddd2;
+  border-radius: 24px;
+  background: rgb(var(--surface) / .86);
+  box-shadow: 0 3px 8px rgba(67, 40, 21, .07), inset 0 1px 0 #fff;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 16px rgba(67, 40, 21, .11);
+}
+
+.metricCard:focus-visible {
+  outline: 2px solid rgb(var(--brand) / .65);
+  outline-offset: 3px;
+}
+
+.metricIcon {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+}
+
+.blue { color: #2478df; background: #dfedff; }
+.yellow { color: #d58a12; background: #fff0c7; }
+.green { color: #159a54; background: #ddf6df; }
+.purple { color: #9237d6; background: #f0dfff; }
+.cyan { color: #168fc6; background: #d9f2ff; }
+.red { color: #dc3838; background: #ffe1e1; }
+
+.metricCopy {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding-top: 5px;
+}
+
+.metricTitle {
+  font-size: clamp(16px, 2vw, 23px);
+  line-height: 1.25;
+}
+
+.metricAmount {
+  margin-top: 5px;
+  overflow: hidden;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metricNote {
+  max-width: 240px;
+  margin-top: 8px;
+  color: #796b60;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.metricNoteUp { color: #1ba65d; }
+.metricNoteDown { color: #c33b35; }
+
+.metricChevron {
+  flex: 0 0 auto;
+  margin: 6px 0 0 auto;
+  color: #68432e;
+}
+
+.goodFoodNote {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 12px 10px 0;
+  color: #a17b5d;
+}
+
+.goodFoodCopy {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 21px;
+  font-style: italic;
+  line-height: 1.15;
+  transform: rotate(-8deg);
+}
+
+.homeOverview {
+  display: grid;
+  gap: 18px;
+}
+
+.homeHero {
+  position: relative;
+  min-height: 215px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 25px 30px;
+  color: #32190f;
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 80% 20%, #fff9ef 0, transparent 42%), linear-gradient(105deg, #fff0df 0 53%, #e8c49e 100%);
+}
+
+.homeHero::after { display: none; }
+
+.homeHero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 62%;
+  margin: 0;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.homeHero p {
+  position: relative;
+  z-index: 1;
+  max-width: 58%;
+  margin: 7px 0 0;
+  color: #684f3e;
+  font-size: 15px;
+}
+
+.allFiguresHeading {
+  margin: 8px 0 14px;
+  color: rgb(var(--ink));
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.homeWarning {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  color: #714112;
+  border: 1px solid #e8c995;
+  border-radius: 18px;
+  background: #ffebc6;
+}
+
+.homeWarningCopy { min-width: 0; flex: 1; }
+.homeWarningCopy strong { display: block; font-size: 15px; }
+.homeWarningCopy p { margin: 3px 0 0; font-size: 13px; }
+
+.homeWarningAction {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  color: #fffaf4;
+  text-decoration: none;
+  border-radius: 12px;
+  background: #5b2c16;
+}
+
+.homeStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.homeStat {
+  min-width: 0;
+  min-height: 160px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+  padding: 20px 24px;
+  color: #fff;
+  text-decoration: none;
+  border: 0;
+  border-radius: 28px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .33), 0 4px 10px rgba(69, 34, 15, .09);
+}
+
+.homeStatSales { background: linear-gradient(115deg, #b65317, #6b2c0c); }
+.homeStatCash { background: linear-gradient(115deg, #23933d, #155b2c); }
+.homeStatExpenses { background: linear-gradient(115deg, #a13cce, #482076); }
+.homeStatSupplier { background: linear-gradient(115deg, #e34859, #8d1f32); }
+.homeStatIcon { width: 60px; height: 60px; flex: 0 0 60px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .21); }
+.homeStatCopy { min-width: 0; display: flex; flex: 1; flex-direction: column; padding-top: 8px; position: relative; z-index: 1; }
+.homeStatCopy > span { overflow: hidden; color: rgba(255, 255, 255, .9); font-size: clamp(16px, 2.2vw, 24px); text-overflow: ellipsis; white-space: nowrap; }
+.homeStatCopy strong { margin-top: 14px; overflow: hidden; font-size: clamp(30px, 4vw, 43px); font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.homeStatDecoration { position: absolute; right: 12px; bottom: 8px; color: #fff; opacity: .18; }
+
+:global(.dark.tea-shop) .metricCard,
+:global(.dark.tea-shop) .homeStat {
+  border-color: rgb(var(--slate-200));
+  box-shadow: var(--shadow-card);
+}
+
+:global(.dark.tea-shop) .homeStatCopy > span {
+  color: rgba(255, 255, 255, .9);
+}
+
+:global(.dark.tea-shop) .metricNote { color: rgb(var(--slate-600)); }
+
+:global(.dark.tea-shop) .metricChevron {
+  color: rgb(var(--slate-700));
+}
+
+@media (max-width: 620px) {
+  .teaShopHero {
+    height: 150px;
+    padding: 18px;
+  }
+
+  .teaShopTopline { display: block; }
+  .teaShopBrandLockup { gap: 12px; }
+  .teaShopBrandMark { width: 68px; height: 68px; flex-basis: 68px; outline-offset: 2px; }
+  .teaShopBrandCopy h1 { font-size: 20px; }
+  .teaShopBrandCopy p { font-size: 14px; }
+  .teaShopActions { position: absolute; top: 76px; left: 0; gap: 6px; }
+  .teaShopCup { right: 3%; transform: scale(.72); transform-origin: bottom right; }
+  .teaShopBeans { right: 25%; bottom: 30px; }
+  .teaShopBranchHero { height: 150px; padding: 18px; }
+  .teaShopBranchTop { display: block; }
+  .teaShopBranchTop .teaShopBrandMark { width: 68px; height: 68px; flex-basis: 68px; }
+  .teaShopBranchTop .teaShopBrandCopy h1 { font-size: 20px; }
+  .teaShopBranchTop .teaShopBrandCopy p { font-size: 14px; }
+  .teaShopBranchActions { position: absolute; top: 76px; left: 0; }
+  .dashboardContent { margin-top: 15px; }
+  .metricsGrid { gap: 12px; }
+  .metricCard { min-height: 105px; gap: 10px; padding: 13px 10px; border-radius: 17px; }
+  .metricIcon { width: 52px; height: 52px; flex-basis: 52px; border-radius: 16px; }
+  .metricIcon svg { width: 25px; height: 25px; }
+  .metricCopy { padding-top: 3px; }
+  .metricTitle { font-size: 14px; }
+  .metricAmount { font-size: 23px; }
+  .metricNote { margin-top: 5px; font-size: 10px; }
+  .metricChevron { width: 17px; margin-top: 4px; }
+  .goodFoodNote { min-height: 80px; }
+  .goodFoodCopy { font-size: 17px; }
+  .homeOverview { gap: 12px; }
+  .homeHero { min-height: 165px; padding: 20px 17px; border-radius: 18px; }
+  .homeHero h1 { max-width: 60%; font-size: 23px; }
+  .homeHero p { max-width: 58%; font-size: 12px; }
+  .homeWarning { align-items: flex-start; gap: 9px; padding: 12px; }
+  .homeWarningCopy strong, .homeWarningCopy p { font-size: 12px; }
+  .homeWarningAction { min-height: 36px; gap: 3px; padding: 0 8px; font-size: 12px; }
+  .homeStatsGrid { gap: 10px; }
+  .homeStat { min-height: 120px; gap: 10px; padding: 14px 12px; border-radius: 20px; }
+  .homeStatIcon { width: 42px; height: 42px; flex-basis: 42px; }
+  .homeStatIcon svg { width: 23px; height: 23px; }
+  .homeStatCopy { padding-top: 4px; }
+  .homeStatCopy > span { font-size: 12px; }
+  .homeStatCopy strong { margin-top: 8px; font-size: 23px; }
+  .homeStatDecoration { right: 5px; bottom: 5px; width: 62px; height: 62px; }
+  .allFiguresHeading { margin: 4px 0 10px; font-size: 19px; }
+}
+
+@media (max-width: 380px) {
+  .teaShopBrandCopy h1 { font-size: 20px; }
+  .teaShopBrandCopy p { font-size: 16px; }
+  .metricCard { gap: 7px; padding: 11px 8px; }
+  .metricIcon { width: 44px; height: 44px; flex-basis: 44px; }
+  .metricTitle { font-size: 12px; }
+  .metricAmount { font-size: 20px; }
+  .metricChevron { width: 14px; }
+}

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { IsBoolean, IsDefined, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
-import { notFound, validation } from '../common/app-exception';
+import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { ReqCtx } from '../common/auth-user';
 import { MONEY_PATTERN, parseMoney } from '../common/money';
@@ -116,6 +116,9 @@ export class MasterService {
 
   async putSetting(ctx: ReqCtx, key: string, value: unknown) {
     if (!(key in SETTING_DEFAULTS)) throw validation('UNKNOWN_SETTING', `Unknown setting ${key}`, 'key');
+    if (key === 'business.name' || key === 'business.type') {
+      throw new AppException(403, 'FORBIDDEN', 'Only the Super Admin can change the business name or type');
+    }
     const expected = typeof SETTING_DEFAULTS[key];
     if (typeof value !== expected) throw validation('INVALID_SETTING', `${key} must be a ${expected}`, 'value');
     if (key === 'branch.code_prefix' && !/^[A-Z]{1,4}$/.test(String(value))) {
@@ -123,6 +126,9 @@ export class MasterService {
     }
     if (key === 'business.type' && !['TEA_SHOP', 'HOTEL', 'BAKERY', 'OTHER'].includes(String(value))) {
       throw validation('INVALID_SETTING', 'business.type must be TEA_SHOP, HOTEL, BAKERY or OTHER', 'value');
+    }
+    if (key === 'business.logo' && value !== '' && (String(value).length > 80_000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(String(value)))) {
+      throw validation('INVALID_SETTING', 'business.logo must be an uploaded JPEG logo under 80 KB', 'value');
     }
     return this.prisma.runCurrent(async (tx) => {
       const before = await tx.setting.findUnique({ where: { company_id_key: { company_id: ctx.user.companyId!, key } } });

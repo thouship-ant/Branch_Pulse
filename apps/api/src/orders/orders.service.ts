@@ -15,7 +15,7 @@ const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CHEQUE'] as const;
 export class CreateOrderDto {
   @IsUUID() locationId: string;
   @IsString() @MaxLength(100) customerName: string;
-  @IsOptional() @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' }) customerPhone?: string;
+  @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' }) customerPhone: string; // the customer's number is mandatory on a new order
   @IsIn(EVENT_TYPES as unknown as string[]) eventType: string;
   @IsDateString() eventDate: string;
   @IsOptional() @Matches(/^\d{2}:\d{2}$/, { message: 'Time must be HH:MM' }) eventTime?: string;

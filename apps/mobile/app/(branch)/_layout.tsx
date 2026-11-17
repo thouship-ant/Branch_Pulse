@@ -28,19 +28,21 @@ export default function BranchLayout() {
   if (!me) return <Redirect href="/login" />;
   if (!isBranchUser) return <Redirect href="/" />;
   const branch = me.locations[0];
+  const teaShop = me.company?.businessType === 'TEA_SHOP';
 
   return (
     <HeaderProvider
       value={{
-        title: me.fullName,
-        subtitle: [me.company?.name, branch?.name].filter(Boolean).join(' · '),
+        title: teaShop ? me.company?.businessName || me.company?.name || me.fullName : me.fullName,
+        subtitle: teaShop ? [me.fullName, branch?.name].filter(Boolean).join(' · ') : [me.company?.name, branch?.name].filter(Boolean).join(' · '),
+        teaShop, logo: teaShop ? me.company?.businessLogo : undefined,
         right: <IconButton icon="log-out" label="Sign out" onPress={() => void logout()} />,
       }}
     >
     <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: th.bg },
+        sceneStyle: { backgroundColor: teaShop ? 'transparent' : th.bg },
         tabBarActiveTintColor: th.brand,
         tabBarInactiveTintColor: th.faint,
         ...tabBar,

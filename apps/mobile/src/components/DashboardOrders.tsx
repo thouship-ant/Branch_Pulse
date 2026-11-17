@@ -46,14 +46,14 @@ export function DashboardOrders({ refreshKey }: { refreshKey?: unknown }) {
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1, borderRadius: 14, padding: 10, backgroundColor: '#EFF6FF' }}>
-          <Text style={{ color: '#3B82F6', fontSize: 11, fontWeight: '700' }}>Upcoming</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ width: '48.5%', borderRadius: 14, padding: 10, backgroundColor: '#EFF6FF' }}>
+          <Text style={{ color: '#3B82F6', fontSize: 13, fontWeight: '700' }}>Upcoming</Text>
           <Text style={{ color: th.ink === '#e2e8f0' ? '#1E293B' : '#1E293B', fontSize: 22, fontWeight: '800' }}>{sum.upcoming}</Text>
         </View>
         {(['UNPAID', 'PARTIAL', 'PAID'] as const).map((k) => (
-          <View key={k} style={{ flex: 1, borderRadius: 14, padding: 10, backgroundColor: PAY[k].bg }}>
-            <Text numberOfLines={1} style={{ color: PAY[k].fg, fontSize: 11, fontWeight: '700' }}>{PAY[k].dot} {PAY[k].label}</Text>
+          <View key={k} style={{ width: '48.5%', borderRadius: 14, padding: 10, backgroundColor: PAY[k].bg }}>
+            <Text numberOfLines={1} style={{ color: PAY[k].fg, fontSize: 13, fontWeight: '700' }}>{PAY[k].dot} {PAY[k].label}</Text>
             <Text style={{ color: '#1E293B', fontSize: 22, fontWeight: '800' }}>{sum.counts[k]}</Text>
           </View>
         ))}

@@ -1,6 +1,6 @@
-import type { IconName } from '@/components/ui';
+import type { AnyIconName } from '@/components/ui';
 
-export interface MenuItem { path: string; title: string; icon: IconName; perm: string; hint: string }
+export interface MenuItem { path: string; title: string; icon: AnyIconName; perm: string; hint: string }
 export interface MenuGroup { title: string; items: MenuItem[] }
 
 /** The back-office sections, as on the web sidebar, each shown only to users who hold its permission. */
@@ -9,7 +9,7 @@ export const MENU: MenuGroup[] = [
     title: 'Daily',
     items: [
       { path: '/more/closings', title: 'Closings', icon: 'check-square', perm: 'closing:view', hint: 'Branch closings by date' },
-      { path: '/more/cash', title: 'Cash', icon: 'dollar-sign', perm: 'cash:view', hint: 'Reconciliation and variances' },
+      { path: '/more/cash', title: 'Cash', icon: 'wallet', perm: 'cash:view', hint: 'Reconciliation and variances' },
       { path: '/more/orders', title: 'Orders', icon: 'calendar', perm: 'order:view', hint: 'Meetings, functions, payments' },
     ],
   },

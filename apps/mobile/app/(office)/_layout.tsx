@@ -4,7 +4,7 @@ import { OfficeTabBar } from '@/components/OfficeTabBar';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 
-const ROUTES = ['dashboard', 'approvals', 'more', 'account'];
+const ROUTES = ['dashboard', 'approvals', 'reports', 'more', 'account'];
 
 /** Back-office layout for Admin, Accountant and Stock Manager. */
 export default function OfficeLayout() {
@@ -13,14 +13,19 @@ export default function OfficeLayout() {
   if (loading) return null;
   if (!me) return <Redirect href="/login" />;
   if (me.isSuper || isBranchUser) return <Redirect href="/" />;
+  const teaShop = me.company?.businessType === 'TEA_SHOP';
 
   return (
-    <HeaderProvider value={{ title: me.fullName, subtitle: me.company?.name }}>
+    <HeaderProvider value={{
+      title: teaShop ? me.company?.businessName || me.company?.name || me.fullName : me.fullName,
+      subtitle: teaShop ? 'Multi-Branch Operations' : me.company?.name,
+      teaShop, logo: teaShop ? me.company?.businessLogo : undefined,
+    }}>
     <Tabs
       tabBar={() => <OfficeTabBar />}
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: th.bg },
+        sceneStyle: { backgroundColor: teaShop ? 'transparent' : th.bg },
         tabBarActiveTintColor: th.brand,
         tabBarInactiveTintColor: th.faint,
       }}

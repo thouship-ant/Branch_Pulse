@@ -297,7 +297,13 @@ export class AuthService {
     const company = user.companyId
       ? await this.prisma.runAuth((tx) => tx.company.findUnique({ where: { id: user.companyId! }, select: { id: true, code: true, name: true } }))
       : null;
-    const businessType = company ? await this.settings.get<string>('business.type', company.id) : undefined;
+    const [businessType, businessName, businessLogo] = company
+      ? await Promise.all([
+          this.settings.get<string>('business.type', company.id),
+          this.settings.get<string>('business.name', company.id),
+          this.settings.get<string>('business.logo', company.id),
+        ])
+      : [undefined, undefined, undefined];
     const locations = user.isSuper
       ? []
       : await this.prisma.runScoped(user, (tx) =>
@@ -322,7 +328,7 @@ export class AuthService {
       isSuper: user.isSuper,
       /** true until the user replaces the default / temporary password: the app shows the change-password prompt */
       mustChangePassword: profile.must_change_password && user.roles.includes('ADMIN'),
-      company: company ? { ...company, businessType } : null,
+      company: company ? { ...company, businessType, businessName, businessLogo } : null,
       locations,
     };
   }

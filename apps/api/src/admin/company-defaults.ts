@@ -133,7 +133,7 @@ export async function ensureSuperAdminRole(db: Db): Promise<string> {
  * Give a company its starting roles, approval limits, categories and settings. Idempotent: existing rows are kept.
  * Returns the company's role ids by code (the caller assigns the first Admin user to ADMIN).
  */
-export async function provisionCompanyDefaults(db: Db, companyId: string, businessName: string): Promise<Map<string, string>> {
+export async function provisionCompanyDefaults(db: Db, companyId: string, businessName: string, businessType = 'TEA_SHOP'): Promise<Map<string, string>> {
   await ensurePermissions(db);
   const perms = new Map((await db.permission.findMany()).map((p) => [p.code, p.id]));
 
@@ -181,7 +181,7 @@ export async function provisionCompanyDefaults(db: Db, companyId: string, busine
   });
   await db.setting.upsert({
     where: { company_id_key: { company_id: companyId, key: 'business.type' } },
-    update: {}, create: { company_id: companyId, key: 'business.type', value: 'TEA_SHOP' },
+    update: {}, create: { company_id: companyId, key: 'business.type', value: businessType },
   });
   return roleId;
 }

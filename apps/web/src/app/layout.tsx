@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body>
+      <body className="app-background">
         <ThemeProvider>
           <I18nProvider>
             <SessionProvider>{children}<ChangePasswordModal /></SessionProvider>

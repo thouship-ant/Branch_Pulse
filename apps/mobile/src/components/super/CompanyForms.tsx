@@ -5,19 +5,24 @@ import { api, ApiError, fieldErrors } from '@/lib/api';
 import { passwordOk } from '@/lib/password';
 import { useTheme } from '@/lib/theme';
 import { PasswordChecklist } from '../PasswordChecklist';
-import { Button, ErrorBox, Field } from '../ui';
+import { Button, Chips, ErrorBox, Field } from '../ui';
 
 export interface Company {
   id: string; code: string; name: string; address: string | null; gstin: string | null; fssai: string | null; email: string | null; status: string;
+  businessName: string; businessType: string;
   branchCount: number; admin: { name: string; mobile: string; status: string } | null;
 }
 
 const EMAIL = /^\S+@\S+\.\S+$/;
+const BIZ_TYPES = [
+  { value: 'TEA_SHOP', label: 'Tea shop' }, { value: 'HOTEL', label: 'Hotel' },
+  { value: 'BAKERY', label: 'Bakery' }, { value: 'OTHER', label: 'Other' },
+];
 
 /** New company with its first Admin. The password is optional: blank = the default Admin@1234, changed at the first sign-in. */
 export function CreateCompanyForm({ onSaved }: { onSaved: () => void }) {
   const th = useTheme();
-  const [f, setF] = useState({ companyName: '', adminName: '', mobile: '', email: '', address: '', gstin: '', fssai: '', password: '' });
+  const [f, setF] = useState({ companyName: '', businessName: '', businessType: 'TEA_SHOP', adminName: '', mobile: '', email: '', address: '', gstin: '', fssai: '', password: '' });
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +35,8 @@ export function CreateCompanyForm({ onSaved }: { onSaved: () => void }) {
     setBusy(true); setError(null); setErrors({});
     try {
       await api.post('/super/companies', {
-        companyName: f.companyName.trim(), adminName: f.adminName.trim(), mobile: f.mobile, email: f.email.trim(), address: f.address.trim(),
+        companyName: f.companyName.trim(), businessName: f.businessName.trim() || f.companyName.trim(), businessType: f.businessType,
+        adminName: f.adminName.trim(), mobile: f.mobile, email: f.email.trim(), address: f.address.trim(),
         gstin: f.gstin.trim().toUpperCase() || undefined, fssai: f.fssai.trim() || undefined, password: f.password || undefined,
       });
       onSaved();
@@ -44,6 +50,8 @@ export function CreateCompanyForm({ onSaved }: { onSaved: () => void }) {
   return (
     <View style={{ gap: 14 }}>
       <Field label="Company name" required value={f.companyName} onChangeText={set('companyName')} maxLength={120} error={errors.companyName} />
+      <Field label="Business name" value={f.businessName} onChangeText={set('businessName')} maxLength={120} placeholder="Defaults to company name" error={errors.businessName} />
+      <Chips label="Business type" value={f.businessType} onChange={(v) => setF((s) => ({ ...s, businessType: v }))} options={BIZ_TYPES} />
       <Field label="Admin full name" required value={f.adminName} onChangeText={set('adminName')} maxLength={100} error={errors.adminName} />
       <Field label="Admin mobile number" required value={f.mobile} onChangeText={(v) => set('mobile')(v.replace(/\D/g, '').slice(0, 10))} keyboardType="number-pad" placeholder="10 digits" error={errors.mobile} />
       <Field label="Email" required value={f.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" error={errors.email} />
@@ -70,7 +78,10 @@ export function CreateCompanyForm({ onSaved }: { onSaved: () => void }) {
 /** Change a company's details (name, email, address, GSTIN, FSSAI). */
 export function EditCompanyForm({ company, onSaved }: { company: Company; onSaved: () => void }) {
   const th = useTheme();
-  const [f, setF] = useState({ companyName: company.name, email: company.email ?? '', address: company.address ?? '', gstin: company.gstin ?? '', fssai: company.fssai ?? '' });
+  const [f, setF] = useState({
+    companyName: company.name, businessName: company.businessName || company.name, businessType: company.businessType || 'TEA_SHOP',
+    email: company.email ?? '', address: company.address ?? '', gstin: company.gstin ?? '', fssai: company.fssai ?? '',
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -80,7 +91,10 @@ export function EditCompanyForm({ company, onSaved }: { company: Company; onSave
   async function submit() {
     setBusy(true); setError(null); setErrors({});
     try {
-      await api.patch(`/super/companies/${company.id}`, { companyName: f.companyName.trim(), email: f.email.trim(), address: f.address.trim(), gstin: f.gstin.trim().toUpperCase(), fssai: f.fssai.trim() });
+      await api.patch(`/super/companies/${company.id}`, {
+        companyName: f.companyName.trim(), businessName: f.businessName.trim(), businessType: f.businessType,
+        email: f.email.trim(), address: f.address.trim(), gstin: f.gstin.trim().toUpperCase(), fssai: f.fssai.trim(),
+      });
       onSaved();
     } catch (e) {
       setErrors(fieldErrors(e));
@@ -93,6 +107,8 @@ export function EditCompanyForm({ company, onSaved }: { company: Company; onSave
     <View style={{ gap: 14 }}>
       <Text style={{ color: th.muted, fontSize: 13 }}>Company code {company.code}. To change the Admin&apos;s mobile number or reset a password open Users.</Text>
       <Field label="Company name" required value={f.companyName} onChangeText={set('companyName')} maxLength={120} error={errors.companyName} />
+      <Field label="Business name" required value={f.businessName} onChangeText={set('businessName')} maxLength={120} error={errors.businessName} />
+      <Chips label="Business type" value={f.businessType} onChange={(v) => setF((s) => ({ ...s, businessType: v }))} options={BIZ_TYPES} />
       <Field label="Email" required value={f.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" error={errors.email} />
       <Field label="Main shop / head office address" required value={f.address} onChangeText={set('address')} multiline error={errors.address} />
       <Field label="GSTIN (optional)" value={f.gstin} onChangeText={(v) => set('gstin')(v.toUpperCase().slice(0, 15))} autoCapitalize="characters" error={errors.gstin} />

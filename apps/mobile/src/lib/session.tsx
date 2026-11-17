@@ -12,7 +12,7 @@ export interface Me {
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;
-  company?: { id: string; code: string; name: string; businessType?: string } | null;
+  company?: { id: string; code: string; name: string; businessType?: string; businessName?: string; businessLogo?: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 
@@ -29,6 +29,7 @@ interface SessionCtx {
   logout: () => Promise<void>;
   /** call after the password was changed so the prompt goes away */
   passwordChanged: () => void;
+  refreshMe: () => Promise<void>;
 }
 
 const Ctx = createContext<SessionCtx>(null as unknown as SessionCtx);
@@ -73,15 +74,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const passwordChanged = useCallback(() => setMe((m) => (m ? { ...m, mustChangePassword: false } : m)), []);
+  const refreshMe = useCallback(async () => { setMe(await api.get<Me>('/me')); }, []);
 
   const value = useMemo<SessionCtx>(() => {
     const perms = new Set(me?.permissions ?? []);
     return {
       me, loading, can: (p) => perms.has(p),
       isBranchUser: perms.has('closing:submit') && !perms.has('closing:approve'),
-      identify, loginWithPassword, requestOtp, verifyOtp, logout, passwordChanged,
+      identify, loginWithPassword, requestOtp, verifyOtp, logout, passwordChanged, refreshMe,
     };
-  }, [me, loading, identify, loginWithPassword, requestOtp, verifyOtp, logout, passwordChanged]);
+  }, [me, loading, identify, loginWithPassword, requestOtp, verifyOtp, logout, passwordChanged, refreshMe]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

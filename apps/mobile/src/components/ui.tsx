@@ -6,13 +6,19 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STATUS_LABEL } from '@/lib/labels';
 import { useHeader } from './HeaderContext';
+import { HeaderRight, ThemeBackdrop, ThemeHeaderBg, useBackdropGeometry } from './ThemeBackdrop';
 import { useLang } from '@/lib/language';
 import { tr } from '@/lib/i18n';
 import { cleanAmount } from '@/lib/money';
 import { useEntryDay } from '@/lib/workDate';
-import { RADIUS, TOUCH, useTheme, useThemeColor, useThemeMode, type Theme, type ThemeColor } from '@/lib/theme';
+import { RADIUS, TOUCH, useIsTeaShop, useTheme, useThemeColor, useThemeMode, type Theme, type ThemeColor } from '@/lib/theme';
 
 export type IconName = keyof typeof Feather.glyphMap;
+/** A Feather icon, or 'wallet' (Feather has none) drawn with the Material wallet glyph. Used wherever money / cash is shown. */
+export type AnyIconName = IconName | 'wallet';
+export function AnyIcon({ name, size, color }: { name: AnyIconName; size: number; color: string }) {
+  return name === 'wallet' ? <MaterialCommunityIcons name="wallet-outline" size={size + 2} color={color} /> : <Feather name={name} size={size} color={color} />;
+}
 type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
 
 // ------------------------------------------------------------------ layout
@@ -24,26 +30,31 @@ type ToneName = 'ok' | 'warn' | 'bad' | 'violet' | 'sky' | 'neutral';
 /** A long list drawn by the screen itself: only the rows near the screen are built (children become the list header). */
 export interface ScreenList { data: any[]; renderItem: ListRenderItem<any>; keyExtractor: (item: any) => string; empty?: ReactNode }
 
-export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight, title, top, list }: { children?: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerRight?: ReactNode; title?: string; top?: ReactNode; list?: ScreenList }) {
+export function Screen({ children, onRefresh, padBottom = 24, hero, headerLeft, headerRight, headerSubtitle, title, top, list }: { children?: ReactNode; onRefresh?: () => Promise<void> | void; padBottom?: number; hero?: boolean; headerLeft?: ReactNode; headerRight?: ReactNode; headerSubtitle?: string; title?: string; top?: ReactNode; list?: ScreenList }) {
   const th = useTheme();
   const header = useHeader();
+  const insets = useSafeAreaInsets();
+  const teaShop = useIsTeaShop();
+  const geo = useBackdropGeometry();
   const [headerH, setHeaderH] = useState(190);
+  // tea shop: the header is part of the themed picture (same for every page and role); the page slides away under it
+  const themed = teaShop && !!header;
+  const contentTop = themed ? geo.headerH : headerH - 30;
   const [refreshing, setRefreshing] = useState(false);
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try { await onRefresh?.(); } finally { setRefreshing(false); }
   }, [onRefresh]);
-  const insets = useSafeAreaInsets();
-  const overlap = !!header && !title; // every page scrolls over the header's curved lower edge (`hero` kept for callers, now the default)
+  const overlap = !!header && (!title || themed); // every page scrolls over the header's curved lower edge (`hero` kept for callers, now the default)
   const right = headerRight ?? header?.right;
   // when the page scrolls over the header, the scroll view covers it and would swallow taps: the header's own buttons are drawn
   // again above the scroll view instead (same spot), and the header underneath is drawn without them
-  const bar = title ? <SubHeader title={title} right={headerRight} /> : header ? <AppBar {...header} right={overlap ? undefined : right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
-  return (
-    <View style={{ flex: 1, backgroundColor: th.bg }}>
+  const bar = title ? <SubHeader title={title} right={themed ? right : headerRight} /> : header ? <AppBar {...header} subtitle={headerSubtitle ?? header.subtitle} left={headerLeft} right={overlap && !themed ? undefined : right} onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)} /> : null;
+  const content = (
+    <View style={{ flex: 1, backgroundColor: teaShop ? 'transparent' : th.bg }}>
       {bar && !overlap ? bar : null}
-      {bar && overlap ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>{bar}</View> : null}
-      {top ? <View style={{ paddingHorizontal: 16, paddingTop: overlap ? headerH - 30 : 16, paddingBottom: 4, gap: 12, backgroundColor: overlap ? 'transparent' : th.bg }}>{top}</View> : null}
+      {bar && overlap && !themed ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>{bar}</View> : null}
+      {top ? <View style={{ paddingHorizontal: 16, paddingTop: overlap ? contentTop : 16, paddingBottom: 4, gap: 12, backgroundColor: overlap || teaShop ? 'transparent' : th.bg }}>{top}</View> : null}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {list ? (
           <FlatList
@@ -51,15 +62,15 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
             initialNumToRender={10} maxToRenderPerBatch={10} windowSize={7} removeClippedSubviews
             ListHeaderComponent={children ? <View style={{ gap: 16 }}>{children}</View> : null}
             ListEmptyComponent={list.empty ? <View>{list.empty}</View> : null}
-            contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
+            contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? contentTop : 16, paddingBottom: padBottom, gap: 16 }}
             keyboardShouldPersistTaps="handled"
-            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap ? '#fff' : th.brand} progressViewOffset={overlap ? headerH - 60 : 0} /> : undefined}
+            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap && !themed ? '#fff' : th.brand} progressViewOffset={overlap ? (themed ? geo.headerH : headerH) - 60 : 0} /> : undefined}
           />
         ) : (
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? headerH - 30 : 16, paddingBottom: padBottom, gap: 16 }}
+          contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? contentTop : 16, paddingBottom: padBottom, gap: 16 }}
           keyboardShouldPersistTaps="handled"
-          refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap ? '#fff' : th.brand} progressViewOffset={overlap ? headerH - 60 : 0} /> : undefined}
+          refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap && !themed ? '#fff' : th.brand} progressViewOffset={overlap ? (themed ? geo.headerH : headerH) - 60 : 0} /> : undefined}
         >
           {children}
         </ScrollView>
@@ -67,20 +78,31 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerRight,
       </KeyboardAvoidingView>
       {/* the fixed part of the header (logo, greeting, name, company + its buttons) is drawn again above the scroll view: the page
           slides over the curved edge below, and disappears under this part once it reaches the company name */}
-      {overlap && bar ? (
+      {overlap && bar && themed ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: geo.headerH, zIndex: 20, elevation: 20 }}>
+          <ThemeHeaderBg />
+          {bar}
+        </View>
+      ) : overlap && bar ? (
         <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, headerH - 52), overflow: 'hidden', backgroundColor: th.brand, zIndex: 20, elevation: 20 }}>
-          <AppBar {...header!} right={right} />
+          <AppBar {...header!} subtitle={headerSubtitle ?? header.subtitle} left={headerLeft} right={right} />
         </View>
       ) : null}
     </View>
   );
+  return teaShop ? (
+    <View style={{ flex: 1, width: '100%', backgroundColor: th.bg }}>
+      <ThemeBackdrop />
+      {content}
+    </View>
+  ) : content;
 }
 
 /** Soft card look: a shadow in light mode, a hairline in dark mode. */
 export function cardLook(th: Theme): ViewStyle {
   return th.dark
     ? { borderWidth: 1, borderColor: th.border }
-    : { shadowColor: '#1e2a8a', shadowOpacity: 0.09, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3 };
+    : { shadowColor: th.brand, shadowOpacity: 0.09, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3 };
 }
 
 /** A soft white card. `tone` tints it (alerts). */
@@ -114,8 +136,31 @@ export function IconTile({ icon, mdi, tone = 'brand', size = 48, accent }: { ico
 }
 
 /** Half-width stat card: icon tile, big number, label (the "Overview" grid). */
+const TEA_TONE: Record<string, { bg: string; fg: string }> = {
+  brand: { bg: '#fdecc4', fg: '#a4501f' }, ok: { bg: '#d6f0d9', fg: '#2e9c5b' }, warn: { bg: '#fdecc4', fg: '#d88a08' }, bad: { bg: '#fbd9d6', fg: '#d9443d' },
+  sky: { bg: '#dce6fb', fg: '#1d4fb8' }, violet: { bg: '#ebd9f7', fg: '#6b2a98' }, neutral: { bg: '#f3e6d6', fg: '#6a351c' },
+};
 export function StatCard({ icon, mdi, tone = 'brand', accent, value, label, sub, alert }: { icon: IconName; mdi?: MdiName; tone?: ToneName | 'brand'; accent?: AccentName; value: string; label: string; sub?: string; alert?: boolean }) {
   const th = useTheme();
+  const teaShop = useIsTeaShop();
+  if (teaShop && !th.dark) {
+    const c = TEA_TONE[tone] ?? TEA_TONE.brand;
+    return (
+      <View style={{ width: '47.8%', minHeight: 96, backgroundColor: c.bg, borderRadius: 18, padding: 12, gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)', shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c.fg, alignItems: 'center', justifyContent: 'center' }}>
+            {mdi ? <MaterialCommunityIcons name={mdi} size={17} color="#fff" /> : <Feather name={icon} size={16} color="#fff" />}
+          </View>
+          <Text numberOfLines={2} style={{ flex: 1, color: '#2d211b', fontSize: 13, fontWeight: '600', lineHeight: 16 }}>{label}</Text>
+        </View>
+        <View>
+          {/* the whole card width is for the number, so it is shown in full (smaller type for long amounts) instead of being cut with "…" */}
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: alert ? th.bad.text : '#2d211b', fontSize: value.length > 12 ? 18 : value.length > 9 ? 21 : 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
+          {sub ? <Text numberOfLines={2} style={{ color: '#6b5444', fontSize: 11, marginTop: 1 }}>{sub}</Text> : null}
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={[{ width: '47.8%', backgroundColor: th.surface, borderRadius: 20, padding: 16, gap: 10 }, cardLook(th)]}>
       <IconTile icon={icon} mdi={mdi} tone={tone} accent={accent} />
@@ -161,7 +206,8 @@ export function HeroCard({
 /** `onBlue`: the page's top heading, which sits over the header's blue curve, so it is white. */
 export function Heading({ title, sub, onBlue: onBlueProp }: { title: string; sub?: string; onBlue?: boolean }) {
   const th = useTheme();
-  const onBlue = onBlueProp && !useEntryDay().date; // a missed day is entered in a plain sheet, not under the blue header
+  const teaShopTitle = useIsTeaShop();
+  const onBlue = onBlueProp && !useEntryDay().date && !teaShopTitle; // a missed day is entered in a plain sheet, not under the blue header
   return (
     // title and date on one line: "Expense · 13 Nov 2026"
     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: onBlue ? '#fff' : th.ink, fontSize: 22, fontWeight: '700' }}>
@@ -343,7 +389,7 @@ export function Empty({ text }: { text: string }) {
 }
 
 // ------------------------------------------------------------------ modal sheet
-export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+export function Sheet({ open, onClose, title, children, tall = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; tall?: boolean }) {
   const th = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions(); // a number: a '90%' maxHeight has no parent height to measure against, so tall content got cut
@@ -351,7 +397,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(15,23,42,0.5)' }} onPress={onClose} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ backgroundColor: th.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: height - insets.top - 24, paddingBottom: insets.bottom + 12 }}>
+        <View style={{ backgroundColor: th.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...(tall ? { height: height - insets.top - 24 } : { maxHeight: height - insets.top - 24 }), paddingBottom: insets.bottom + 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
             <Text style={{ color: th.ink, fontSize: 18, fontWeight: '700', flexShrink: 1 }}>{title}</Text>
             <Pressable onPress={onClose} accessibilityLabel="Close" hitSlop={12} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
@@ -366,27 +412,48 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
 }
 
 // ------------------------------------------------------------------ app bar
+/** A soft shadow keeps white header text readable over the picture's bokeh. */
+const SHADOW = { textShadowColor: 'rgba(40,16,4,0.55)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 } as const;
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good Morning,' : h < 17 ? 'Good Afternoon,' : 'Good Evening,'; };
 
 /**
  * Curved brand header: logo, greeting, the user's name and the company (and branch) under it. The bottom padding leaves
  * room for the first card to overlap it (HeroCard).
  */
-export function AppBar({ title, subtitle, right, onLayout }: { title: string; subtitle?: string; right?: ReactNode; onLayout?: ViewProps['onLayout'] }) {
+export function AppBar({ title, subtitle, left, right, onLayout }: { title: string; subtitle?: string; left?: ReactNode; right?: ReactNode; onLayout?: ViewProps['onLayout'] }) {
   const th = useTheme();
+  const header = useHeader();
   const insets = useSafeAreaInsets();
+  const teaShop = header?.teaShop;
+  const geo = useBackdropGeometry();
+  const logoSize = Math.max(56, Math.min(88, Math.round(geo.width * 0.17)));
+  const titleSize = Math.max(18, Math.min(28, Math.round(geo.width * 0.047)));
   return (
     <View
       onLayout={onLayout}
-      style={{ backgroundColor: th.brand, paddingTop: insets.top + 14, paddingBottom: 62, paddingHorizontal: 20, borderBottomLeftRadius: 34, borderBottomRightRadius: 34, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+      // tea shop: no bar of its own, the themed picture shows through (the picture draws the curve and the cup)
+      style={teaShop
+        ? { height: geo.barH, paddingTop: geo.top, paddingHorizontal: Math.round(geo.width * 0.04), flexDirection: 'row', alignItems: 'center', gap: Math.round(geo.width * 0.028) }
+        : { backgroundColor: th.brand, paddingTop: insets.top + 14, paddingBottom: 62, paddingHorizontal: 20, borderBottomLeftRadius: 34, borderBottomRightRadius: 34, flexDirection: 'row', alignItems: 'center', gap: 8, overflow: 'hidden' }}
     >
-      <Image source={require('../../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#fff' }} />
-      <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>{greeting()}</Text>
-        <Text numberOfLines={1} style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{title}</Text>
-        {subtitle ? <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '500' }}>{subtitle}</Text> : null}
+      {left}
+      {header?.teaShop ? (
+        header.logo ? (
+          <Image source={{ uri: header.logo }} accessibilityLabel={`${title} logo`} style={{ width: logoSize, height: logoSize, borderRadius: logoSize / 2, backgroundColor: '#fff8ef', borderWidth: 2, borderColor: '#f6e3cc' }} />
+        ) : (
+          <View style={{ width: logoSize, height: logoSize, borderRadius: logoSize / 2, backgroundColor: '#fff8ef', borderWidth: 2, borderColor: '#f6e3cc', alignItems: 'center', justifyContent: 'center' }}>
+            <MaterialCommunityIcons name="coffee" size={logoSize / 2} color={th.brand} />
+          </View>
+        )
+      ) : (
+        <Image source={require('../../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#fff' }} />
+      )}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        {!header?.teaShop ? <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>{greeting()}</Text> : null}
+        <Text numberOfLines={1} style={{ color: '#fff', fontSize: teaShop ? titleSize : 22, fontWeight: '800' }}>{title}</Text>
+        {subtitle ? <Text numberOfLines={1} style={{ color: teaShop ? '#fff4e6' : 'rgba(255,255,255,0.85)', fontSize: teaShop ? Math.round(titleSize * 0.82) : 14, fontWeight: teaShop ? '400' : '500' }}>{subtitle}</Text> : null}
       </View>
-      {right}
+      {teaShop ? (right ? <HeaderRight>{right}</HeaderRight> : null) : right}
     </View>
   );
 }
@@ -400,13 +467,13 @@ export function IconButton({ icon, onPress, label }: { icon: IconName; onPress: 
 }
 
 /** A tappable card row with an icon, title, detail and chevron (the branch home checklist). */
-export function LinkCard({ icon, title, detail, right, onPress, done }: { icon: IconName; title: string; detail?: string; right?: ReactNode; onPress: () => void; done?: boolean }) {
+export function LinkCard({ icon, title, detail, right, onPress, done }: { icon: AnyIconName; title: string; detail?: string; right?: ReactNode; onPress: () => void; done?: boolean }) {
   const th = useTheme();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 72, paddingVertical: 12 }}>
         <View style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? th.ok.bg : th.brandLight }}>
-          <Feather name={icon} size={22} color={done ? th.ok.text : th.brandDark} />
+          <AnyIcon name={icon} size={22} color={done ? th.ok.text : th.brandDark} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: th.ink, fontWeight: '600', fontSize: 16 }}>{title}</Text>
@@ -425,6 +492,7 @@ export function SelectField<T extends string>({
 }: { label: string; value: T | ''; onChange: (v: T) => void; options: Array<{ value: T; label: string }>; placeholder?: string; required?: boolean; disabled?: boolean }) {
   const th = useTheme();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const chosen = options.find((o) => o.value === value);
   return (
     <View>
@@ -436,19 +504,30 @@ export function SelectField<T extends string>({
         <Text numberOfLines={1} style={{ color: chosen ? th.ink : th.faint, fontSize: 16, flex: 1 }}>{chosen?.label ?? placeholder}</Text>
         <Feather name="chevron-down" size={20} color={th.muted} />
       </Pressable>
-      <Sheet open={open} onClose={() => setOpen(false)} title={label}>
-        {options.map((o) => {
+      <Sheet tall={options.length > 5} open={open} onClose={() => { setOpen(false); setQuery(''); }} title={label}>
+        {options.length > 5 ? (
+          <View style={{ minHeight: TOUCH, borderRadius: 12, borderWidth: 1, borderColor: th.border, backgroundColor: th.fieldBg, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Feather name="search" size={18} color={th.muted} />
+            <TextInput
+              value={query} onChangeText={setQuery} placeholder="Search" placeholderTextColor={th.faint} autoCorrect={false} accessibilityLabel={`Search ${label}`}
+              style={[{ flex: 1, minHeight: TOUCH - 2, color: th.ink, fontSize: 16, paddingVertical: 0 }, { outlineStyle: 'none' } as any]}
+            />
+            {query ? <Pressable onPress={() => setQuery('')} accessibilityLabel="Clear search" hitSlop={8}><Feather name="x-circle" size={18} color={th.muted} /></Pressable> : null}
+          </View>
+        ) : null}
+        {options.filter((o) => !query.trim() || o.label.toLowerCase().includes(query.trim().toLowerCase())).map((o) => {
           const on = o.value === value;
           return (
             <Pressable
               key={o.value} accessibilityRole="button" accessibilityState={{ selected: on }}
-              onPress={() => { onChange(o.value); setOpen(false); }}
+              onPress={() => { onChange(o.value); setOpen(false); setQuery(''); }}
               style={{ minHeight: TOUCH, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, justifyContent: 'center', borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brandLight : th.surface }}
             >
               <Text style={{ color: th.ink, fontWeight: on ? '700' : '400' }}>{on ? '✓ ' : ''}{o.label}</Text>
             </Pressable>
           );
         })}
+        {query.trim() && !options.some((o) => o.label.toLowerCase().includes(query.trim().toLowerCase())) ? <Text style={{ color: th.muted, textAlign: 'center', paddingVertical: 12 }}>No match</Text> : null}
       </Sheet>
     </View>
   );
@@ -458,35 +537,66 @@ export function SelectField<T extends string>({
 /** Slim brand bar for sub-pages: back arrow, title, optional action on the right. */
 export function SubHeader({ title, right }: { title: string; right?: ReactNode }) {
   const th = useTheme();
+  const header = useHeader();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const teaShopHeader = header?.teaShop ? header : null;
+  const teaShop = !!teaShopHeader;
+  const geo = useBackdropGeometry();
+  const logoSize = Math.max(56, Math.min(88, Math.round(geo.width * 0.17)));
+  const nameSize = Math.max(18, Math.min(28, Math.round(geo.width * 0.047)));
   return (
-    <View style={{ backgroundColor: th.brand, paddingTop: insets.top + 6, paddingBottom: 14, paddingHorizontal: 8, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Back" hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={teaShop
+        ? { height: geo.barH, paddingTop: geo.top, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }
+        : { backgroundColor: th.brand, paddingTop: insets.top + 6, paddingBottom: 14, paddingHorizontal: 8, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}
+    >
+      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Back" hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
         <Feather name="arrow-left" size={24} color="#fff" />
       </Pressable>
-      <Text numberOfLines={1} style={{ color: '#fff', fontSize: 20, fontWeight: '800', flex: 1 }}>{title}</Text>
-      {right}
+      {teaShopHeader?.logo ? (
+        <Image source={{ uri: teaShopHeader.logo }} accessibilityLabel={`${teaShopHeader.title} logo`} style={{ width: logoSize, height: logoSize, borderRadius: logoSize / 2, backgroundColor: '#fff8ef', borderWidth: 2, borderColor: '#f6e3cc', zIndex: 1 }} />
+      ) : teaShop ? (
+        <View style={{ width: logoSize, height: logoSize, borderRadius: logoSize / 2, backgroundColor: '#fff4e8', borderWidth: 2, borderColor: '#f6e3cc', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+          <MaterialCommunityIcons name="coffee" size={logoSize / 2} color={th.brand} />
+        </View>
+      ) : null}
+      <View style={{ flex: 1, zIndex: 1 }}>
+        {teaShopHeader ? <Text numberOfLines={1} style={{ color: '#fff', fontSize: nameSize, fontWeight: '800' }}>{teaShopHeader.title}</Text> : null}
+        <Text numberOfLines={1} style={{ color: teaShopHeader ? '#fff4e6' : '#fff', fontSize: teaShopHeader ? Math.round(nameSize * 0.8) : 20, fontWeight: teaShopHeader ? '400' : '800' }}>{title}</Text>
+      </View>
+      {teaShop ? (right ? <HeaderRight>{right}</HeaderRight> : null) : right}
     </View>
   );
 }
 
 /** Horizontal pill tabs for pages with several sections (Daily | Variance report ...). */
-export function SegTabs<T extends string>({ value, onChange, tabs }: { value: T; onChange: (v: T) => void; tabs: Array<{ key: T; label: string }> }) {
+export function SegTabs<T extends string>({ value, onChange, tabs, fit = false }: { value: T; onChange: (v: T) => void; tabs: Array<{ key: T; label: string; badge?: number }>; fit?: boolean }) {
   const th = useTheme();
+  const items = tabs.map((t) => {
+    const on = t.key === value;
+    return (
+      <View key={t.key} style={fit ? { flex: 1, minWidth: 0 } : { paddingTop: t.badge ? 6 : 0 }}>
+        <Pressable
+          onPress={() => onChange(t.key)} accessibilityRole="tab" accessibilityLabel={t.badge ? `${t.label}, ${t.badge} waiting` : t.label} accessibilityState={{ selected: on }}
+          style={{ minHeight: 40, paddingHorizontal: fit ? 6 : 16, borderRadius: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: on ? th.brand : th.surface, ...(on ? {} : cardLook(th)) }}
+        >
+          <Text numberOfLines={1} adjustsFontSizeToFit={fit} minimumFontScale={0.75} style={{ color: on ? th.onBrand : th.ink, fontWeight: '700', fontSize: 14 }}>{t.label}</Text>
+        </Pressable>
+        {/* the count sits on the tab's top-right corner, like the badges on the bottom bar */}
+        {t.badge ? (
+          <View pointerEvents="none" style={{ position: 'absolute', top: fit ? -6 : 0, right: -2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#dc2626', alignItems: 'center', justifyContent: 'center' }}>
+            <Text allowFontScaling={false} style={{ color: '#fff', fontSize: 10, lineHeight: 12, fontWeight: '800' }}>{t.badge > 99 ? '99+' : t.badge}</Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  });
+  // `fit`: the tabs share the page width instead of scrolling sideways
+  if (fit) return <View style={{ flexDirection: 'row', gap: 6, paddingTop: 6 }}>{items}</View>;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ flexGrow: 0 }}>
-      {tabs.map((t) => {
-        const on = t.key === value;
-        return (
-          <Pressable
-            key={t.key} onPress={() => onChange(t.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
-            style={{ minHeight: 40, paddingHorizontal: 16, borderRadius: 999, justifyContent: 'center', backgroundColor: on ? th.brand : th.surface, ...(on ? {} : cardLook(th)) }}
-          >
-            <Text style={{ color: on ? th.onBrand : th.ink, fontWeight: '700', fontSize: 14 }}>{t.label}</Text>
-          </Pressable>
-        );
-      })}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }} style={{ flexGrow: 0 }}>
+      {items}
     </ScrollView>
   );
 }
@@ -677,5 +787,42 @@ export function LanguageSwitch() {
         );
       })}
     </View>
+  );
+}
+
+/** Tea-shop page title: a brown icon tile, the page name and a one-line description (the same block on every page). `action` sits below. */
+export function PageTitle({ icon, title, subtitle, action }: { icon: MdiName; title: string; subtitle?: string; action?: ReactNode }) {
+  const th = useTheme();
+  return (
+    <View style={{ gap: 8, paddingHorizontal: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ width: 54, height: 54, borderRadius: 16, backgroundColor: '#8f421b', alignItems: 'center', justifyContent: 'center' }}>
+          <MaterialCommunityIcons name={icon} size={30} color="#fff4e8" />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: th.dark ? th.ink : '#32190f', fontSize: 24, fontWeight: '800' }}>{title}</Text>
+          {subtitle ? <Text numberOfLines={2} style={{ color: th.dark ? th.muted : '#4a3020', fontSize: 12, lineHeight: 16 }}>{subtitle}</Text> : null}
+        </View>
+      </View>
+      {action ? <View style={{ alignSelf: 'flex-start', marginLeft: 66 }}>{action}</View> : null}
+    </View>
+  );
+}
+
+/**
+ * The small action button for a page header ("+ New", "+ Add"). On a tea-shop page it is the same brown pill as the "Today" period
+ * button on Home; elsewhere it stays the usual small button.
+ */
+export function HeaderButton({ title, icon, onPress, variant }: { title: string; icon: IconName; onPress: () => void; variant?: 'primary' | 'secondary' }) {
+  const teaShop = useIsTeaShop();
+  if (!teaShop) return <Button small variant={variant} icon={icon} title={title} onPress={onPress} />;
+  return (
+    <Pressable
+      onPress={onPress} accessibilityRole="button" accessibilityLabel={title} hitSlop={6}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(110,52,24,0.78)', borderWidth: 1, borderColor: 'rgba(255,225,190,0.55)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}
+    >
+      <Feather name={icon} size={16} color="#fff" />
+      <Text numberOfLines={1} style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{title}</Text>
+    </Pressable>
   );
 }

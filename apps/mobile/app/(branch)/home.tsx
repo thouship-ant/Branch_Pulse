@@ -100,7 +100,7 @@ export default function BranchHome() {
     { path: '/sales', icon: 'trending-up', title: 'Sales', detail: sales ? formatINR(sales.totalSales) : '—', done: !!sales },
     { path: '/purchases', icon: 'shopping-bag', title: 'Purchases', detail: `${formatINR(String(livePurchases.reduce((a, p) => a + Number(p.totalAmount), 0)), { decimals: false })} (${livePurchases.length})`, done: livePurchases.length > 0 },
     { path: '/expense', icon: 'credit-card', title: 'Expenses', detail: `${formatINR(String(total), { decimals: false })} (${live.length})`, done: live.length > 0 },
-    { path: '/cash', icon: 'dollar-sign', title: 'Cash reconciliation', detail: counted ? formatINR(cash.actualClosing) : '—', done: counted },
+    { path: '/cash', icon: 'wallet', title: 'Cash reconciliation', detail: counted ? formatINR(cash.actualClosing) : '—', done: counted },
   ] as const;
   const stepsDone = cards.filter((c) => c.done).length + (submitted ? 1 : 0);
   const stepsTotal = cards.length + 1;

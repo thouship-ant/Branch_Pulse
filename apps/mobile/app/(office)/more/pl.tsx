@@ -61,7 +61,7 @@ function Report({ data, period }: { data: PLLines; period: string }) {
       </Card>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
         <StatCard icon="trending-up" tone="ok" value={formatINR(data.totalSales, { decimals: false })} label="Total sales" />
-        <StatCard icon="dollar-sign" tone={profit.isNegative() ? 'bad' : 'ok'} alert={profit.isNegative()} value={formatINR(data.operatingProfit, { decimals: false })} label="Operating profit" />
+        <StatCard icon="dollar-sign" mdi="wallet-outline" tone={profit.isNegative() ? 'bad' : 'ok'} alert={profit.isNegative()} value={formatINR(data.operatingProfit, { decimals: false })} label="Operating profit" />
         <StatCard icon="percent" tone="violet" value={data.marginPct !== null ? `${data.marginPct}%` : '—'} label="Margin" />
         <StatCard icon="calendar" tone="sky" value={formatINR(data.avgDailySales, { decimals: false })} label="Avg daily sales" sub={`${data.salesDays} sales days`} />
       </View>

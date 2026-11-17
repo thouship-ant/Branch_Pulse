@@ -85,56 +85,56 @@
 
 .tea-shop {
   color-scheme: light;
-  --surface: 255 253 248;
-  --ink: 47 37 28;
-  --brand: 56 102 65;
-  --brand-dark: 44 80 52;
-  --brand-light: 231 240 228;
+  --surface: 255 250 244;
+  --ink: 50 25 15;
+  --brand: 113 56 23;
+  --brand-dark: 91 44 22;
+  --brand-light: 240 226 212;
   --on-brand: 255 255 255;
-  --slate-50: 245 240 231;
-  --slate-100: 239 232 220;
-  --slate-200: 230 216 204;
-  --slate-300: 213 198 183;
-  --slate-400: 152 138 122;
-  --slate-500: 128 113 96;
-  --slate-600: 101 88 75;
-  --slate-700: 74 62 50;
-  --slate-800: 52 41 31;
-  --slate-900: 47 37 28;
-  --series-1: #386641; --series-2: #d28c45; --series-3: #b85c38;
-  --series-4: #8a6f45; --series-5: #71917a; --series-6: #d6ad45;
+  --slate-50: 255 242 229;
+  --slate-100: 255 244 232;
+  --slate-200: 232 221 210;
+  --slate-300: 218 196 175;
+  --slate-400: 161 123 93;
+  --slate-500: 138 107 88;
+  --slate-600: 104 79 62;
+  --slate-700: 82 56 42;
+  --slate-800: 61 39 28;
+  --slate-900: 50 25 15;
+  --series-1: #6f3b1f; --series-2: #d28c45; --series-3: #b85c38;
+  --series-4: #8a6f45; --series-5: #a97043; --series-6: #d6ad45;
   --shadow-card: 0 1px 2px rgb(65 47 30 / 0.04), 0 6px 20px -10px rgb(65 47 30 / 0.14);
-  --shadow-lift: 0 2px 4px rgb(65 47 30 / 0.06), 0 14px 28px -14px rgb(56 102 65 / 0.26);
-  --backdrop-a: rgb(56 102 65 / 0.075);
+  --shadow-lift: 0 2px 4px rgb(65 47 30 / 0.06), 0 14px 28px -14px rgb(75 33 13 / 0.24);
+  --backdrop-a: rgb(75 33 13 / 0.075);
   --backdrop-b: rgb(210 140 69 / 0.055);
   --glass: rgb(255 253 248 / 0.82);
 }
 
 .dark.tea-shop {
   color-scheme: dark;
-  --surface: 32 39 29;
-  --ink: 243 235 221;
-  --brand: 143 191 120;
-  --brand-dark: 168 210 148;
-  --brand-light: 43 61 43;
-  --on-brand: 23 32 21;
-  --slate-50: 22 27 20;
-  --slate-100: 39 47 35;
-  --slate-200: 58 68 53;
-  --slate-300: 76 89 71;
+  --surface: 40 26 18;
+  --ink: 255 241 223;
+  --brand: 155 91 50;
+  --brand-dark: 196 135 94;
+  --brand-light: 61 40 27;
+  --on-brand: 255 255 255;
+  --slate-50: 27 18 13;
+  --slate-100: 48 33 22;
+  --slate-200: 73 51 38;
+  --slate-300: 94 68 51;
   --slate-400: 161 149 127;
   --slate-500: 178 164 143;
-  --slate-600: 204 190 170;
-  --slate-700: 222 211 193;
-  --slate-800: 236 227 212;
-  --slate-900: 243 235 221;
-  --series-1: #8fbf78; --series-2: #e0ad63; --series-3: #dc8060;
-  --series-4: #bca477; --series-5: #91b89a; --series-6: #e5c777;
+  --slate-600: 210 187 165;
+  --slate-700: 225 205 183;
+  --slate-800: 241 225 204;
+  --slate-900: 255 241 223;
+  --series-1: #c98a55; --series-2: #e0ad63; --series-3: #dc8060;
+  --series-4: #bca477; --series-5: #d5a071; --series-6: #e5c777;
   --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 10px 30px -16px rgb(0 0 0 / 0.6);
-  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 18px 36px -16px rgb(143 191 120 / 0.28);
-  --backdrop-a: rgb(143 191 120 / 0.10);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 18px 36px -16px rgb(155 91 50 / 0.28);
+  --backdrop-a: rgb(155 91 50 / 0.10);
   --backdrop-b: rgb(210 173 99 / 0.07);
-  --glass: rgb(32 39 29 / 0.82);
+  --glass: rgb(40 26 18 / 0.82);
 }
 
 /* default border colour follows the theme (Tailwind's preflight default is a fixed light grey) */
@@ -154,6 +154,69 @@ body {
   -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom);
   background: rgb(var(--slate-50));
 }
+.app-background {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+html.tea-shop body.app-background,
+.loginBackdrop.app-background {
+  background-color: rgb(var(--slate-50));
+  background-image: url('/images/tricups-phone-1080x1920.jpg'), url('/tea-shop-theme.png');
+  background-size: 100% 100%, cover;
+}
+html.dark.tea-shop body.app-background,
+.dark .loginBackdrop.app-background {
+  background-image: linear-gradient(rgb(27 18 13 / 0.52), rgb(27 18 13 / 0.52)), url('/images/tricups-phone-1080x1920.jpg'), url('/tea-shop-theme.png');
+  background-size: 100% 100%, 100% 100%, cover;
+}
+.loginBackdrop.app-background {
+  background-color: #fff2e5;
+}
+
+@media (min-width: 768px) {
+  html.tea-shop body.app-background,
+  .loginBackdrop.app-background {
+    background-image: url('/images/tricups-tablet-1920x1200.jpg'), url('/tea-shop-theme.png');
+    background-size: 100% 100%, cover;
+  }
+  html.dark.tea-shop body.app-background,
+  .dark .loginBackdrop.app-background {
+    background-image: linear-gradient(rgb(27 18 13 / 0.52), rgb(27 18 13 / 0.52)), url('/images/tricups-tablet-1920x1200.jpg'), url('/tea-shop-theme.png');
+    background-size: 100% 100%, 100% 100%, cover;
+  }
+}
+.dark .loginBackdrop.tea-shop {
+  color-scheme: dark;
+  --surface: 40 26 18;
+  --ink: 255 241 223;
+  --brand: 155 91 50;
+  --brand-dark: 196 135 94;
+  --brand-light: 61 40 27;
+  --on-brand: 255 255 255;
+  --slate-50: 27 18 13;
+  --slate-100: 48 33 22;
+  --slate-200: 73 51 38;
+  --slate-300: 94 68 51;
+  --slate-400: 161 149 127;
+  --slate-500: 178 164 143;
+  --slate-600: 210 187 165;
+  --slate-700: 225 205 183;
+  --slate-800: 241 225 204;
+  --slate-900: 255 241 223;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 10px 30px -16px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 18px 36px -16px rgb(155 91 50 / 0.28);
+  --shadow-pop: 0 30px 70px -20px rgb(0 0 0 / 0.75);
+  --backdrop-a: rgb(155 91 50 / 0.10);
+  --backdrop-b: rgb(210 173 99 / 0.07);
+  --glass: rgb(40 26 18 / 0.82);
+}
+.dark .loginBackdrop.tea-shop .text-brand,
+.dark .loginBackdrop.tea-shop .text-brand-dark { color: rgb(var(--brand-dark)); }
+.dark .loginBackdrop.tea-shop .bg-brand-light { background-color: rgb(var(--brand) / 0.18); }
+.dark .loginBackdrop.tea-shop .bg-brand.text-white { color: rgb(var(--on-brand)); }
 ::selection { background: rgb(var(--brand) / 0.18); }
 * { scrollbar-width: thin; scrollbar-color: rgb(var(--slate-300)) transparent; }
 ::-webkit-scrollbar { height: 8px; width: 8px; }

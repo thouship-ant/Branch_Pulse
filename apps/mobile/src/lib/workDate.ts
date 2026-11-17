@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/storage';
 import { useSyncExternalStore } from 'react';
 import { todayIST } from './dates';
 

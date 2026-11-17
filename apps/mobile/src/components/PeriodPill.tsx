@@ -11,7 +11,7 @@ import { Sheet } from './ui';
  * "Today v" pill for the header's right side. Tapping it opens "Select Period": Today, Yesterday, This Week, This Month,
  * All Time or a Custom Range picked on a calendar.
  */
-export function PeriodPill({ period, today, onChange }: { period: Period; today: string; onChange: (p: Period) => void }) {
+export function PeriodPill({ period, today, onChange, onLight = false }: { period: Period; today: string; onChange: (p: Period) => void; onLight?: boolean }) {
   const th = useTheme();
   const [open, setOpen] = useState(false);
   const [calendar, setCalendar] = useState(false);
@@ -27,10 +27,11 @@ export function PeriodPill({ period, today, onChange }: { period: Period; today:
     <>
       <Pressable
         onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={`Period: ${periodLabel(period)}`} hitSlop={6}
-        style={{ maxWidth: 170, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10 }}
+        style={{ maxWidth: onLight ? 170 : 130, flexDirection: 'row', alignItems: 'center', gap: onLight ? 6 : 4, backgroundColor: onLight ? 'rgba(255,250,244,0.92)' : 'rgba(110,52,24,0.78)', borderWidth: 1, borderColor: onLight ? th.border : 'rgba(255,225,190,0.55)', borderRadius: 999, paddingHorizontal: onLight ? 12 : 9, paddingVertical: onLight ? 10 : 4 }}
       >
-        <Text numberOfLines={1} style={{ color: '#fff', fontSize: 15, fontWeight: '700', flexShrink: 1 }}>{periodLabel(period)}</Text>
-        <Feather name="chevron-down" size={18} color="#fff" />
+        <Feather name="calendar" size={onLight ? 16 : 13} color={onLight ? '#6a351c' : '#fff'} />
+        <Text numberOfLines={1} style={{ color: onLight ? '#6a351c' : '#fff', fontSize: onLight ? 14 : 12, fontWeight: '700', flexShrink: 1 }}>{periodLabel(period)}</Text>
+        <Feather name="chevron-down" size={onLight ? 18 : 14} color={onLight ? '#6a351c' : '#fff'} />
       </Pressable>
 
       <Sheet open={open} onClose={close} title={calendar ? 'Custom Range' : 'Select Period'}>

@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { BranchForm } from '@/components/BranchForm';
-import { Button, Chip, Chips, Empty, ErrorBox, ListRow, Loading, Screen, Sheet, ToggleRow } from '@/components/ui';
+import { Button, HeaderButton, Chip, Chips, Empty, ErrorBox, ListRow, Loading, Screen, Sheet, ToggleRow } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatINR } from '@/lib/money';
 
@@ -25,7 +25,7 @@ export default function BranchesScreen() {
 
   const visible = (rows ?? []).filter((r) => (filter === 'ALL' || r.type === filter) && (showInactive || r.status === 'ACTIVE'));
   return (
-    <Screen title="Branches" onRefresh={load} headerRight={<Button small variant="secondary" icon="plus" title="Add" onPress={() => setAdding(true)} />}>
+    <Screen title="Branches" onRefresh={load} headerRight={<HeaderButton variant="secondary" icon="plus" title="Add" onPress={() => setAdding(true)} />}>
       <Chips label="Type" value={filter} onChange={setFilter} options={[{ value: 'ALL', label: 'All' }, { value: 'BRANCH', label: 'Branch' }, { value: 'GODOWN', label: 'Godown' }, { value: 'CENTRAL_OFFICE', label: 'Office' }]} />
       <ToggleRow label="Show inactive" value={showInactive} onChange={setShowInactive} />
       <ErrorBox error={error} />

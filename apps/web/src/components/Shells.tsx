@@ -14,6 +14,27 @@ import { LogoMark } from './Logo';
 import { CommandPalette } from './CommandPalette';
 import { Sheet, Skeleton, SyncBanner } from './ui';
 import { useAttention } from '@/lib/useAttention';
+import { OfficeHeaderContext, type OfficeHeaderContent } from './OfficeHeaderSlot';
+import Image from 'next/image';
+import teaShopStyles from './TeaShopDashboard.module.css';
+
+function TeaShopArtwork({ brandName }: { brandName: string }) {
+  return (
+    <>
+      <div className={teaShopStyles.teaShopBeans} aria-hidden>● · ●</div>
+      <div className={teaShopStyles.teaShopCup} aria-hidden>
+        <span className={teaShopStyles.cupSteam}>♨</span>
+        <div className={teaShopStyles.cupBowl}>
+          <span className={teaShopStyles.cupLatteArt}>♡</span>
+          <strong className={teaShopStyles.cupBrand}>{brandName}</strong>
+          <span className={teaShopStyles.cupCafe}>CAFÉ</span>
+        </div>
+        <span className={teaShopStyles.cupHandle} />
+        <span className={teaShopStyles.cupSaucer} />
+      </div>
+    </>
+  );
+}
 
 function LangSwitch({ onDark = false }: { onDark?: boolean }) {
   const { lang, setLang, t } = useT();
@@ -103,28 +124,59 @@ export function BranchShell({ children }: { children: ReactNode }) {
   }, [ready]);
   if (!ready || !me) return <Splash />;
   const branch = me.locations[0];
+  const teaShop = me.company?.businessType === 'TEA_SHOP';
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col">
       {/* branded header: the branch is the first thing you see */}
-      <header className="sticky top-0 z-30 flex items-center justify-between overflow-hidden bg-gradient-to-br from-brand-dark via-brand to-brand-dark px-4 py-2.5 text-on-brand shadow-lg shadow-brand/25">
-        <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
-        <div className="relative flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold ring-2 ring-white/30" aria-hidden>
-            {me.fullName.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-xs text-on-brand/75">{me.fullName}</p>
-            <h1 className="truncate text-lg font-bold leading-tight">{branch ? pick(branch.name, branch.nameTa) : t('appName')}</h1>
-          </div>
-        </div>
-        <div className="relative flex items-center">
-          <ThemeToggle onDark />
-          <LangSwitch onDark />
-          <button className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15" onClick={() => logout()} aria-label={t('logout')} title={t('logout')}>
-            <Icon name="logout" size={19} />
-          </button>
-        </div>
+      <header
+        className={teaShop ? teaShopStyles.teaShopBranchHero : 'sticky top-0 z-30 flex min-h-[108px] items-center justify-between overflow-hidden bg-gradient-to-br from-brand-dark via-brand to-brand-dark px-4 py-3 text-white shadow-lg shadow-brand/25'}
+      >
+        {teaShop ? (
+          <>
+            <div className={teaShopStyles.teaShopBranchTop}>
+              <div className={teaShopStyles.teaShopBrandLockup}>
+                <span className={teaShopStyles.teaShopBrandMark}>
+                  {me.company?.businessLogo
+                    ? <Image src={me.company.businessLogo} alt={`${me.company.businessName || me.company.name} logo`} width={64} height={64} unoptimized className={teaShopStyles.teaShopBrandLogo} />
+                    : <span aria-hidden>☕</span>}
+                </span>
+                <div className={teaShopStyles.teaShopBrandCopy}>
+                  <h1>{me.company?.businessName || me.company?.name}</h1>
+                  <p>{[me.fullName, branch ? pick(branch.name, branch.nameTa) : null].filter(Boolean).join(' · ')}</p>
+                </div>
+              </div>
+              <div className={teaShopStyles.teaShopBranchActions}>
+                <ThemeToggle onDark />
+                <LangSwitch onDark />
+                <button className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15" onClick={() => logout()} aria-label={t('logout')} title={t('logout')}>
+                  <Icon name="logout" size={19} />
+                </button>
+              </div>
+            </div>
+            <TeaShopArtwork brandName={me.company?.businessName || me.company?.name || ''} />
+          </>
+        ) : (
+          <>
+            <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
+            <div className="relative flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold ring-2 ring-white/30" aria-hidden>
+                {me.fullName.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-xs text-on-brand/75">{me.fullName}</p>
+                <h1 className="truncate text-lg font-bold leading-tight">{branch ? pick(branch.name, branch.nameTa) : t('appName')}</h1>
+              </div>
+            </div>
+            <div className="relative flex items-center">
+              <ThemeToggle onDark />
+              <LangSwitch onDark />
+              <button className="flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/15" onClick={() => logout()} aria-label={t('logout')} title={t('logout')}>
+                <Icon name="logout" size={19} />
+              </button>
+            </div>
+          </>
+        )}
       </header>
       <SyncBanner locationId={branch?.id} />
       <main className="flex-1 space-y-4 p-4 pb-28">{children}</main>
@@ -247,6 +299,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [more, setMore] = useState(false);
   const [palette, setPalette] = useState(false);
+  const [officeHeader, setOfficeHeader] = useState<OfficeHeaderContent | null>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ today: true, admin: true });
 
   useEffect(() => {
@@ -336,27 +389,63 @@ export function OfficeShell({ children }: { children: ReactNode }) {
 
       <div className={`min-w-0 flex-1 transition-[margin] duration-200 ${collapsed ? 'md:ml-[76px]' : 'md:ml-[264px]'}`}>
         {/* top bar that earns its space: search everything, what is waiting, language, theme (NAV-04) */}
-        <header className="sticky top-0 z-30 flex h-[60px] items-center gap-2 border-b border-slate-200 bg-surface/90 px-3 backdrop-blur-xl md:px-6">
-          <span className="md:hidden"><Logo /></span>
-          <button type="button" onClick={() => setPalette(true)} aria-label={t('searchPlaceholder')} className="ml-1 hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 transition hover:border-slate-300 md:flex">
-            <Icon name="eye" size={16} /><span className="flex-1 truncate text-left">{t('searchPlaceholder')}</span><kbd className="rounded-md border border-slate-300 bg-surface px-1.5 py-0.5 text-xs">Ctrl K</kbd>
-          </button>
-          <div className="ml-auto flex items-center gap-0.5">
-            <button type="button" onClick={() => setPalette(true)} aria-label={t('searchShort')} className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 md:hidden"><Icon name="eye" size={19} /></button>
-            {can('expense:approve') && (
-              <Link href="/approvals" aria-label={`${t('notificationsLabel')}: ${att.waiting}`} title={t('notificationsLabel')} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100">
-                <Icon name="clock" size={19} />
-                {att.waiting > 0 && <span className="absolute right-0.5 top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{att.waiting}</span>}
-              </Link>
-            )}
-            <span className="hidden sm:block"><ThemeToggle /></span>
-            <span className="hidden sm:block"><LangSwitch /></span>
-            <span className="md:hidden">
-              <AccountMenu me={me}><span className="flex h-10 w-10 items-center justify-center"><Avatar name={me.fullName} /></span></AccountMenu>
-            </span>
-          </div>
+        <header className={me.company?.businessType === 'TEA_SHOP' ? teaShopStyles.teaShopHero : 'sticky top-0 z-30 flex h-[60px] items-center gap-2 border-b border-slate-200 bg-surface/90 px-3 backdrop-blur-xl md:px-6'}>
+          {me.company?.businessType === 'TEA_SHOP' ? (
+            <>
+              <div className={teaShopStyles.teaShopTopline}>
+                <div className={teaShopStyles.teaShopBrandLockup}>
+                  <span className={teaShopStyles.teaShopBrandMark}>
+                    {me.company.businessLogo
+                      ? <Image src={me.company.businessLogo} alt={`${me.company.businessName || me.company.name} logo`} width={112} height={112} unoptimized className={teaShopStyles.teaShopBrandLogo} />
+                      : <span aria-hidden>☕</span>}
+                  </span>
+                  <div className={teaShopStyles.teaShopBrandCopy}>
+                    <h1>{me.company.businessName || me.company.name}</h1>
+                    <p>{officeHeader?.subtitle ?? 'Multi-Branch Operations'}</p>
+                  </div>
+                </div>
+                <div className={teaShopStyles.teaShopActions}>
+                  {officeHeader?.right ? <div className={teaShopStyles.teaShopDateControl}>{officeHeader.right}</div> : null}
+                  <button type="button" onClick={() => setPalette(true)} aria-label={t('searchShort')} className="hidden h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/15 sm:flex"><Icon name="eye" size={19} /></button>
+                  {can('expense:approve') && (
+                    <Link href="/approvals" aria-label={`${t('notificationsLabel')}: ${att.waiting}`} title={t('notificationsLabel')} className="relative hidden h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/15 sm:flex">
+                      <Icon name="clock" size={19} />
+                      {att.waiting > 0 && <span className="absolute right-0 top-0 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{att.waiting}</span>}
+                    </Link>
+                  )}
+                  <span className="hidden sm:block"><ThemeToggle onDark /></span>
+                  <span className="hidden sm:block"><LangSwitch onDark /></span>
+                  <AccountMenu me={me}><span className="flex h-9 w-9 items-center justify-center"><Avatar name={me.fullName} className="bg-white text-[#4b210d]" /></span></AccountMenu>
+                </div>
+              </div>
+              <TeaShopArtwork brandName={me.company.businessName || me.company.name} />
+            </>
+          ) : (
+            <>
+              <span className="md:hidden"><Logo /></span>
+              <button type="button" onClick={() => setPalette(true)} aria-label={t('searchPlaceholder')} className="ml-1 hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 transition hover:border-slate-300 md:flex">
+                <Icon name="eye" size={16} /><span className="flex-1 truncate text-left">{t('searchPlaceholder')}</span><kbd className="rounded-md border border-slate-300 bg-surface px-1.5 py-0.5 text-xs">Ctrl K</kbd>
+              </button>
+              <div className="ml-auto flex items-center gap-0.5">
+                <button type="button" onClick={() => setPalette(true)} aria-label={t('searchShort')} className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 md:hidden"><Icon name="eye" size={19} /></button>
+                {can('expense:approve') && (
+                  <Link href="/approvals" aria-label={`${t('notificationsLabel')}: ${att.waiting}`} title={t('notificationsLabel')} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100">
+                    <Icon name="clock" size={19} />
+                    {att.waiting > 0 && <span className="absolute right-0.5 top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{att.waiting}</span>}
+                  </Link>
+                )}
+                <span className="hidden sm:block"><ThemeToggle /></span>
+                <span className="hidden sm:block"><LangSwitch /></span>
+                <span className="md:hidden">
+                  <AccountMenu me={me}><span className="flex h-10 w-10 items-center justify-center"><Avatar name={me.fullName} /></span></AccountMenu>
+                </span>
+              </div>
+            </>
+          )}
         </header>
-        <main className="mx-auto max-w-[1400px] space-y-5 p-4 pb-28 md:p-8 md:pb-10">{children}</main>
+        <OfficeHeaderContext.Provider value={setOfficeHeader}>
+          <main className="mx-auto max-w-[1400px] space-y-5 p-4 pb-28 md:p-8 md:pb-10">{children}</main>
+        </OfficeHeaderContext.Provider>
 
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-[var(--glass)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Main">
           <div className="flex px-1.5 pt-1">

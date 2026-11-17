@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image, Pressable, useWindowDimensions, View } from 'react-native';
 import { tAlert } from '@/lib/i18n';
 import { Text } from '@/components/Text';
-import { ACCENT, type AccentName, Banner, Button, Card, Chips, ErrorBox, Field, H3, Heading, Loading, Muted, MoneyField, Screen, Warnings } from '@/components/ui';
+import { ACCENT, AnyIcon, type AccentName, type AnyIconName, Banner, Button, Card, Chips, ErrorBox, Field, H3, Heading, Loading, Muted, MoneyField, Screen, Warnings } from '@/components/ui';
 import { api, ApiError, uploadAttachment, type Warning } from '@/lib/api';
 import { prettyDate, uuid } from '@/lib/dates';
 import { MODE_LABEL, STATUS_LABEL } from '@/lib/labels';
@@ -22,19 +22,19 @@ interface Bootstrap { categories: Category[]; suppliers?: Supplier[]; rules: { r
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'] as const;
 
 const ACCENTS: AccentName[] = ['blue', 'amber', 'purple', 'green', 'sky', 'rose'];
-const CAT_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
-  salary: 'users', 'staff advance': 'dollar-sign', rent: 'home', electricity: 'zap', transport: 'truck', maintenance: 'tool', repairs: 'settings',
+const CAT_ICON: Record<string, AnyIconName> = {
+  salary: 'users', 'staff advance': 'wallet', rent: 'home', electricity: 'zap', transport: 'truck', maintenance: 'tool', repairs: 'settings',
   cleaning: 'droplet', miscellaneous: 'more-horizontal', water: 'droplet', internet: 'wifi', phone: 'phone', gas: 'zap', packaging: 'package', marketing: 'send',
 };
-const MODE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = { CASH: 'dollar-sign', UPI: 'smartphone', CARD: 'credit-card', BANK_TRANSFER: 'briefcase', CHEQUE: 'file-text' };
+const MODE_ICON: Record<string, AnyIconName> = { CASH: 'wallet', UPI: 'smartphone', CARD: 'credit-card', BANK_TRANSFER: 'briefcase', CHEQUE: 'file-text' };
 
 /** A section heading: coloured icon tile and title. */
-function Section({ icon, accent, title }: { icon: React.ComponentProps<typeof Feather>['name']; accent: AccentName; title: string }) {
+function Section({ icon, accent, title }: { icon: AnyIconName; accent: AccentName; title: string }) {
   const th = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: ACCENT[accent].bg, alignItems: 'center', justifyContent: 'center' }}>
-        <Feather name={icon} size={16} color={ACCENT[accent].fg} />
+        <AnyIcon name={icon} size={16} color={ACCENT[accent].fg} />
       </View>
       <Text style={{ color: th.ink, fontSize: 16, fontWeight: '800' }}>{title}</Text>
     </View>
@@ -42,7 +42,7 @@ function Section({ icon, accent, title }: { icon: React.ComponentProps<typeof Fe
 }
 
 /** A grid of icon tiles to pick one option: easier to hit and to scan than a row of small chips. */
-function Tiles<T extends string>({ options, value, onChange, cols = 3 }: { options: Array<{ value: T; label: string; icon: React.ComponentProps<typeof Feather>['name']; accent: AccentName }>; value: T | ''; onChange: (v: T) => void; cols?: number }) {
+function Tiles<T extends string>({ options, value, onChange, cols = 3 }: { options: Array<{ value: T; label: string; icon: AnyIconName; accent: AccentName }>; value: T | ''; onChange: (v: T) => void; cols?: number }) {
   const th = useTheme();
   const { width } = useWindowDimensions();
   const gap = 10;
@@ -58,7 +58,7 @@ function Tiles<T extends string>({ options, value, onChange, cols = 3 }: { optio
             style={{ width: cell, minHeight: cols > 3 ? 72 : 84, borderRadius: 16, borderWidth: on ? 2 : 1, borderColor: on ? th.brand : th.border, backgroundColor: on ? th.brandLight : th.surface, alignItems: 'center', justifyContent: 'center', gap: 6, padding: 6 }}
           >
             <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name={o.icon} size={18} color={c.fg} />
+              <AnyIcon name={o.icon} size={18} color={c.fg} />
             </View>
             <Text numberOfLines={2} style={{ color: on ? th.brand : th.ink, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{o.label}</Text>
             {on ? <View style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: 9, backgroundColor: th.brand, alignItems: 'center', justifyContent: 'center' }}><Feather name="check" size={12} color="#fff" /></View> : null}
@@ -150,7 +150,7 @@ export default function ExpenseScreen() {
         />
         {subs.length > 0 && <Chips label="Sub-category" value={subId} onChange={setSubId} options={subs.map((c) => ({ value: c.id, label: c.nameEn }))} />}
 
-        <Section icon="dollar-sign" accent="green" title="Amount" />
+        <Section icon="wallet" accent="green" title="Amount" />
         <MoneyField label="How much?" value={amount} onChange={setAmount} required />
 
         <Section icon="credit-card" accent="purple" title="Paid by" />

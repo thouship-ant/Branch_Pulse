@@ -5,7 +5,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { DashboardOrders } from '@/components/DashboardOrders';
 import { HomeFocus } from '@/components/HomeFocus';
+import { TeaShopDashboard, TeaShopHomeOverview } from '@/components/TeaShopDashboard';
 import { PeriodDropdown } from '@/components/PeriodDropdown';
+import { OfficeHeaderSlot } from '@/components/OfficeHeaderSlot';
 import { Icon, type IconName, MdiIcon } from '@/components/Icon';
 import { mdiAccountCashOutline, mdiCartOutline, mdiClipboardAlertOutline, mdiClockOutline, mdiCreditCardOutline, mdiDeleteOutline, mdiPackageVariantClosed, mdiPurseOutline, mdiQrcodeScan, mdiScaleBalance, mdiStorefrontOutline } from '@mdi/js';
 import { ErrorBox, Sheet, Skeleton, StatusPill } from '@/components/ui';
@@ -16,6 +18,7 @@ import { useT } from '@/lib/i18n';
 import { EXCEPTION_KEY } from '@/lib/labels';
 import { dec, formatINR } from '@/lib/money';
 import { useLive } from '@/lib/live';
+import { useSession } from '@/lib/session';
 
 interface Exc { code: string; severity: 'CRITICAL' | 'WARNING' | 'INFO'; group: string; groupKey: string; groupParam?: number; title: string; locationId?: string; locationName?: string; locationNameTa?: string | null; businessDate?: string; metric?: string; link: { type: string; locationId?: string; date?: string } }
 interface PendingClosing { locationId: string; locationName: string; locationNameTa: string | null; businessDate: string; status: string }
@@ -30,6 +33,8 @@ const SEV: Record<string, { icon: string; cls: string }> = {
 
 export default function Dashboard() {
   const { t, pick } = useT();
+  const { me } = useSession();
+  const isTeaShop = me?.company?.businessType === 'TEA_SHOP';
   const today = todayIST();
   const [period, setPeriod] = useState<Period>(() => resolvePeriod('today', todayIST()));
   const date = period.to; // the day the per-branch links open
@@ -74,13 +79,15 @@ export default function Dashboard() {
   }, [summary, sort]);
 
   const sortBy = (key: SortKey) => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : 1 }));
+  const periodLabel = period.id === 'custom' ? periodCustomText(period) : t(({ today: 'today', yesterday: 'pYesterday', week: 'pThisWeek', month: 'pThisMonth', all: 'pAllTime', custom: 'customRange' } as const)[period.id]);
+  const headerSlot = <OfficeHeaderSlot subtitle={isTeaShop ? 'Multi-Branch Operations' : t('attAllFigures')} right={<PeriodDropdown period={period} today={today} onChange={setPeriod} onDark />} />;
   const Th = ({ k, children, right = true }: { k: SortKey; children: string; right?: boolean }) => (
     <th scope="col" className={`whitespace-nowrap px-3 py-2 ${right ? 'text-right' : 'text-left'}`} aria-sort={sort.key === k ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}>
       <button className="font-semibold" onClick={() => sortBy(k)}>{children}{sort.key === k ? (sort.dir === 1 ? ' ↑' : ' ↓') : ''}</button>
     </th>
   );
 
-  if (!summary) return error ? <ErrorBox error={error} /> : <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-40" /><Skeleton className="h-64" /></div>;
+  if (!summary) return <>{headerSlot}{error ? <ErrorBox error={error} /> : <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-40" /><Skeleton className="h-64" /></div>}</>;
   const tl = summary.tiles;
   const change = summary.vsLastWeek.salesChangePct;
   const pendingDates = [...new Set(pendingClosings.map((p) => p.businessDate))]; // already newest first
@@ -125,7 +132,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      <HomeFocus summary={summary} periodLabel={period.id === 'custom' ? periodCustomText(period) : t(({ today: 'today', yesterday: 'pYesterday', week: 'pThisWeek', month: 'pThisMonth', all: 'pAllTime', custom: 'customRange' } as const)[period.id])} />
+      {!isTeaShop && <HomeFocus summary={summary} periodLabel={periodLabel} />}
       <Sheet open={pendingOpen} onClose={() => setPendingOpen(false)} title={`${t('exceptions')} (${alertCount})`}>
         <div className="space-y-4">
           {alertGroups.slice((pendingPage - 1) * PENDING_PAGE_SIZE, pendingPage * PENDING_PAGE_SIZE).map((g) => (
@@ -147,11 +154,11 @@ export default function Dashboard() {
           </div>
         )}
       </Sheet>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-xl font-bold">{t('attAllFigures')}</h2>
-        <PeriodDropdown period={period} today={today} onChange={setPeriod} />
-      </div>
+      {headerSlot}
       <ErrorBox error={error} />
+      {isTeaShop && <TeaShopHomeOverview summary={summary} pendingCount={pendingClosings.length} exceptionCount={exceptions.length} periodLabel={periodLabel} />}
+      {isTeaShop && <HomeFocus summary={summary} periodLabel={periodLabel} />}
+      {isTeaShop && <TeaShopDashboard tiles={tl} change={change} comparison={summary.vsLastWeek.comparedWith === 'PREVIOUS_PERIOD' ? t('vsPrevPeriod') : t('vsLastWeek')} />}
 
       {/* Band 1: exceptions first */}
       <section aria-label={t('exceptions')} className="space-y-2">
@@ -162,7 +169,7 @@ export default function Dashboard() {
       </section>
 
       {/* Band 2: KPI tiles */}
-      <section aria-label="KPIs" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {!isTeaShop && <section aria-label="KPIs" className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile icon="trend" tint="blue" label={t('totalSales')} value={formatINR(tl.totalSales, { decimals: false })} sub={change != null ? `${Number(change) >= 0 ? '▲' : '▼'} ${Math.abs(Number(change))}% ${summary?.vsLastWeek?.comparedWith === 'PREVIOUS_PERIOD' ? t('vsPrevPeriod') : t('vsLastWeek')}` : undefined} />
         <Tile icon="card" tint="amber" label={t('expenses')} value={formatINR(tl.totalExpenses, { decimals: false })} />
         <Tile icon="bars" tint="green" label={t('net')} value={formatINR(tl.netOperating, { decimals: false })} />
@@ -185,7 +192,7 @@ export default function Dashboard() {
         />
         <Tile icon="user" tint="purple" mdi={mdiAccountCashOutline} label={t('salaryPayableLabel')} value={formatINR(tl.salaryPayable, { decimals: false })} />
         <Tile icon="store" tint="blue" mdi={mdiStorefrontOutline} label={t('rOutstanding')} value={formatINR(tl.supplierOutstanding, { decimals: false })} />
-      </section>
+      </section>}
 
       {/* Band 3: branch table */}
       <section aria-label={t('branch')} className="card overflow-x-auto p-0">

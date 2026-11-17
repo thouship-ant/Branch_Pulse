@@ -80,7 +80,7 @@ export default function OrdersPage() {
     setBusy(true); setFormError(null);
     try {
       await api.post('/orders', {
-        locationId: adding.locationId, customerName: adding.customerName.trim(), customerPhone: adding.customerPhone || undefined, eventType: adding.eventType, eventDate: adding.eventDate,
+        locationId: adding.locationId, customerName: adding.customerName.trim(), customerPhone: adding.customerPhone, eventType: adding.eventType, eventDate: adding.eventDate,
         eventTime: adding.eventTime || undefined, venue: adding.venue || undefined, itemsSummary: adding.itemsSummary || undefined, peopleCount: adding.peopleCount ? Number(adding.peopleCount) : undefined,
         amount: dec(adding.amount).toFixed(2), advance: adding.advance ? dec(adding.advance).toFixed(2) : undefined, advanceMode: adding.advance ? adding.advanceMode : undefined, notes: adding.notes || undefined,
       });
@@ -179,7 +179,7 @@ export default function OrdersPage() {
           <div className="space-y-4">
             <div className="grid items-end gap-3 sm:grid-cols-2">
               <TextField id="o-c" label={`${t('oCustomer')} *`} value={adding.customerName} onChange={(e) => setAdding({ ...adding, customerName: e.target.value })} maxLength={100} />
-              <TextField id="o-p" label={t('oPhone')} inputMode="numeric" value={adding.customerPhone} onChange={(e) => setAdding({ ...adding, customerPhone: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
+              <TextField id="o-p" label={`${t('oPhone')} *`} inputMode="numeric" value={adding.customerPhone} onChange={(e) => setAdding({ ...adding, customerPhone: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
             </div>
             <Chips label={t('oEventType')} value={adding.eventType} onChange={(v) => setAdding({ ...adding, eventType: v })} options={TYPES.map((k) => ({ value: k, label: t(`et${k}` as MessageKey) }))} />
             <div className="grid items-end gap-3 sm:grid-cols-3">
@@ -204,7 +204,7 @@ export default function OrdersPage() {
             <ErrorBox error={formError} />
             <div className="flex justify-end gap-2">
               <button className="btn-secondary" onClick={() => setAdding(null)}>{t('cancel')}</button>
-              <button className="btn-primary" disabled={busy || !adding.customerName.trim() || !adding.locationId || !dec(adding.amount || '0').greaterThan(0)} onClick={create}>{busy ? t('loading') : t('oSave')}</button>
+              <button className="btn-primary" disabled={busy || !adding.customerName.trim() || adding.customerPhone.length !== 10 || !adding.locationId || !dec(adding.amount || '0').greaterThan(0)} onClick={create}>{busy ? t('loading') : t('oSave')}</button>
             </div>
           </div>
         )}

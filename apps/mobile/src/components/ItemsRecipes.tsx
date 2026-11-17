@@ -184,7 +184,7 @@ export function RecipesPanel({ addSignal }: { addSignal?: number } = {}) {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               <StatCard icon="layers" value={formatINR(view.totalCost)} label="Total cost" />
               <StatCard icon="tag" tone="sky" value={formatINR(view.costPerUnit)} label="Cost per unit" />
-              <StatCard icon="dollar-sign" tone="ok" value={view.sellingPrice ? formatINR(view.sellingPrice, { decimals: false }) : '—'} label="Selling price" />
+              <StatCard icon="dollar-sign" mdi="wallet-outline" tone="ok" value={view.sellingPrice ? formatINR(view.sellingPrice, { decimals: false }) : '—'} label="Selling price" />
               <StatCard icon="percent" tone="violet" value={view.marginPct != null ? `${view.marginPct}%` : '—'} label="Margin" />
             </View>
             <SectionTitle>Ingredients</SectionTitle>

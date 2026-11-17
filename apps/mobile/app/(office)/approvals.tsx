@@ -1,9 +1,10 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
-import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, Screen, SegTabs, Sheet } from '@/components/ui';
+import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, PageTitle, Screen, SegTabs, Sheet } from '@/components/ui';
+import { useTeaHeaderRight } from '@/components/TeaShopHeaderActions';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
 import { tAlert } from '@/lib/i18n';
@@ -11,7 +12,7 @@ import { MODE_LABEL } from '@/lib/labels';
 import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
 import { hideToast, showToast } from '@/lib/toast';
-import { useTheme } from '@/lib/theme';
+import { useIsTeaShop, useTheme } from '@/lib/theme';
 import { useLive } from '@/lib/live';
 
 function age(iso: string) {
@@ -69,7 +70,7 @@ function Thumb({ up, onPress, disabled, label, size = 48 }: { up: boolean; onPre
       onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label} hitSlop={6}
       style={({ pressed }) => ({
         width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.45 : pressed ? 0.8 : 1,
-        backgroundColor: up ? '#059669' : th.bad.bg, borderWidth: up ? 0 : 2, borderColor: th.bad.border,
+        backgroundColor: up ? '#1f7a35' : th.bad.bg, borderWidth: up ? 0 : 2, borderColor: th.bad.border,
       })}
     >
       <Feather name={up ? 'thumbs-up' : 'thumbs-down'} size={size * 0.46} color={up ? '#fff' : th.bad.text} />
@@ -77,9 +78,151 @@ function Thumb({ up, onPress, disabled, label, size = 48 }: { up: boolean; onPre
   );
 }
 
+const MODE_TONE: Record<string, { bg: string; fg: string }> = {
+  CASH: { bg: '#d6f0d9', fg: '#2e7d4f' }, UPI: { bg: '#dce6fb', fg: '#1d4fb8' }, CARD: { bg: '#ebd9f7', fg: '#6b2a98' },
+};
+
+/** Tea-shop look for one expense waiting for approval: icon tile, payment chip, amount, receipt warning and the two decision buttons. */
+function ExpenseCardTea({ e, branchName, picked, onTick, busy, onApprove, onReject }: { e: any; branchName: string; picked: boolean; onTick: () => void; busy: boolean; onApprove: () => void; onReject: () => void }) {
+  const th = useTheme();
+  const tone = MODE_TONE[String(e.paymentMode).toUpperCase()] ?? { bg: '#f3e6d6', fg: '#6a351c' };
+  const noReceipt = e.receiptCount === 0 && Number(e.amount) > 500;
+  return (
+    <View style={{ borderRadius: 22, padding: 14, gap: 10, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: picked ? '#a4501f' : th.border, shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable onPress={onTick} accessibilityRole="checkbox" accessibilityState={{ checked: picked }} hitSlop={8}>
+          <Feather name={picked ? 'check-square' : 'square'} size={24} color={picked ? '#a4501f' : th.faint} />
+        </Pressable>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#fdecc4', alignItems: 'center', justifyContent: 'center' }}>
+          <MaterialCommunityIcons name="script-text-outline" size={22} color="#a4501f" />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+          <Text numberOfLines={1} style={{ color: th.ink, fontSize: 16, fontWeight: '800' }}>{e.categoryName}</Text>
+          <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: tone.bg }}>
+            <Text style={{ color: tone.fg, fontSize: 11, fontWeight: '800' }}>{MODE_LABEL[e.paymentMode] ?? e.paymentMode}</Text>
+          </View>
+        </View>
+        <Text style={{ color: th.dark ? th.ink : '#54210d', fontWeight: '800', fontSize: 20, fontVariant: ['tabular-nums'] }}>{formatINR(e.amount)}</Text>
+      </View>
+      <View style={{ gap: 3, paddingLeft: 2 }}>
+        <Text style={{ color: th.muted, fontSize: 13 }}>{branchName} · {prettyDate(e.businessDate)}{e.payeeName ? ` · ${e.payeeName}` : ''}</Text>
+        {e.description ? <Text style={{ color: th.ink, fontSize: 13, fontStyle: 'italic' }}>“{e.description}”</Text> : null}
+        {noReceipt ? (
+          <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: '#fbd9d6' }}>
+            <Feather name="alert-triangle" size={12} color="#b91c1c" />
+            <Text style={{ color: '#b91c1c', fontSize: 11, fontWeight: '800' }}>No receipt above ₹500</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: th.border }}>
+        <Text numberOfLines={1} style={{ flex: 1, color: th.faint, fontSize: 12 }}>{e.code} · ⏱ {age(e.createdAt)}{e.receiptCount === 0 && !noReceipt ? ' · No receipt' : ''}</Text>
+        <Thumb up size={42} label="Approve" disabled={busy} onPress={onApprove} />
+        <Thumb up={false} size={42} label="Reject" disabled={busy} onPress={onReject} />
+      </View>
+    </View>
+  );
+}
+
+/** Tea-shop look for one closing waiting for approval: branch tile, date and age, sales, cash difference, View + the decision buttons. */
+function ClosingCardTea({ c, picked, onTick, busy, onView, onApprove, onReject }: { c: any; picked: boolean; onTick: () => void; busy: boolean; onView: () => void; onApprove: () => void; onReject: () => void }) {
+  const th = useTheme();
+  const diff = c.cashVariance != null && Number(c.cashVariance) !== 0 ? Number(c.cashVariance) : null;
+  return (
+    <View style={{ borderRadius: 22, padding: 14, gap: 10, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: picked ? '#a4501f' : th.border, shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable onPress={onTick} accessibilityRole="checkbox" accessibilityState={{ checked: picked }} hitSlop={8}>
+          <Feather name={picked ? 'check-square' : 'square'} size={24} color={picked ? '#a4501f' : th.faint} />
+        </Pressable>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#d6f0d9', alignItems: 'center', justifyContent: 'center' }}>
+          <MaterialCommunityIcons name="storefront-outline" size={22} color="#2e7d4f" />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Text numberOfLines={1} style={{ color: th.ink, fontSize: 16, fontWeight: '800' }}>{c.locationName}</Text>
+          <Text numberOfLines={1} style={{ color: th.muted, fontSize: 13 }}>{prettyDate(String(c.businessDate).slice(0, 10))}{c.submittedAt ? ` · ⏱ ${age(c.submittedAt)}` : ''}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ color: th.muted, fontSize: 11 }}>Sales</Text>
+          <Text style={{ color: th.dark ? th.ink : '#54210d', fontWeight: '800', fontSize: 20, fontVariant: ['tabular-nums'] }}>{c.totalSales != null ? formatINR(c.totalSales) : '—'}</Text>
+        </View>
+      </View>
+      {diff !== null ? (
+        <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: diff < 0 ? '#fbd9d6' : '#fdecc4' }}>
+          <Feather name="alert-triangle" size={12} color={diff < 0 ? '#b91c1c' : '#a4501f'} />
+          <Text style={{ color: diff < 0 ? '#b91c1c' : '#a4501f', fontSize: 11, fontWeight: '800' }}>Cash difference {formatINR(c.cashVariance)}</Text>
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: th.border }}>
+        <Pressable onPress={onView} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, height: 42, borderRadius: 999, backgroundColor: '#f3e6d6', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.8 : 1 })}>
+          <Text style={{ color: '#6a351c', fontWeight: '800', fontSize: 14 }}>View closing</Text>
+        </Pressable>
+        <Thumb up size={42} label="Approve" disabled={busy} onPress={onApprove} />
+        <Thumb up={false} size={42} label="Reject" disabled={busy} onPress={onReject} />
+      </View>
+    </View>
+  );
+}
+
+/** Tea-shop look for one missed-day request: branch tile, the day asked for, who asked, their reason and the decision buttons. */
+function RequestCardTea({ r, busy, onApprove, onReject }: { r: any; busy: boolean; onApprove: () => void; onReject: () => void }) {
+  const th = useTheme();
+  return (
+    <View style={{ borderRadius: 22, padding: 14, gap: 10, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: th.border, shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#dce6fb', alignItems: 'center', justifyContent: 'center' }}>
+          <MaterialCommunityIcons name="calendar-clock-outline" size={22} color="#1d4fb8" />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Text numberOfLines={1} style={{ color: th.ink, fontSize: 16, fontWeight: '800' }}>{r.locationName}</Text>
+          <Text numberOfLines={1} style={{ color: th.muted, fontSize: 13 }}>Missed day · {prettyDate(String(r.businessDate).slice(0, 10))}</Text>
+        </View>
+        <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: '#fdecc4' }}>
+          <Text style={{ color: '#a4501f', fontSize: 11, fontWeight: '800' }}>⏱ {age(r.createdAt)}</Text>
+        </View>
+      </View>
+      <View style={{ gap: 3, paddingLeft: 2 }}>
+        <Text style={{ color: th.muted, fontSize: 13 }}>Asked by {r.requestedByName} ({r.requestedByUsername})</Text>
+        <Text style={{ color: th.ink, fontSize: 13, fontStyle: 'italic' }}>“{r.reason}”</Text>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: th.border }}>
+        <Thumb up size={42} label="Approve" disabled={busy} onPress={onApprove} />
+        <Thumb up={false} size={42} label="Reject" disabled={busy} onPress={onReject} />
+      </View>
+    </View>
+  );
+}
+
+/** Tea-shop look for one decided request: the result as a coloured pill, then who decided and when. */
+function HistoryCardTea({ r }: { r: any }) {
+  const th = useTheme();
+  const ok = r.status === 'APPROVED';
+  const when = r.decidedAt ?? r.createdAt;
+  return (
+    <View style={{ borderRadius: 22, padding: 14, gap: 8, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: th.border, shadowColor: '#45220f', shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: ok ? '#d6f0d9' : '#fbd9d6', alignItems: 'center', justifyContent: 'center' }}>
+          <MaterialCommunityIcons name={ok ? 'check-circle-outline' : 'close-circle-outline'} size={22} color={ok ? '#2e7d4f' : '#b91c1c'} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Text numberOfLines={1} style={{ color: th.ink, fontSize: 16, fontWeight: '800' }}>{r.locationName}</Text>
+          <Text numberOfLines={1} style={{ color: th.muted, fontSize: 13 }}>Missed day · {prettyDate(String(r.businessDate).slice(0, 10))}</Text>
+        </View>
+        <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: ok ? '#d6f0d9' : '#fbd9d6' }}>
+          <Text style={{ color: ok ? '#2e7d4f' : '#b91c1c', fontSize: 12, fontWeight: '800' }}>{ok ? 'Approved' : 'Rejected'}</Text>
+        </View>
+      </View>
+      <Text style={{ color: th.muted, fontSize: 13 }}>Asked by {r.requestedByName} ({r.requestedByUsername})</Text>
+      <Text style={{ color: th.ink, fontSize: 13, fontStyle: 'italic' }}>“{r.reason}”</Text>
+      {r.decisionNote ? <Text style={{ color: th.muted, fontSize: 13 }}>Note: {r.decisionNote}</Text> : null}
+      <Text style={{ color: th.faint, fontSize: 12 }}>{ok ? 'Approved' : 'Rejected'}{r.decidedByUsername ? ` by ${r.decidedByUsername}` : ''} · {prettyDate(String(when).slice(0, 10))}</Text>
+    </View>
+  );
+}
+
 /** Expenses waiting for approval. */
 export default function ApprovalsScreen() {
   const th = useTheme();
+  const teaShop = useIsTeaShop();
+  const tea = useTeaHeaderRight();
   const { me, can } = useSession();
   // closings and missed-day requests are decided by the Admin only; others never see those tabs
   const showClosing = can('closing:approve');
@@ -193,19 +336,12 @@ export default function ApprovalsScreen() {
     </Pressable>
   );
 
-  return (
-    <Screen
-      onRefresh={load}
-      list={tab === 'backdate' && bdSub === 'history' ? {
-        data: history, keyExtractor: (r) => r.id, renderItem: ({ item }) => <HistoryCard r={item} />,
-        empty: <Banner tone="neutral">No decided requests yet</Banner>,
-      } : undefined}
-      top={(
-        <>
-      <Heading onBlue title={tab === 'expenses' ? 'Approvals · Expenses' : tab === 'closing' ? 'Approvals · Closing' : 'Approvals · Date requests'} />
+  const controls = (
+    <>
+      {teaShop ? null : <Heading onBlue title={tab === 'expenses' ? 'Approvals · Expenses' : tab === 'closing' ? 'Approvals · Closing' : 'Approvals · Date requests'} />}
       <SegTabs
-        value={tab} onChange={setTab}
-        tabs={[{ key: 'expenses' as const, label: `Expenses${rows?.length ? ` (${rows.length})` : ''}` }, ...(showClosing ? [{ key: 'closing' as const, label: `Closing${closings?.length ? ` (${closings.length})` : ''}` }] : []), ...(showBackdate ? [{ key: 'backdate' as const, label: `Date requests${requests?.length ? ` (${requests.length})` : ''}` }] : [])]}
+        fit value={tab} onChange={setTab}
+        tabs={[{ key: 'expenses' as const, label: 'Expenses', badge: rows?.length }, ...(showClosing ? [{ key: 'closing' as const, label: 'Closing', badge: closings?.length }] : []), ...(showBackdate ? [{ key: 'backdate' as const, label: 'Date requests', badge: requests?.length }] : [])]}
       />
       {tab === 'backdate' ? (
         <JoinedTabs
@@ -215,7 +351,7 @@ export default function ApprovalsScreen() {
       ) : null}
       <ErrorBox error={error} />
       {ids.length > 0 ? (
-        <Card style={{ paddingVertical: 8, paddingHorizontal: 12 }}>
+        <Card style={[{ paddingVertical: 8, paddingHorizontal: 12 }, teaShop ? { borderRadius: 20, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.96)' } : null]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Pressable onPress={() => setPicked(allPicked ? [] : ids)} accessibilityRole="checkbox" accessibilityState={{ checked: allPicked }} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 }}>
               <Feather name={allPicked ? 'check-square' : picked.length ? 'minus-square' : 'square'} size={24} color={picked.length ? th.brand : th.faint} />
@@ -230,7 +366,7 @@ export default function ApprovalsScreen() {
                 key={String(up)} disabled={picked.length === 0 || busy !== null} accessibilityRole="button"
                 accessibilityLabel={up ? (allPicked ? 'Approve all' : 'Approve selected') : (allPicked ? 'Reject all' : 'Reject selected')}
                 onPress={() => { setBulkReason(''); setBulk(up ? 'approve' : 'reject'); }}
-                style={{ minWidth: 48, height: 44, paddingHorizontal: 10, borderRadius: 22, flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', opacity: picked.length === 0 ? 0.45 : 1, backgroundColor: up ? '#059669' : th.bad.bg, borderWidth: up ? 0 : 2, borderColor: th.bad.border }}
+                style={{ minWidth: 48, height: 44, paddingHorizontal: 10, borderRadius: 22, flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', opacity: picked.length === 0 ? 0.45 : 1, backgroundColor: up ? (teaShop ? '#1f7a35' : '#059669') : th.bad.bg, borderWidth: up ? 0 : 2, borderColor: th.bad.border }}
               >
                 <Feather name={up ? 'thumbs-up' : 'thumbs-down'} size={20} color={up ? '#fff' : th.bad.text} />
                 {picked.length > 0 ? <Text style={{ color: up ? '#fff' : th.bad.text, fontWeight: '800', fontSize: 13 }}>{picked.length}</Text> : null}
@@ -239,11 +375,32 @@ export default function ApprovalsScreen() {
           </View>
         </Card>
       ) : null}
-        </>
-      )}
+    </>
+  );
+
+  const pageTitle = (
+    <PageTitle
+      icon="check-decagram-outline" title="Approvals"
+      subtitle={tab === 'expenses' ? 'Expenses waiting for your decision' : tab === 'closing' ? 'Daily closings waiting for your decision' : 'Requests to enter a missed day'}
+    />
+  );
+
+  return (
+    <Screen
+      hero
+      headerRight={teaShop ? tea.right : undefined}
+      onRefresh={load}
+      list={tab === 'backdate' && bdSub === 'history' ? {
+        data: history, keyExtractor: (r) => r.id, renderItem: ({ item }) => (teaShop ? <HistoryCardTea r={item} /> : <HistoryCard r={item} />),
+        empty: <Banner tone="neutral">No decided requests yet</Banner>,
+      } : undefined}
+      top={teaShop ? undefined : controls}
     >
+      {teaShop ? <>{pageTitle}{controls}</> : null}
       {tab === 'backdate' ? (
-        bdSub === 'history' ? null : !requests ? <Loading /> : requests.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : requests.map((r) => (
+        bdSub === 'history' ? null : !requests ? <Loading /> : requests.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : requests.map((r) => (teaShop ? (
+          <RequestCardTea key={r.id} r={r} busy={busy !== null} onApprove={() => { setNote(''); setDeciding({ r, approve: true }); }} onReject={() => { setNote(''); setDeciding({ r, approve: false }); }} />
+        ) : (
           <Card key={r.id} style={{ gap: 6 }}>
             <Text style={{ color: th.ink, fontWeight: '700' }}>{r.locationName} · {prettyDate(String(r.businessDate).slice(0, 10))}</Text>
             <Text style={{ color: th.muted, fontSize: 13 }}>{r.requestedByName} ({r.requestedByUsername}) · ⏱ {age(r.createdAt)}</Text>
@@ -254,9 +411,14 @@ export default function ApprovalsScreen() {
               <Thumb up={false} label="Reject" disabled={busy !== null} onPress={() => { setNote(''); setDeciding({ r, approve: false }); }} />
             </View>
           </Card>
-        ))
+        )))
       ) : tab === 'closing' ? (
-        !closings ? <Loading /> : closings.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : closings.map((c) => (
+        !closings ? <Loading /> : closings.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : closings.map((c) => (teaShop ? (
+          <ClosingCardTea key={c.closingId} c={c} picked={picked.includes(c.closingId)} onTick={() => toggle(c.closingId)} busy={busy !== null}
+            onView={() => router.push(`/more/closing/${c.locationId}/${String(c.businessDate).slice(0, 10)}` as any)}
+            onApprove={() => approveClosing(c.closingId)}
+            onReject={() => { setReason(''); setRejecting({ ...c, id: c.closingId, code: `${c.locationCode} ${String(c.businessDate).slice(0, 10)}` }); }} />
+        ) : (
           <Card key={c.closingId} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
               {tick(c.closingId)}
@@ -278,8 +440,8 @@ export default function ApprovalsScreen() {
               <Thumb up={false} label="Reject" disabled={busy !== null} onPress={() => { setReason(''); setRejecting({ ...c, id: c.closingId, code: `${c.locationCode} ${String(c.businessDate).slice(0, 10)}` }); }} />
             </View>
           </Card>
-        ))
-      ) : !rows ? <Loading /> : rows.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : rows.map((e) => (
+        )))
+      ) : !rows ? <Loading /> : rows.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : rows.map((e) => (teaShop ? <ExpenseCardTea key={e.id} e={e} branchName={branch(e.locationId)} picked={picked.includes(e.id)} onTick={() => toggle(e.id)} busy={busy !== null} onApprove={() => approve(e.id)} onReject={() => setRejecting(e)} /> : (
         <Card key={e.id} style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
             {tick(e.id)}
@@ -299,7 +461,7 @@ export default function ApprovalsScreen() {
             </View>
           </View>
         </Card>
-      ))}
+      )))}
 
       <Sheet open={!!deciding} onClose={() => setDeciding(null)} title={`${deciding?.approve ? 'Approve' : 'Reject'} · ${deciding ? prettyDate(String(deciding.r.businessDate).slice(0, 10)) : ''}`}>
         <Field label={deciding?.approve ? 'Comment (optional)' : 'Reason'} required={!deciding?.approve} value={note} onChangeText={setNote} multiline />

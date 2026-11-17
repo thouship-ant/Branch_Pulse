@@ -136,7 +136,7 @@ function Report({ id, period }: { id: string; period: Period }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
         <StatCard icon="trending-up" tone="ok" value={whole(s.totalSales)} label="Sales" sub={`${s.salesDays} days · avg ${whole(s.avgDailySales)}`} />
         <StatCard icon="credit-card" tone="warn" value={whole(s.totalExpenses)} label="Expenses" />
-        <StatCard icon="dollar-sign" tone={profit.isNegative() ? 'bad' : 'ok'} alert={profit.isNegative()} value={whole(s.operatingProfit)} label="Operating profit" sub={s.marginPct != null ? `${s.marginPct}% margin` : undefined} />
+        <StatCard icon="dollar-sign" mdi="wallet-outline" tone={profit.isNegative() ? 'bad' : 'ok'} alert={profit.isNegative()} value={whole(s.operatingProfit)} label="Operating profit" sub={s.marginPct != null ? `${s.marginPct}% margin` : undefined} />
         <StatCard icon="alert-triangle" tone={dec(s.netCashVariance).isNegative() ? 'bad' : 'neutral'} value={whole(s.netCashVariance)} label="Net cash variance" sub={`${s.shortageDays} shortage days`} />
       </View>
       <Card>

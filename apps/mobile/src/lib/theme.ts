@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
-import { useSyncExternalStore } from 'react';
+import * as SecureStore from '@/lib/storage';
+import { createContext, createElement, useContext, useSyncExternalStore, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
 /** Shared app-wide palette tokens with selectable brand colors and light/dark variants. */
@@ -40,16 +40,16 @@ const dark: Theme = {
 
 const teaShopLight: Theme = {
   ...light,
-  bg: '#f5f0e7', surface: '#fffdf8', ink: '#2f251c', muted: '#65584b', faint: '#988a7a', border: '#e6d8cc', fieldBg: '#fffefa',
-  brand: '#386641', brandDark: '#2c5034', brandLight: '#e7f0e4', onBrand: '#ffffff',
-  series: ['#386641', '#d28c45', '#b85c38', '#8a6f45', '#71917a', '#d6ad45'],
+  bg: '#fff2e5', surface: '#fffaf4', ink: '#32190f', muted: '#684f3e', faint: '#a17b5d', border: '#e8ddd2', fieldBg: '#fffaf4',
+  brand: '#713817', brandDark: '#5b2c16', brandLight: '#f0e2d4', onBrand: '#ffffff',
+  series: ['#6f3b1f', '#d28c45', '#b85c38', '#8a6f45', '#a97043', '#d6ad45'],
 };
 
 const teaShopDark: Theme = {
   ...dark,
-  bg: '#161b14', surface: '#20271d', ink: '#f3ebdd', muted: '#ccbeaa', faint: '#a1957f', border: '#3a4435', fieldBg: '#272f23',
-  brand: '#8fbf78', brandDark: '#a8d294', brandLight: '#2b3d2b', onBrand: '#172015',
-  series: ['#8fbf78', '#e0ad63', '#dc8060', '#bca477', '#91b89a', '#e5c777'],
+  bg: '#1b120d', surface: '#281a12', ink: '#fff1df', muted: '#d2bba5', faint: '#aa907b', border: '#493326', fieldBg: '#302116',
+  brand: '#9b5b32', brandDark: '#c4875e', brandLight: '#3d281b', onBrand: '#ffffff',
+  series: ['#c98a55', '#e0ad63', '#dc8060', '#bca477', '#d5a071', '#e5c777'],
 };
 
 const redLight: Theme = {
@@ -76,6 +76,7 @@ const COLOR_KEY = 'bp.themeColor';
 type BusinessType = 'TEA_SHOP' | 'OTHER';
 interface ThemeState { mode: ThemeMode; businessType: BusinessType; color: ThemeColor | null }
 let current: ThemeState = { mode: 'system', businessType: 'OTHER', color: null };
+const ThemeBusinessOverride = createContext<BusinessType | null>(null);
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((l) => l());
 const setCurrent = (m: ThemeMode) => { if (current.mode !== m) { current = { ...current, mode: m }; notify(); } };
@@ -88,19 +89,29 @@ const getState = () => current;
 const getMode = () => current.mode;
 const defaultColor = () => current.businessType === 'TEA_SHOP' ? 'green' : 'blue';
 
+export function ThemeOverrideProvider({ businessType, children }: { businessType: BusinessType; children: ReactNode }) {
+  return createElement(ThemeBusinessOverride.Provider, { value: businessType }, children);
+}
+
 export function useTheme(): Theme {
   const system = useColorScheme();
   const state = useSyncExternalStore(subscribe, getState, getState);
+  const businessType = useContext(ThemeBusinessOverride) ?? state.businessType;
   const isDark = (state.mode === 'system' ? system === 'dark' : state.mode === 'dark');
+  if (businessType === 'TEA_SHOP') return isDark ? teaShopDark : teaShopLight;
   const color = state.color ?? defaultColor();
   if (color === 'red') return isDark ? redDark : redLight;
   if (color === 'green') return isDark ? teaShopDark : teaShopLight;
   return isDark ? dark : light;
 }
 
+export function useIsTeaShop(): boolean {
+  return useSyncExternalStore(subscribe, getState, getState).businessType === 'TEA_SHOP';
+}
+
 export function useThemeColor(): [ThemeColor, (color: ThemeColor) => void] {
   const state = useSyncExternalStore(subscribe, getState, getState);
-  const color = state.color ?? defaultColor();
+  const color = state.businessType === 'TEA_SHOP' ? 'green' : state.color ?? defaultColor();
   return [color, (value) => { void setThemeColor(value); }];
 }
 

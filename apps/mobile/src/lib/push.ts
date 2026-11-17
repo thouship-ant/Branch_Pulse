@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/storage';
 import { Platform } from 'react-native';
 import { api } from './api';
 

@@ -2,12 +2,13 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
-import { Chip, DateStepper, Empty, ErrorBox, ListRow, Loading, Screen, SectionTitle, SegTabs, SelectField, StatCard, StatusPill } from '@/components/ui';
+import { useTeaHeaderRight } from '@/components/TeaShopHeaderActions';
+import { Chip, DateStepper, Empty, ErrorBox, ListRow, Loading, PageTitle, Screen, SectionTitle, SegTabs, SelectField, StatCard, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { approvalTone, REASON_LABEL } from '@/lib/labels';
 import { dec, formatINR } from '@/lib/money';
-import { useTheme } from '@/lib/theme';
+import { useIsTeaShop, useTheme } from '@/lib/theme';
 import { useDay } from '@/lib/useDate';
 
 type Tab = 'daily' | 'report';
@@ -21,6 +22,27 @@ export default function CashScreen() {
   const [locationId, setLocationId] = useState('');
   const [branches, setBranches] = useState<any[]>([]);
   useEffect(() => { api.get('/locations?type=BRANCH').then((b) => setBranches(b as any[])).catch(() => undefined); }, []);
+  const teaShop = useIsTeaShop();
+  const tea = useTeaHeaderRight();
+  if (teaShop) {
+    return (
+      <Screen hero headerRight={tea.right}>
+        <View style={{ gap: 14 }}>
+          <PageTitle icon="wallet-outline" title="Cash" subtitle="Daily cash reconciliation and variances" />
+          <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'daily', label: 'Daily' }, { key: 'report', label: 'Variance report' }]} />
+          {tab === 'daily' ? (
+            <DateStepper label={day.label} onPrev={day.prev} onNext={day.next} nextDisabled={day.isToday} />
+          ) : (
+            <>
+              <SegTabs value={days} onChange={setDays} tabs={[{ key: '7', label: '7 days' }, { key: '30', label: '30 days' }, { key: '90', label: '90 days' }]} />
+              <SelectField label="Branch" value={locationId} onChange={setLocationId} placeholder="All branches" options={[{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} />
+            </>
+          )}
+          {tab === 'daily' ? <Daily day={day} /> : <Report days={days} locationId={locationId} />}
+        </View>
+      </Screen>
+    );
+  }
   // the tabs and the date / filters stay put; only the results below scroll
   return (
     <Screen
@@ -62,7 +84,7 @@ function Daily({ day }: { day: ReturnType<typeof useDay> }) {
       {!data ? <Loading /> : (
         <>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
-            <StatCard icon="dollar-sign" value={whole(tot.expected)} label="Expected cash" />
+            <StatCard icon="dollar-sign" mdi="wallet-outline" value={whole(tot.expected)} label="Expected cash" />
             <StatCard icon="check-circle" tone="ok" value={whole(tot.actual)} label="Actual cash" sub={`${tot.branchesCounted} / ${data.rows.length} counted`} />
             <StatCard icon="alert-triangle" tone={dec(tot.netVariance).isNegative() ? 'bad' : 'neutral'} alert={dec(tot.netVariance).isNegative()} value={whole(tot.netVariance)} label="Net variance" sub={`${tot.shortages} short · ${tot.surpluses} surplus`} />
             <StatCard icon="clock" tone={tot.awaitingApproval ? 'warn' : 'ok'} value={String(tot.awaitingApproval)} label="Awaiting approval" />

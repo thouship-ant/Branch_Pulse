@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/storage';
 import { Alert, type AlertButton } from 'react-native';
 import { TA_EXTRA } from './ta-extra';
 import { TA_WEB } from './ta-web';

@@ -23,7 +23,7 @@ export interface Me {
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;
-  company?: { id: string; code: string; name: string; businessType?: string } | null;
+  company?: { id: string; code: string; name: string; businessType?: string; businessName?: string; businessLogo?: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 

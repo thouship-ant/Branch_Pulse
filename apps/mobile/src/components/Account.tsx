@@ -1,13 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Image, Platform, Pressable, View } from 'react-native';
 import { Text } from './Text';
-import { ACCENT, type AccentName, Banner, Button, Card, Heading, Screen, SelectField, ThemeColorSwitch, ThemeSwitch, ToggleRow } from '@/components/ui';
+import { ACCENT, type AccentName, Banner, Button, Card, Heading, PageTitle, Screen, SelectField, Sheet, ThemeColorSwitch, ThemeSwitch, ToggleRow } from '@/components/ui';
+import { useAvatar } from '@/lib/avatar';
 import { roleLabel } from '@/lib/labels';
 import { pushEnabled, sendTestPush, setPushEnabled } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { useLang } from '@/lib/language';
-import { useTheme } from '@/lib/theme';
+import { useIsTeaShop, useTheme } from '@/lib/theme';
 
 type IconName = React.ComponentProps<typeof Feather>['name'];
 
@@ -19,6 +20,10 @@ export function Account() {
   const [push, setPush] = useState(true);
   const [note, setNote] = useState<{ tone: 'ok' | 'warn'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const teaShop = useIsTeaShop();
+  const avatar = useAvatar(me?.id);
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   useEffect(() => { void pushEnabled().then(setPush); }, []);
   if (!me) return null;
 
@@ -36,6 +41,11 @@ export function Account() {
     setBusy(false);
   }
 
+  async function changePhoto(source: 'library' | 'camera') {
+    setPhotoError(null);
+    try { await avatar.pick(source); setPhotoOpen(false); } catch (e) { setPhotoError(e instanceof Error ? e.message : 'Could not change the photo'); }
+  }
+
   const roles = me.roleNames?.length ? me.roleNames : me.roles.map(roleLabel);
   const initials = me.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '?';
   const info: Array<{ icon: IconName; accent: AccentName; label: string; value: string }> = [
@@ -46,21 +56,36 @@ export function Account() {
 
   return (
     <Screen>
-      <Heading onBlue title="Account" />
+      {teaShop
+        ? <PageTitle icon="account-circle-outline" title="Account" subtitle="Your profile and app settings" />
+        : <Heading onBlue title="Account" />}
 
       {/* who is signed in */}
-      <Card style={{ padding: 0, overflow: 'hidden', gap: 0 }}>
-        <View style={{ alignItems: 'center', gap: 10, paddingVertical: 22, paddingHorizontal: 16, backgroundColor: th.brandLight }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: th.brand, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: th.surface }}>
-            <Text style={{ color: th.onBrand, fontSize: 26, fontWeight: '800' }}>{initials}</Text>
-          </View>
-          <Text style={{ color: th.ink, fontSize: 20, fontWeight: '800' }}>{me.fullName}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
-            {roles.map((r) => (
-              <View key={r} style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, backgroundColor: th.surface, borderWidth: 1, borderColor: th.border }}>
-                <Text style={{ color: th.brandDark, fontSize: 12, fontWeight: '700' }}>{r}</Text>
-              </View>
-            ))}
+      <Card style={{ padding: 0, overflow: 'hidden', gap: 0, ...(teaShop ? { borderRadius: 26 } : null) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 22, paddingHorizontal: 16, backgroundColor: teaShop ? (th.dark ? th.brandLight : '#f3e2cd') : th.brandLight }}>
+          <Pressable onPress={() => { setPhotoError(null); setPhotoOpen(true); }} accessibilityRole="button" accessibilityLabel="Change profile photo" style={{ width: 88, height: 88 }}>
+            <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: th.brand, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: th.surface, overflow: 'hidden', shadowColor: '#45220f', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4 }}>
+              {avatar.uri
+                ? <Image source={{ uri: avatar.uri }} accessibilityLabel={`${me.fullName} photo`} style={{ width: '100%', height: '100%' }} />
+                : <Text style={{ color: th.onBrand, fontSize: 30, fontWeight: '800' }}>{initials}</Text>}
+            </View>
+            <View style={{ position: 'absolute', right: -2, bottom: 0, width: 30, height: 30, borderRadius: 15, backgroundColor: '#a4501f', borderWidth: 3, borderColor: th.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="camera" size={13} color="#fff" />
+            </View>
+          </Pressable>
+          {/* the name, roles and photo link sit beside the photo, in one row */}
+          <View style={{ flex: 1, minWidth: 0, gap: 8, alignItems: 'flex-start' }}>
+            <Text numberOfLines={1} style={{ color: th.ink, fontSize: 22, fontWeight: '800' }}>{me.fullName}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {roles.map((r) => (
+                <View key={r} style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, backgroundColor: teaShop && !th.dark ? '#8f421b' : th.surface, borderWidth: teaShop ? 0 : 1, borderColor: th.border }}>
+                  <Text style={{ color: teaShop && !th.dark ? '#fff4e8' : th.brandDark, fontSize: 12, fontWeight: '700' }}>{r}</Text>
+                </View>
+              ))}
+            </View>
+            <Pressable onPress={() => { setPhotoError(null); setPhotoOpen(true); }} accessibilityRole="button" hitSlop={8}>
+              <Text style={{ color: th.brandDark, fontSize: 12, fontWeight: '700' }}>{avatar.uri ? 'Change photo' : 'Add a photo'}</Text>
+            </Pressable>
           </View>
         </View>
         {info.map((r) => (
@@ -83,21 +108,31 @@ export function Account() {
         </Card>
       ) : null}
 
-      <Card>
+      <Card style={teaShop ? { borderRadius: 24 } : undefined}>
         <SectionTitle icon="globe" accent="sky" title="Language" sub="English or தமிழ்" />
         <SelectField label="Choose language" value={lang} onChange={setLang} options={[{ value: 'en', label: 'English' }, { value: 'ta', label: 'தமிழ்' }]} />
       </Card>
 
-      <Card>
+      <Card style={teaShop ? { borderRadius: 24 } : undefined}>
         <SectionTitle icon="sun" accent="rose" title="Appearance" sub="Light, dark, or follow your phone" />
         <ThemeSwitch />
         <View style={{ gap: 8 }}>
           <Text style={{ color: th.ink, fontSize: 14, fontWeight: '700' }}>Theme color</Text>
-          <ThemeColorSwitch />
+          {me.company?.businessType === 'TEA_SHOP'
+            ? <Text style={{ color: th.muted, fontSize: 13 }}>Tea-shop colors follow your business type.</Text>
+            : <ThemeColorSwitch />}
         </View>
       </Card>
 
       <Button title="Sign out" variant="danger" icon="log-out" onPress={() => void logout()} />
+
+      <Sheet open={photoOpen} onClose={() => setPhotoOpen(false)} title="Profile photo">
+        <Text style={{ color: th.muted, fontSize: 13 }}>Your photo is kept on this device only.</Text>
+        {photoError ? <Banner tone="warn">{photoError}</Banner> : null}
+        <Button title="Choose from gallery" icon="image" onPress={() => void changePhoto('library')} />
+        {Platform.OS !== 'web' ? <Button title="Take a photo" variant="secondary" icon="camera" onPress={() => void changePhoto('camera')} /> : null}
+        {avatar.uri ? <Button title="Remove photo" variant="danger" icon="trash-2" onPress={() => { void avatar.remove(); setPhotoOpen(false); }} /> : null}
+      </Sheet>
     </Screen>
   );
 }

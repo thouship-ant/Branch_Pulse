@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Switch, View } from 'react-native';
+import { Image, Switch, View } from 'react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
 import { Text } from '@/components/Text';
 import { Banner, Button, Card, Chips, ErrorBox, Field, Heading, ListRow, Loading, Muted, MultiChips, MoneyField, Screen, SectionTitle, SegTabs, Sheet, ToggleRow } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { amt } from '@/lib/money';
-import { setBusinessType, useTheme } from '@/lib/theme';
+import { useSession } from '@/lib/session';
+import { useTheme } from '@/lib/theme';
 
 type Tab = 'general' | 'limits' | 'roles' | 'units';
 
@@ -49,12 +52,15 @@ const responseKey = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c
 
 function General() {
   const th = useTheme();
+  const { refreshMe } = useSession();
   const [values, setValues] = useState<Record<string, unknown> | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   const load = useCallback(async () => { try { setValues(await api.get('/settings')); setError(null); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); } }, []);
   useEffect(() => { void load(); }, [load]);
@@ -71,12 +77,44 @@ function General() {
     setBusyKey(f.key);
     try {
       await api.put(`/settings/${f.key}`, { value });
-      if (f.key === 'business.type') setBusinessType(raw);
       drop(); setErrors((e) => { const n = { ...e }; delete n[f.key]; return n; });
       setNotice('Saved'); setTimeout(() => setNotice(null), 2000);
       await load();
     } catch (e) { setErrors((x) => ({ ...x, [f.key]: e instanceof ApiError ? e.message : 'Could not save' })); }
     finally { setBusyKey(null); }
+  }
+
+  async function saveLogo(value: string) {
+    setLogoBusy(true); setLogoError(null);
+    try {
+      await api.put('/settings/business.logo', { value });
+      await load();
+      await refreshMe();
+      setNotice('Saved'); setTimeout(() => setNotice(null), 2000);
+    } catch (e) {
+      setLogoError(e instanceof Error ? e.message : 'Could not save logo');
+    } finally { setLogoBusy(false); }
+  }
+
+  async function chooseLogo() {
+    setLogoBusy(true); setLogoError(null);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) throw new Error('Allow photo access in Settings to choose a business logo');
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.75 });
+      const asset = result.assets?.[0];
+      if (result.canceled || !asset) return;
+      const resize = Math.max(asset.width, asset.height) > 320
+        ? [{ resize: asset.width >= asset.height ? { width: 320 } : { height: 320 } }]
+        : [];
+      const image = await ImageManipulator.manipulateAsync(asset.uri, resize, { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true });
+      if (!image.base64) throw new Error('Could not read the selected logo');
+      const logo = `data:image/jpeg;base64,${image.base64}`;
+      if (logo.length > 80_000) throw new Error('Choose a smaller logo image (maximum 80 KB after resizing)');
+      await saveLogo(logo);
+    } catch (e) {
+      setLogoError(e instanceof Error ? e.message : 'Could not choose a logo');
+    } finally { setLogoBusy(false); }
   }
 
   if (!values) return error ? <ErrorBox error={error} /> : <Loading />;
@@ -90,6 +128,15 @@ function General() {
           {g.fields.map((f) => {
             const cur = values[responseKey(f.key)];
             const shown = edits[f.key] ?? (cur == null ? '' : String(cur));
+            if (f.key === 'business.name' || f.key === 'business.type') {
+              const display = f.key === 'business.type' ? BIZ.find((o) => o.value === shown)?.label ?? shown : shown;
+              return (
+                <View key={f.key} style={{ gap: 4 }}>
+                  <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>{f.label}</Text>
+                  <Text style={{ color: th.ink, fontSize: 16, minHeight: 44, paddingVertical: 11 }}>{display || '—'}</Text>
+                </View>
+              );
+            }
             if (f.kind === 'boolean') {
               return (
                 <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -109,6 +156,28 @@ function General() {
               />
             );
           })}
+          {g.title === 'Business' && values['business.type'] === 'TEA_SHOP' ? (
+            <View style={{ gap: 10 }}>
+              <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>Business logo</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                {typeof values['business.logo'] === 'string' && values['business.logo'] ? (
+                  <Image source={{ uri: values['business.logo'] }} accessibilityLabel="Business logo preview" style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff' }} />
+                ) : (
+                  <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: th.brandLight, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: th.brand, fontSize: 24, fontWeight: '800' }}>+</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1, gap: 8 }}>
+                  <Button small title={values['business.logo'] ? 'Replace logo' : 'Upload logo'} icon="image" loading={logoBusy} onPress={() => void chooseLogo()} />
+                  {typeof values['business.logo'] === 'string' && values['business.logo'] ? (
+                    <Button small variant="secondary" title="Remove logo" disabled={logoBusy} onPress={() => void saveLogo('')} />
+                  ) : null}
+                </View>
+              </View>
+              <ErrorBox error={logoError} />
+              <Muted small>Choose a square image. It is resized for the app header.</Muted>
+            </View>
+          ) : null}
         </Card>
       ))}
       <Muted small>Each value saves when you leave the field.</Muted>

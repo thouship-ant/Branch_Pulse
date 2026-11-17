@@ -12,7 +12,7 @@ const LABEL: Record<PeriodId, MessageKey> = {
 };
 
 /** "Today v" pill: opens "Select Period" (Today, Yesterday, This Week, This Month, All Time, Custom Range on a calendar) - the same picker as the mobile app. */
-export function PeriodDropdown({ period, today, onChange }: { period: Period; today: string; onChange: (p: Period) => void }) {
+export function PeriodDropdown({ period, today, onChange, onDark = false }: { period: Period; today: string; onChange: (p: Period) => void; onDark?: boolean }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [calendar, setCalendar] = useState(false);
@@ -28,7 +28,7 @@ export function PeriodDropdown({ period, today, onChange }: { period: Period; to
     <>
       <button
         type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label={`${t('selectPeriod')}: ${text}`}
-        className="inline-flex min-h-[44px] max-w-full items-center gap-2 rounded-full bg-brand px-5 text-[15px] font-bold text-white shadow-md shadow-brand/25 transition hover:bg-brand-dark active:scale-[0.98]"
+        className={`inline-flex min-h-[44px] max-w-full items-center gap-2 rounded-full px-4 text-[14px] font-bold text-white transition active:scale-[0.98] ${onDark ? 'border border-white/35 bg-white/15 hover:bg-white/25' : 'bg-brand px-5 text-[15px] shadow-md shadow-brand/25 hover:bg-brand-dark'}`}
       >
         <Icon name="calendar" size={17} />
         <span className="truncate">{text}</span>
