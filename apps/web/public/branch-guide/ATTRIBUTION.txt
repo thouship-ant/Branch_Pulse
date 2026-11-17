@@ -41,6 +41,13 @@ License: CC BY-SA 3.0
 Source: https://commons.wikimedia.org/wiki/File:Coffee_powdered.jpg
 License: https://creativecommons.org/licenses/by-sa/3.0/
 
+tea-powder-source.jpg
+Title: A closer view of CTC tea inside the drying roller
+Author: shankar s. from Dubai, United Arab Emirates
+License: CC BY 2.0
+Source: https://commons.wikimedia.org/wiki/File:A_closer_view_of_CTC_tea_inside_the_drying_roller_(28729476766).jpg
+License: https://creativecommons.org/licenses/by/2.0/
+
 eggs-basket.jpg
 Title: A Basket of Chicken Eggs at Tuen Mun
 Author: Peachyeung316
@@ -110,4 +117,4 @@ License: https://creativecommons.org/publicdomain/zero/1.0/
 Composite checklist banners
 
 sales-collage.jpg, purchases-collage.jpg, expenses-collage.jpg, closing-collage.jpg
-Text-free collages made from the source photos above, Tea Shop assets, and the user-provided images noted above.
+Checklist banners made from the source photos above, Tea Shop assets, and the user-provided images noted above.
