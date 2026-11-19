@@ -45,7 +45,7 @@ export function ThemeBackdrop() {
 }
 
 /** The header art, drawn behind the logo / names / buttons. Page content slides away under it. */
-export function ThemeHeaderBg() {
+export function ThemeHeaderBg({ emblem = true }: { emblem?: boolean } = {}) {
   const th = useTheme();
   const { width, artH, top, barH } = useBackdropGeometry();
   return (
@@ -53,7 +53,7 @@ export function ThemeHeaderBg() {
       <View style={{ ...StyleSheet.absoluteFillObject, opacity: th.dark ? 0.55 : 1 }}>
         {top > 0 ? <Image source={HEADER} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: top + 1 - artH, width, height: artH, transform: [{ scaleY: -1 }] }} /> : null}
         <Image source={HEADER} resizeMode="stretch" style={{ position: 'absolute', left: 0, top, width, height: artH }} />
-        <CupEmblem />
+        {emblem ? <CupEmblem /> : null}
       </View>
     </View>
   );

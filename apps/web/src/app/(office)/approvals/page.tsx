@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Icon } from '@/components/Icon';
+import { mdiCalendarClockOutline, mdiCheckDecagramOutline, mdiScriptTextOutline, mdiStorefrontOutline } from '@mdi/js';
+import { Icon, MdiIcon } from '@/components/Icon';
+import { PageTitle, TabBadge, useIsTea } from '@/components/TeaParts';
 import { Sheet, Skeleton } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -33,6 +35,7 @@ function Tick({ checked, onChange, label, partial }: { checked: boolean; onChang
 export default function Approvals() {
   const { t, pick } = useT();
   const { me, can } = useSession();
+  const tea = useIsTea();
   // closings and missed-day requests are decided by the Admin only; others never see those tabs
   const showClosing = can('closing:approve');
   const showBackdate = can('closing:reopen');
@@ -162,18 +165,18 @@ export default function Approvals() {
     </p>
   );
   const rowCls = (on: boolean) =>
-    `card grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-3 !p-3 transition sm:grid-cols-[auto_1fr_8.5rem_auto] sm:gap-x-4 sm:!px-4 ${on ? 'border-brand/60 bg-brand-light/50 ring-2 ring-brand/30' : ''}`;
+    `card ${tea ? '!rounded-3xl' : ''} grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-3 !p-3 transition sm:grid-cols-[auto_1fr_8.5rem_auto] sm:gap-x-4 sm:!px-4 ${on ? 'border-brand/60 bg-brand-light/50 ring-2 ring-brand/30' : ''}`;
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold">{t('approvals')}</h2>
-        <p className="text-sm text-slate-600">{tab === 'expenses' ? t('expenses') : tab === 'closing' ? t('closings') : t('bdTab')}</p>
-      </div>
-      <div role="tablist" className="flex gap-2 tabs-pills">
+      <PageTitle
+        mdi={mdiCheckDecagramOutline} title={t('approvals')}
+        subtitle={tea ? (tab === 'expenses' ? t('apSubExp') : tab === 'closing' ? t('apSubCl') : t('apSubBd')) : (tab === 'expenses' ? t('expenses') : tab === 'closing' ? t('closings') : t('bdTab'))}
+      />
+      <div role="tablist" className="flex gap-2 pt-2 tabs-pills">
         {([['expenses', t('expenses'), rows?.length ?? 0], ['closing', t('closings'), closings?.length ?? 0], ['backdate', t('bdTab'), requests?.length ?? 0]] as const).filter(([k]) => (k === 'closing' ? showClosing : k === 'backdate' ? showBackdate : true)).map(([k, label, n]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
-            {label}{n > 0 ? <><span className="ml-2 hidden rounded-full bg-white/25 px-2 py-0.5 text-xs md:inline">{n}</span><span className="md:hidden"> ({n})</span></> : null}
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className="relative" aria-label={n > 0 ? `${label}, ${n}` : label}>
+            {label}<TabBadge n={n} />
           </button>
         ))}
       </div>
@@ -204,7 +207,7 @@ export default function Approvals() {
             {requests.map((r) => (
               <li key={r.id} className="card flex flex-wrap items-center justify-between gap-3 !p-3 sm:!px-4">
                 <div className="min-w-0 space-y-0.5">
-                  <p className="text-base font-bold">{pick(r.locationName, r.locationNameTa)} · {prettyDate(String(r.businessDate).slice(0, 10))}</p>
+                  <p className="flex items-center gap-2.5">{tea && <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ background: '#dce6fb', color: '#1d4fb8' }} aria-hidden><MdiIcon path={mdiCalendarClockOutline} size={20} /></span>}<span className="text-base font-bold">{pick(r.locationName, r.locationNameTa)} · {prettyDate(String(r.businessDate).slice(0, 10))}</span></p>
                   <p className="text-sm text-slate-600">{r.requestedByName} <span className="text-slate-400">({r.requestedByUsername})</span> · ⏱ {age(r.createdAt)}</p>
                   <p className="text-sm">“{r.reason}”</p>
                 </div>
@@ -226,7 +229,7 @@ export default function Approvals() {
                 <li key={c.closingId} className={rowCls(picked.includes(c.closingId)).replace('grid-cols-[auto_1fr]', 'grid-cols-[auto_1fr_auto]')}>
                   <Tick checked={picked.includes(c.closingId)} onChange={() => toggle(c.closingId)} label={t('selectAll')} />
                   <div className="min-w-0">
-                      <p className="truncate text-base font-bold">{pick(c.locationName, c.locationNameTa)}</p>
+                      <p className="flex items-center gap-2.5">{tea && <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ background: '#d6f0d9', color: '#2e7d4f' }} aria-hidden><MdiIcon path={mdiStorefrontOutline} size={20} /></span>}<span className="truncate text-base font-bold">{pick(c.locationName, c.locationNameTa)}</span></p>
                       <p className="text-sm text-slate-600">{prettyDate(day)}{c.submittedAt ? <span className="text-slate-400"> · ⏱ {age(c.submittedAt)}</span> : null}</p>
                       {off && <p className="mt-0.5 text-xs font-semibold text-amber-800">{t('difference')} {formatINR(c.cashVariance)}</p>}
                     </div>
@@ -251,6 +254,7 @@ export default function Approvals() {
               <Tick checked={picked.includes(e.id)} onChange={() => toggle(e.id)} label={t('selectAll')} />
               <div className="min-w-0 space-y-0.5">
                   <p className="flex flex-wrap items-center gap-2">
+                    {tea && <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ background: '#fdecc4', color: '#a4501f' }} aria-hidden><MdiIcon path={mdiScriptTextOutline} size={20} /></span>}
                     <span className="truncate text-base font-bold">{pick(e.categoryName, e.categoryNameTa)}</span>
                     <span className="chip border-slate-300 bg-slate-100 !py-0.5 text-xs text-slate-700">{MODE_KEY[e.paymentMode] ? t(MODE_KEY[e.paymentMode]) : e.paymentMode}</span>
                   </p>

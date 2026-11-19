@@ -1,5 +1,7 @@
 'use client';
 
+import { mdiChartBar, mdiClockOutline, mdiCreditCardOutline, mdiTrendingUp } from '@mdi/js';
+import { StatTile, useIsTea, type Tone } from '@/components/TeaParts';
 import { Select } from '@/components/Select';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
@@ -20,6 +22,7 @@ const EXPENSES = 'var(--series-2)'; // expenses are orange everywhere in the app
 /** Owner overview: daily / weekly / monthly expenses, branch-wise, category-wise and the trend over time. */
 export function ExpenseOverview({ fixedLocationId }: { fixedLocationId?: string }) {
   const { t, pick } = useT();
+  const tea = useIsTea();
   const period = usePeriod('30');
   const { range, valid } = period;
   const [group, setGroup] = useState<Group>('day');
@@ -57,7 +60,11 @@ export function ExpenseOverview({ fixedLocationId }: { fixedLocationId?: string 
   const tot = data?.totals;
   const change: number | null = tot?.changePct ?? null;
 
-  const Tile = ({ icon, title, value, sub, warn }: { icon: IconName; title: string; value: string; sub?: string; warn?: boolean }) => (
+  const TEA_ICON: Partial<Record<IconName, string>> = { card: mdiCreditCardOutline, trend: mdiTrendingUp, grid: mdiChartBar, clock: mdiClockOutline };
+  const TEA_TONE_OF: Partial<Record<IconName, Tone>> = { card: 'brand', trend: 'sky', grid: 'ok', clock: 'warn' };
+  const Tile = ({ icon, title, value, sub, warn }: { icon: IconName; title: string; value: string; sub?: string; warn?: boolean }) => tea ? (
+    <StatTile mdi={TEA_ICON[icon] ?? mdiCreditCardOutline} tone={warn ? 'warn' : TEA_TONE_OF[icon] ?? 'brand'} label={title} value={value} sub={sub} />
+  ) : (
     <div className={`card flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3 ${warn ? 'border-amber-300' : ''}`}>
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand-dark"><Icon name={icon} size={22} /></span>
       <div className="min-w-0 max-w-full"><p className="text-sm leading-tight text-slate-600">{title}</p><p className="whitespace-nowrap text-[clamp(1.1rem,5.6vw,1.375rem)] font-bold tabular-nums sm:text-xl">{value}</p>{sub && <p className="text-xs text-slate-600">{sub}</p>}</div>

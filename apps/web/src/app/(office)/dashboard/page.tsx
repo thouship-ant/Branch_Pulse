@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DashboardCharts } from '@/components/DashboardCharts';
 import { DashboardOrders } from '@/components/DashboardOrders';
 import { HomeFocus } from '@/components/HomeFocus';
 import { TeaShopDashboard, TeaShopHomeOverview } from '@/components/TeaShopDashboard';
@@ -225,7 +224,6 @@ export default function Dashboard() {
 
       {/* Band 4: charts (own period filter; fetched lazily when scrolled near) */}
       <DashboardOrders />
-      <DashboardCharts />
     </div>
   );
 }

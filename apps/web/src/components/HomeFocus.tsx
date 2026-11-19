@@ -1,14 +1,28 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from './Icon';
+import { useIsTea } from './TeaParts';
 import { api } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { formatINR } from '@/lib/money';
 import { useSession } from '@/lib/session';
 import { useAttention } from '@/lib/useAttention';
+
+/** The "Tea and Snacks" pictures on a tea shop's Home: all of them at once, four to a row on a wide screen. */
+const TEA_SNACKS = [
+  { image: 'tea-1.jpg', title: 'Chai & cookies', caption: 'A little tea-time favourite' },
+  { image: 'bread-omelette.png', title: 'Bread omelette', caption: 'A filling tea-time bite' },
+  { image: 'tea-3.jpg', title: 'Iced tea', caption: 'A refreshing shop special' },
+  { image: 'tea-4.jpg', title: 'Ginger tea', caption: 'Fresh ginger with warm tea' },
+  { image: 'vada.jpg', title: 'Medhu Vada', caption: 'A crisp, savoury snack' },
+  { image: 'samosa.jpg', title: 'Samosa', caption: 'A golden, flaky favourite' },
+  { image: 'fries.jpg', title: 'French fries', caption: 'Hot and crispy' },
+  { image: 'tea-2.jpg', title: 'Freshly brewed', caption: 'Made for a relaxing break' },
+] as const;
 
 const lakh = (v: number) => (Math.abs(v) >= 100000 ? `₹${(v / 100000).toFixed(1)} L` : formatINR(String(v), { decimals: false }));
 const ageDays = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso.length === 10 ? `${iso}T00:00:00` : iso).getTime()) / 86_400_000)) : 0);
@@ -22,6 +36,7 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
   const { me, can } = useSession();
   const isTeaShop = me?.company?.businessType === 'TEA_SHOP';
   const att = useAttention();
+  const tea = useIsTea();
   const [pending, setPending] = useState<any[]>([]);
   const [awaiting, setAwaiting] = useState<any[]>([]);
   const [sales, setSales] = useState<{ dates: string[]; total: Array<string | null> } | null>(null);
@@ -65,13 +80,28 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
   const bars = sales ? sales.dates.map((d, i) => ({ d, v: sales.total[i] === null ? null : Number(sales.total[i]) })) : [];
   const max = Math.max(1, ...bars.map((b) => b.v ?? 0));
 
-  const card = (label: string, value: string, sub?: string, bad?: boolean) => (
-    <div className="card">
-      <p className="text-sm font-medium text-slate-600">{label}</p>
-      <p className={`mt-0.5 whitespace-nowrap text-[clamp(1.2rem,5.6vw,1.6rem)] font-extrabold tabular-nums ${bad ? 'text-red-700' : ''}`}>{value}</p>
-      {sub && <p className={`text-xs ${bad ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{sub}</p>}
-    </div>
-  );
+  // tea shop: the four figures are solid colour tiles with white text, as on the mobile app's Home
+  const TEA_HOME = ['#b65317', '#23933d', '#8436a8', '#bd3549'];
+  let tileNo = 0;
+  const card = (label: string, value: string, sub?: string, bad?: boolean) => {
+    const bg = TEA_HOME[tileNo++ % TEA_HOME.length];
+    if (tea) {
+      return (
+        <div className="rounded-2xl p-4 text-white" style={{ background: bg, boxShadow: 'var(--shadow-card)' }}>
+          <p className="text-sm font-medium text-white/90">{label}</p>
+          <p className="mt-0.5 whitespace-nowrap text-[clamp(1.2rem,5.6vw,1.6rem)] font-extrabold tabular-nums">{value}</p>
+          {sub && <p className="text-xs font-semibold text-white/90">{sub}</p>}
+        </div>
+      );
+    }
+    return (
+      <div className="card">
+        <p className="text-sm font-medium text-slate-600">{label}</p>
+        <p className={`mt-0.5 whitespace-nowrap text-[clamp(1.2rem,5.6vw,1.6rem)] font-extrabold tabular-nums ${bad ? 'text-red-700' : ''}`}>{value}</p>
+        {sub && <p className={`text-xs ${bad ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{sub}</p>}
+      </div>
+    );
+  };
   const branches = grid.length;
   const closedToday = grid.filter((g) => g.cells[6] === 'done').length;
 
@@ -105,7 +135,7 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
         </>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         <section className="card space-y-3" aria-label={t('attTitle')}>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">{t('attTitle')}</h3>
@@ -125,44 +155,25 @@ export function HomeFocus({ summary, periodLabel }: { summary: any; periodLabel:
           )}
         </section>
 
-        <section className="card space-y-2" aria-label={t('cSalesTrend')}>
-          <div className="flex items-baseline justify-between"><h3 className="text-lg font-bold">{t('attSales7')}</h3><span className="text-sm font-semibold tabular-nums text-slate-600">{lakh(bars.reduce((s, b) => s + (b.v ?? 0), 0))}</span></div>
-          <div className="flex h-36 items-end gap-2" role="img" aria-label={t('attSales7')}>
-            {bars.map((b) => (
-              <div key={b.d} className="flex h-full flex-1 flex-col justify-end" title={`${prettyDate(b.d)}: ${b.v === null ? t('attNotClosed') : formatINR(String(b.v), { decimals: false })}`}>
-                {b.v === null
-                  ? <div className="h-full rounded-md" style={{ background: 'repeating-linear-gradient(135deg, rgb(var(--slate-200)) 0 4px, transparent 4px 8px)' }} />
-                  : <div className="rounded-md bg-brand/70" style={{ height: `${Math.max(6, (b.v / max) * 100)}%` }} />}
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 text-center text-[11px] tabular-nums text-slate-600">{bars.map((b) => <span key={b.d} className="flex-1">{b.d.slice(8)}</span>)}</div>
-          <p className="flex items-center gap-2 text-xs text-slate-600"><span className="inline-block h-3 w-3 rounded-sm" style={{ background: 'repeating-linear-gradient(135deg, rgb(var(--slate-300)) 0 2px, transparent 2px 4px)' }} />{t('attNotClosedNote')}</p>
-        </section>
+
       </div>
 
-      {grid.length > 0 && unclosedCount > 0 && (
-        <section className="card space-y-3 overflow-x-auto" aria-label={t('attGridTitle')}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div><h3 className="text-lg font-bold">{unclosedCount} {t('attBranchesNotClosed')}</h3><p className="text-xs text-slate-600">{t('attGridNote')}</p></div>
-            <Link href="/closings" className="btn-secondary min-h-[38px] px-4 text-sm">{t('attBacklog')}</Link>
-          </div>
-          <table className="w-full min-w-[420px] text-sm" data-keep>
-            <thead><tr><th className="py-1 text-left">{t('branch')}</th>{days.map((d) => <th key={d} className="px-1 py-1 text-center">{d.slice(8)}</th>)}</tr></thead>
-            <tbody>
-              {grid.map((g) => (
-                <tr key={g.id}>
-                  <th scope="row" className="py-1 pr-3 text-left font-semibold">{g.name}</th>
-                  {g.cells.map((c, i) => (
-                    <td key={days[i]} className="px-1 py-1 text-center">
-                      <span title={prettyDate(days[i])} className={`grid h-7 place-items-center rounded-md text-xs font-bold ${c === 'open' ? 'bg-red-100 text-red-700' : c === 'wait' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-50 text-emerald-800'}`}>{c === 'open' ? '!' : c === 'wait' ? '◔' : '✓'}</span>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600"><span><b className="text-red-700">!</b> {t('attNotClosed')}</span><span><b className="text-amber-800">◔</b> {t('attWaitingYou')}</span><span><b className="text-emerald-800">✓</b> {t('attClosed')}</span></p>
+
+
+      {isTeaShop && (
+        <section className="space-y-2" aria-label="Tea and Snacks">
+          <h3 className="inline-block rounded-xl bg-surface/90 px-3 py-1 text-lg font-bold shadow-sm backdrop-blur-sm">Tea and Snacks</h3>
+          <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {TEA_SNACKS.map((item) => (
+              <li key={item.image} className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm">
+                <Image src={`/tea-shop/${item.image}`} alt={item.title} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />
+                <div className="absolute inset-x-0 bottom-0 bg-slate-950/65 px-3 py-2 text-white">
+                  <p className="text-sm font-extrabold leading-tight">{item.title}</p>
+                  <p className="text-xs text-slate-100">{item.caption}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </div>

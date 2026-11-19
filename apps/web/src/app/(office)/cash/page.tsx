@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { varianceTone } from '@/components/cash/parts';
 import { VarianceReport } from '@/components/cash/VarianceReport';
+import { mdiCheckCircleOutline, mdiClockOutline, mdiScaleBalance, mdiWalletOutline } from '@mdi/js';
 import { DateNav } from '@/components/DateNav';
+import { PageTitle, StatTile } from '@/components/TeaParts';
 import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -23,7 +25,7 @@ export default function CashPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">{t('cashRecon')}</h2>
+      <PageTitle mdi={mdiWalletOutline} title={t('cashRecon')} subtitle={t('cashSub')} />
       <div className="flex gap-1 border-b border-slate-200" role="tablist">
         {([['daily', t('tabDaily')], ['report', t('varianceReport')]] as Array<[Tab, string]>).map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
@@ -56,10 +58,14 @@ function Daily() {
       {!data ? <Skeleton className="h-64" /> : (
         <>
           <section aria-label="Summary" className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="card"><p className="text-sm text-slate-600">{t('expectedCash')}</p><p className="text-xl font-bold tabular-nums">{formatINR(tot.expected, { decimals: false })}</p></div>
-            <div className="card"><p className="text-sm text-slate-600">{t('actualCash')}</p><p className="text-xl font-bold tabular-nums">{formatINR(tot.actual, { decimals: false })}</p><p className="text-xs text-slate-500">{tot.branchesCounted} / {data.rows.length}</p></div>
-            <div className={`card ${dec(tot.netVariance).isNegative() ? 'border-red-300' : ''}`}><p className="text-sm text-slate-600">{t('netVariance')}</p><p className="text-xl font-bold tabular-nums">{dec(tot.netVariance).isNegative() ? '▼ ' : dec(tot.netVariance).isZero() ? '' : '▲ '}{formatINR(dec(tot.netVariance).abs(), { decimals: false })}</p><p className="text-xs text-slate-500">{tot.shortages} {t('shortage')} · {tot.surpluses} {t('surplus')}</p></div>
-            <div className={`card ${tot.awaitingApproval ? 'border-amber-300' : ''}`}><p className="text-sm text-slate-600">{t('awaiting')}</p><p className="text-xl font-bold tabular-nums">{tot.awaitingApproval}</p></div>
+            <StatTile mdi={mdiWalletOutline} tone="brand" label={t('expectedCash')} value={formatINR(tot.expected, { decimals: false })} />
+            <StatTile mdi={mdiCheckCircleOutline} tone="ok" label={t('actualCash')} value={formatINR(tot.actual, { decimals: false })} sub={`${tot.branchesCounted} / ${data.rows.length}`} />
+            <StatTile
+              mdi={mdiScaleBalance} tone={dec(tot.netVariance).isNegative() ? 'bad' : 'violet'} alert={dec(tot.netVariance).isNegative()} label={t('netVariance')}
+              value={`${dec(tot.netVariance).isNegative() ? '▼ ' : dec(tot.netVariance).isZero() ? '' : '▲ '}${formatINR(dec(tot.netVariance).abs(), { decimals: false })}`}
+              sub={`${tot.shortages} ${t('shortage')} · ${tot.surpluses} ${t('surplus')}`}
+            />
+            <StatTile mdi={mdiClockOutline} tone={tot.awaitingApproval ? 'warn' : 'ok'} label={t('awaiting')} value={String(tot.awaitingApproval)} />
           </section>
 
           <section className="card overflow-x-auto p-0" aria-label={t('cashRecon')}>

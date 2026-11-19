@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ClosingBacklog } from '@/components/ClosingBacklog';
+import { useIsTea } from '@/components/TeaParts';
+import { TeaClosingBoard } from '@/components/TeaClosingBoard';
 import { DateNav } from '@/components/DateNav';
 import { ErrorBox, Skeleton, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -18,12 +20,15 @@ export default function ClosingBoard() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'backlog' | 'day'>('backlog');
+  const tea = useIsTea();
 
   const load = useCallback(async () => {
     try { setRows(await api.get(`/closings?date=${date}`)); setError(null); } catch (e: any) { setError(e.message); }
   }, [date]);
   useEffect(() => { if (!ready) return; setRows(null); void load(); }, [load, ready]);
   useLive(load, ['DAILY_CLOSING', 'DAILY_SALES', 'CASH_RECONCILIATION']);
+
+  if (tea) return <TeaClosingBoard />;
 
   return (
     <div className="space-y-4">

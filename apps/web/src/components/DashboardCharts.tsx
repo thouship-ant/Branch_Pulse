@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { mdiAccountGroupOutline, mdiCalendarMonthOutline, mdiChartBar, mdiPackageVariantClosed, mdiShapeOutline, mdiStorefrontOutline, mdiTrashCanOutline, mdiTrendingUp } from '@mdi/js';
 import { api } from '@/lib/api';
 import { monthLong, monthShort, prettyDate, shortDate } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
@@ -119,7 +120,7 @@ export function DashboardCharts() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* 1. Daily sales trend */}
         <ChartCard
-          className="lg:col-span-2" title={t('cSalesTrend')} subtitle={rangeText} loading={loading} empty={trendEmpty}
+          className="lg:col-span-2" title={t('cSalesTrend')} tile={{ mdi: mdiChartBar, bg: '#2563eb' }} subtitle={rangeText} loading={loading} empty={trendEmpty}
           legend={trendSeries.map((s) => ({ name: s.name, color: s.color }))}
           actions={canSplit && (
             <div className="flex overflow-hidden rounded-card border border-slate-300 text-xs font-medium" role="radiogroup" aria-label={t('cSalesTrend')}>
@@ -140,7 +141,7 @@ export function DashboardCharts() {
 
         {/* 2. Branch-wise sales */}
         <ChartCard
-          title={t('cBranchSales')} subtitle={rangeText} loading={loading} empty={!bs || bs.every((r) => Number(r.sales) === 0)}
+          title={t('cBranchSales')} tile={{ mdi: mdiStorefrontOutline, bg: '#a4501f' }} subtitle={rangeText} loading={loading} empty={!bs || bs.every((r) => Number(r.sales) === 0)}
           table={bs && { head: [t('branch'), t('sales'), t('daysLabel')], rows: bs.map((r) => [pick(r.name, r.nameTa), money(Number(r.sales)), r.days]) }}
         >
           {bs && <BarList ariaLabel={t('cBranchSales')} fmt={money} color={SALES} rows={bs.map((r) => ({ key: r.locationId, label: pick(r.name, r.nameTa), value: Number(r.sales), detail: `${r.days} ${t('daysLabel')}` }))} />}
@@ -148,7 +149,7 @@ export function DashboardCharts() {
 
         {/* 3. Expense category breakdown */}
         <ChartCard
-          title={t('cExpenseCats')} subtitle={rangeText} loading={loading} empty={!cats || catRows.length === 0}
+          title={t('cExpenseCats')} tile={{ mdi: mdiShapeOutline, bg: '#d97706' }} subtitle={rangeText} loading={loading} empty={!cats || catRows.length === 0}
           table={cats && { head: [t('category'), t('amount'), '%'], rows: catRows.map((r) => [r.label, money(r.value), catTotal ? `${((r.value / catTotal) * 100).toFixed(1)}%` : '—']) }}
         >
           {cats && <BarList ariaLabel={t('cExpenseCats')} fmt={money} color={EXPENSES} rows={catRows.map((r) => ({ ...r, detail: catTotal ? `${((r.value / catTotal) * 100).toFixed(1)}% ${t('ofTotal')}` : undefined }))} />}
@@ -156,7 +157,7 @@ export function DashboardCharts() {
 
         {/* 4. Monthly sales */}
         <ChartCard
-          title={t('cMonthlySales')} subtitle={`${t('last12')} · ${t('monthToDate')}`} loading={loading} empty={!data['monthly-sales'] || monthCols('monthly-sales').every((c) => c.value === 0)}
+          title={t('cMonthlySales')} tile={{ mdi: mdiCalendarMonthOutline, bg: '#2563eb' }} subtitle={`${t('last12')} · ${t('monthToDate')}`} loading={loading} empty={!data['monthly-sales'] || monthCols('monthly-sales').every((c) => c.value === 0)}
           table={data['monthly-sales'] && { head: [t('sales'), t('amount')], rows: monthCols('monthly-sales').map((c) => [c.tipTitle, money(c.value)]) }}
         >
           {data['monthly-sales'] && <Columns cols={monthCols('monthly-sales')} fmt={money} axisFmt={moneyAxis} color={SALES} ariaLabel={t('cMonthlySales')} />}
@@ -164,7 +165,7 @@ export function DashboardCharts() {
 
         {/* 5. Monthly expenses */}
         <ChartCard
-          title={t('cMonthlyExpenses')} subtitle={`${t('last12')} · ${t('monthToDate')}`} loading={loading} empty={!data['monthly-expenses'] || monthCols('monthly-expenses').every((c) => c.value === 0)}
+          title={t('cMonthlyExpenses')} tile={{ mdi: mdiCalendarMonthOutline, bg: '#d97706' }} subtitle={`${t('last12')} · ${t('monthToDate')}`} loading={loading} empty={!data['monthly-expenses'] || monthCols('monthly-expenses').every((c) => c.value === 0)}
           table={data['monthly-expenses'] && { head: [t('expenses'), t('amount')], rows: monthCols('monthly-expenses').map((c) => [c.tipTitle, money(c.value)]) }}
         >
           {data['monthly-expenses'] && <Columns cols={monthCols('monthly-expenses')} fmt={money} axisFmt={moneyAxis} color={EXPENSES} ariaLabel={t('cMonthlyExpenses')} />}
@@ -172,7 +173,7 @@ export function DashboardCharts() {
 
         {/* 6. Branch-wise profitability: diverging around zero */}
         <ChartCard
-          className="lg:col-span-2" title={t('cBranchProfit')} subtitle={t('cMarginNote')} loading={loading} empty={!prof || prof.every((r) => r.marginPct === null)}
+          className="lg:col-span-2" title={t('cBranchProfit')} tile={{ mdi: mdiTrendingUp, bg: '#2f8f3a' }} subtitle={t('cMarginNote')} loading={loading} empty={!prof || prof.every((r) => r.marginPct === null)}
           table={prof && { head: [t('branch'), t('sales'), t('expenses'), t('net'), '%'], rows: prof.map((r) => [pick(r.name, r.nameTa), money(Number(r.sales)), money(Number(r.expenses) + Number(r.wastage)), money(Number(r.profit)), r.marginPct === null ? '—' : `${r.marginPct}%`]) }}
         >
           {prof && (
@@ -185,7 +186,7 @@ export function DashboardCharts() {
 
         {/* 7. Stock consumption: small multiples, one axis per item because units differ */}
         <ChartCard
-          className="lg:col-span-2" title={t('cStockUse')} subtitle={t('cStockNote')} loading={loading}
+          className="lg:col-span-2" title={t('cStockUse')} tile={{ mdi: mdiPackageVariantClosed, bg: '#0284c7' }} subtitle={t('cStockNote')} loading={loading}
           empty={!stock || stock.items.length === 0} emptyText={t('noConsumption')}
           table={stock && stock.items.length > 0 && {
             head: [t('dateLabel'), ...stock.items.map((i: any) => `${pick(i.name, i.nameTa)} (${UNIT[i.unit] ?? i.unit})`)],
@@ -218,7 +219,7 @@ export function DashboardCharts() {
 
         {/* 8a. Daily salary and allowance */}
         <ChartCard
-          className="lg:col-span-2" title={t('cSalaryTrend')} subtitle={rangeText} loading={loading}
+          className="lg:col-span-2" title={t('cSalaryTrend')} tile={{ mdi: mdiAccountGroupOutline, bg: '#a4501f' }} subtitle={rangeText} loading={loading}
           empty={!sal || sal.salary.every((v: string | null, i: number) => v === null && sal.allowance[i] === null)}
           legend={[{ name: t('salaryLabel'), color: SALARY }, { name: t('allowanceLabel'), color: ALLOWANCE }]}
           table={sal && {
@@ -239,7 +240,7 @@ export function DashboardCharts() {
 
         {/* 8. Wastage trend: value or % of sales, one axis at a time */}
         <ChartCard
-          className="lg:col-span-2" title={t('cWastage')} subtitle={rangeText} loading={loading} empty={!waste || waste.value.every((v: string | null) => v === null)}
+          className="lg:col-span-2" title={t('cWastage')} tile={{ mdi: mdiTrashCanOutline, bg: '#2f8f3a' }} subtitle={rangeText} loading={loading} empty={!waste || waste.value.every((v: string | null) => v === null)}
           actions={(
             <div className="flex overflow-hidden rounded-card border border-slate-300 text-xs font-medium" role="radiogroup" aria-label={t('cWastage')}>
               {(['value', 'pct'] as const).map((m) => (

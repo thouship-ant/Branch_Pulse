@@ -234,6 +234,7 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group
   { href: '/approvals', key: 'approvals', icon: 'tick', group: 'today', perm: 'expense:approve' },
   { href: '/closings', key: 'closings', icon: 'clock', group: 'today', perm: 'closing:view' },
   { href: '/cash', key: 'cash', icon: 'wallet', group: 'today', perm: 'cash:view' },
+  { href: '/reports', key: 'reportsTitle', icon: 'bars', group: 'today', perm: 'dashboard:view' },
   { href: '/orders', key: 'ordersTitle', icon: 'calendar', group: 'today', perm: 'order:view' },
   { href: '/expenses', key: 'expenses', icon: 'card', group: 'money', perm: 'expense:view' },
   { href: '/purchases', key: 'purchases', icon: 'bag', group: 'money', perm: 'purchase:view' },
@@ -250,7 +251,7 @@ const OFFICE_LINKS: Array<{ href: string; key: MessageKey; icon: IconName; group
 const MORE_TINT: Record<string, string> = {
   '/orders': 'bg-[#EFF6FF] text-[#3B82F6]', '/expenses': 'bg-[#FEF3C7] text-[#D97706]', '/purchases': 'bg-[#F3E8FF] text-[#9333EA]', '/pl': 'bg-[#DCFCE7] text-[#16A34A]',
   '/inventory': 'bg-[#E0F2FE] text-[#0284C7]', '/recipes': 'bg-[#FFE4E6] text-[#E11D48]', '/branches': 'bg-[#FEE2E2] text-[#DC2626]', '/employees': 'bg-[#EFF6FF] text-[#3B82F6]',
-  '/users': 'bg-[#F3E8FF] text-[#9333EA]', '/settings': 'bg-[#FEF3C7] text-[#D97706]', '/cash': 'bg-[#DCFCE7] text-[#16A34A]', '/closings': 'bg-[#FEF3C7] text-[#D97706]',
+  '/users': 'bg-[#F3E8FF] text-[#9333EA]', '/settings': 'bg-[#FEF3C7] text-[#D97706]', '/cash': 'bg-[#DCFCE7] text-[#16A34A]', '/reports': 'bg-[#E0F2FE] text-[#0284C7]', '/closings': 'bg-[#FEF3C7] text-[#D97706]',
 };
 const PHONE_SLOTS = 4; // the rest live under "More"
 
@@ -341,7 +342,16 @@ export function OfficeShell({ children }: { children: ReactNode }) {
       {/* sidebar: quiet and light - one flat colour, one marker for the open page; only its own menu area scrolls */}
       <aside className={`${collapsed ? 'side-collapsed ' : ''}fixed inset-y-0 left-0 z-20 hidden h-dvh flex-col border-r border-slate-200 bg-surface transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px] p-3' : 'w-[264px] p-4'}`}>
         <div className={`mb-4 flex h-11 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-1'}`}><Logo compact={collapsed} /></div>
-        <nav className="scroll-hover min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5" aria-label="Main">
+        <nav
+          className="scroll-hover min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5" aria-label="Main"
+          onScroll={(e) => {
+            // show the scrollbar while scrolling, hide it again shortly after
+            const el = e.currentTarget as HTMLElement & { __hide?: number };
+            el.dataset.scrolling = '1';
+            window.clearTimeout(el.__hide);
+            el.__hide = window.setTimeout(() => { delete el.dataset.scrolling; }, 700);
+          }}
+        >
           {GROUPS.map((g) => {
             const items = links.filter((l) => l.group === g.id);
             if (!items.length) return null;

@@ -223,10 +223,11 @@ html.dark.tea-shop body.app-background,
 ::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); border-radius: 8px; }
 :focus-visible { outline: 2px solid rgb(var(--brand) / 0.65); outline-offset: 2px; border-radius: 8px; }
 /* a scrollbar that only shows while the pointer is over the area (sidebar nav) */
-.scroll-hover { scrollbar-color: transparent transparent; }
-.scroll-hover:hover, .scroll-hover:focus-within { scrollbar-color: rgb(var(--slate-300)) transparent; }
+.scroll-hover { scrollbar-color: transparent transparent; transition: scrollbar-color 0.3s; }
 .scroll-hover::-webkit-scrollbar-thumb { background: transparent; }
-.scroll-hover:hover::-webkit-scrollbar-thumb, .scroll-hover:focus-within::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); }
+/* the sidebar's scrollbar shows only while it is being scrolled (data-scrolling is set by the nav's onScroll), then fades away */
+.scroll-hover[data-scrolling='1'] { scrollbar-color: rgb(var(--slate-300)) transparent; }
+.scroll-hover[data-scrolling='1']::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
 .tea-shop input[type='checkbox'] { accent-color: rgb(var(--brand)); }
 
@@ -415,3 +416,31 @@ main > * { animation: rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
   .dark [role='tablist'].tabs-pills > [role='tab'][aria-selected='true'] { background: #4a5bd8; color: #fff; box-shadow: 0 4px 10px -3px rgb(74 91 216 / 0.5); }
   .dark.tea-shop [role='tablist'].tabs-pills > [role='tab'][aria-selected='true'] { background: rgb(var(--brand)); color: rgb(var(--on-brand)); box-shadow: 0 4px 10px -3px rgb(var(--brand) / 0.5); }
 }
+
+/* ---- tea shop: a soft light shade behind page titles (they sit on the photo background), and the mobile app's tinted summary tiles ---- */
+html.tea-shop h2.text-2xl {
+  display: inline-block; padding: 14px 44px 14px 24px; border-radius: 22px; font-size: clamp(24px, 3vw, 34px); font-weight: 800; line-height: 1.2;
+  color: #32190f; background: linear-gradient(90deg, #fff0df 0%, #fff0df 70%, rgba(255, 240, 223, 0) 100%);
+}
+.dark.tea-shop h2.text-2xl { color: rgb(var(--ink)); background: linear-gradient(90deg, rgb(var(--surface)) 0%, rgb(var(--surface)) 70%, rgb(var(--surface) / 0) 100%); }
+/* the page title block (PageTitle): cream up to 30% of the width, fading out by 50% - same as the Home greeting */
+.page-hero {
+  display: flex; flex-direction: column; justify-content: center; min-height: 104px; padding: 20px 30px; border-radius: 22px; color: #32190f;
+  background: linear-gradient(90deg, #fff0df 0%, #fff0df 30%, rgba(255, 240, 223, 0) 50%);
+}
+.dark .page-hero { color: rgb(var(--ink)); background: linear-gradient(90deg, rgb(var(--surface)) 0%, rgb(var(--surface)) 30%, rgb(var(--surface) / 0) 50%); }
+html.tea-shop:not(.dark) .card:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])) {
+  --tile-bg: #fdecc4; --tile-fg: #a4501f;
+  background: var(--tile-bg); border-color: rgb(255 255 255 / 0.8);
+}
+html.tea-shop:not(.dark) .card:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])):nth-child(4n+2) { --tile-bg: #d6f0d9; --tile-fg: #2e9c5b; }
+html.tea-shop:not(.dark) .card:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])):nth-child(4n+3) { --tile-bg: #dce6fb; --tile-fg: #1d4fb8; }
+html.tea-shop:not(.dark) .card:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])):nth-child(4n+4) { --tile-bg: #ebd9f7; --tile-fg: #6b2a98; }
+html.tea-shop:not(.dark) .card.border-red-300:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])) { --tile-bg: #fbd9d6; --tile-fg: #d9443d; }
+html.tea-shop:not(.dark) .card.border-amber-300:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])) { --tile-bg: #fdecc4; --tile-fg: #d88a08; }
+html.tea-shop:not(.dark) .card:is(:has(> span[class*='h-11'][class*='w-11']), :has(> span[class*='h-12'][class*='w-12'])) > span:first-child {
+  background: var(--tile-fg) !important; color: #fff !important; border-radius: 9999px;
+}
+
+/* tab rows with count badges (Approvals): the badges sit on the tabs' top corners, so the row must not clip them */
+[role='tablist'].tabs-pills { overflow: visible; padding-top: 14px; }

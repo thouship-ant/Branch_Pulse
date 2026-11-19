@@ -50,17 +50,6 @@ export function TeaShopHomeOverview({ summary, pendingCount, exceptionCount, per
       <div className={styles.homeHero}>
         <h1>{greeting}, {me?.fullName}<span aria-hidden> 👋</span></h1>
         <p>{prettyDate(today)} · {closedCount} / {branchCount} {t('attClosedToday')}</p>
-        <div className={styles.teaShopBeans} aria-hidden>● · ●</div>
-        <div className={styles.teaShopCup} aria-hidden>
-          <span className={styles.cupSteam}>♨</span>
-          <div className={styles.cupBowl}>
-            <span className={styles.cupLatteArt}>♡</span>
-            <strong className={styles.cupBrand}>{me?.company?.businessName || me?.company?.name || ''}</strong>
-            <span className={styles.cupCafe}>CAFÉ</span>
-          </div>
-          <span className={styles.cupHandle} />
-          <span className={styles.cupSaucer} />
-        </div>
       </div>
       {(pendingCount > 0 || exceptionCount > 0) && (
         <div className={styles.homeWarning} role="status">

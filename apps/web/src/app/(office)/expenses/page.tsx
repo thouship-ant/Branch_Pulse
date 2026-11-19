@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { mdiCreditCardOutline } from '@mdi/js';
+import { PageTitle } from '@/components/TeaParts';
 import { CategoryManager } from '@/components/expenses/CategoryManager';
 import { ExpenseLedger } from '@/components/expenses/ExpenseLedger';
 import { ExpenseOverview } from '@/components/expenses/ExpenseOverview';
@@ -21,7 +23,7 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">{t('expenses')}</h2>
+      <PageTitle mdi={mdiCreditCardOutline} title={t('expenses')} subtitle={t('expSub')} />
       <div className="flex gap-1 overflow-x-auto border-b border-slate-200" role="tablist">
         {tabs.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}

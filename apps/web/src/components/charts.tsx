@@ -10,6 +10,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useT } from '@/lib/i18n';
+import { MdiIcon } from './Icon';
+import { useIsTea } from './TeaParts';
 
 // ------------------------------------------------------------------ formatting
 const trim = (n: number) => String(Math.round(n * 10) / 10).replace(/\.0$/, '');
@@ -99,21 +101,27 @@ function useTip() {
 
 // ------------------------------------------------------------------ card, legend, table view
 export function ChartCard({
-  title, subtitle, legend, table, children, loading, empty, emptyText, actions, className = '',
+  title, subtitle, legend, table, children, loading, empty, emptyText, actions, className = '', tile,
 }: {
   title: string; subtitle?: string;
+  /** tea shop: an icon tile in front of the title, as on the mobile app's chart cards */
+  tile?: { mdi: string; bg: string };
   legend?: Array<{ name: string; color: string; kind?: 'line' | 'box' }>;
   table?: { head: string[]; rows: Array<Array<string | number>> };
   children: ReactNode; loading?: boolean; empty?: boolean; emptyText?: string; actions?: ReactNode; className?: string;
 }) {
   const { t } = useT();
+  const tea = useIsTea() && !!tile;
   const [view, setView] = useState<'chart' | 'table'>('chart');
   return (
-    <section className={`card flex flex-col gap-3 ${className}`} aria-label={title}>
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="font-semibold">{title}</h3>
-          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+    <section className={`card flex flex-col gap-3 ${tea ? '!rounded-3xl' : ''} ${className}`} aria-label={title}>
+      <header className={`flex flex-wrap justify-between gap-2 ${tea ? 'items-center' : 'items-start'}`}>
+        <div className="flex min-w-0 items-center gap-3">
+          {tea && tile ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-white" style={{ background: tile.bg }} aria-hidden><MdiIcon path={tile.mdi} size={25} /></span> : null}
+          <div className="min-w-0">
+            <h3 className={tea ? 'text-lg font-extrabold leading-tight' : 'font-semibold'}>{title}</h3>
+            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {actions}

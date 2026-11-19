@@ -203,6 +203,12 @@ const en = {
   noUnits: 'No units yet.', approvalLimitsHint: 'The most an amount can be for someone in this role to approve alone.', entityTypeLabel: 'Type',
   maxAmountLabel: 'Limit', limitSaved: 'Limit saved', etExpense: 'Expense', etPurchase: 'Purchase', etAdvance: 'Advance', etWastage: 'Wastage',
   etCashVariance: 'Cash variance', bizTeaShop: 'Tea shop', bizHotel: 'Hotel', bizBakery: 'Bakery', bizOther: 'Other', roleInUseHint: 'has active users',
+  tcTitle: 'Branch Closings', tcSub: 'Track and manage daily branch closings', closedToday: 'Closed today', openBacklogBtn: 'Open closing backlog',
+  closeStatusTitle: 'Branch closing status', lastNDays: 'Last {n} days', closingsByDay: 'Closings by day',
+  cashSub: 'Daily cash reconciliation and variances', expSub: 'Track spending, approvals and categories',
+  apSubExp: 'Expenses waiting for your decision', apSubCl: 'Daily closings waiting for your decision', apSubBd: 'Requests to enter a missed day',
+  missedDayWord: 'Missed day', askedBy: 'Asked by', viewClosing: 'View closing', noReceiptAbove: 'No receipt above ₹500',
+  reportsTitle: 'Reports', reportsSub: 'Sales, closings and charts across all branches',
 };
 
 const ta: typeof en = {
@@ -400,6 +406,12 @@ const ta: typeof en = {
   noUnits: 'இன்னும் அலகுகள் இல்லை.', approvalLimitsHint: 'இந்தப் பாத்திரத்தில் உள்ளவர் தனியாக அனுமதிக்கக்கூடிய அதிகபட்ச தொகை.', entityTypeLabel: 'வகை',
   maxAmountLabel: 'வரம்பு', limitSaved: 'வரம்பு சேமிக்கப்பட்டது', etExpense: 'செலவு', etPurchase: 'கொள்முதல்', etAdvance: 'முன்பணம்', etWastage: 'வீண்விரயம்',
   etCashVariance: 'பண வேறுபாடு', bizTeaShop: 'தேநீர் கடை', bizHotel: 'ஹோட்டல்', bizBakery: 'பேக்கரி', bizOther: 'மற்றவை', roleInUseHint: 'செயலில் பயனர்கள் உள்ளனர்',
+  tcTitle: 'கிளை நாள் முடிவுகள்', tcSub: 'தினசரி கிளை முடிவுகளைக் கண்காணித்து நிர்வகிக்கவும்', closedToday: 'இன்று முடிந்தவை', openBacklogBtn: 'நிலுவை முடிவுகளைத் திற',
+  closeStatusTitle: 'கிளை முடிவு நிலை', lastNDays: 'கடந்த {n} நாட்கள்', closingsByDay: 'நாள் வாரியான முடிவுகள்',
+  cashSub: 'தினசரி ரொக்கப் பொருத்தம் மற்றும் வேறுபாடுகள்', expSub: 'செலவுகள், ஒப்புதல்கள், வகைகளைக் கண்காணிக்கவும்',
+  apSubExp: 'உங்கள் முடிவுக்குக் காத்திருக்கும் செலவுகள்', apSubCl: 'உங்கள் முடிவுக்குக் காத்திருக்கும் நாள் முடிவுகள்', apSubBd: 'தவறிய நாளைப் பதிவிடக் கோரிக்கைகள்',
+  missedDayWord: 'தவறிய நாள்', askedBy: 'கேட்டவர்', viewClosing: 'முடிவைப் பார்', noReceiptAbove: '₹500க்கு மேல் ரசீது இல்லை',
+  reportsTitle: 'அறிக்கைகள்', reportsSub: 'அனைத்து கிளைகளுக்கான விற்பனை, நாள் முடிவுகள் மற்றும் வரைபடங்கள்',
 };
 
 export type MessageKey = keyof typeof en;

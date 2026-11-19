@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text as PlainText, TextInput, View } from 'react-native';
-import { ThemeBackdrop } from '@/components/ThemeBackdrop';
+import { ThemeBackdrop, ThemeHeaderBg, useBackdropGeometry } from '@/components/ThemeBackdrop';
 import { Text } from '@/components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ErrorBox, Field, Muted, Sheet } from '@/components/ui';
@@ -37,6 +37,7 @@ export default function LoginScreen() {
 function LoginForm() {
   const th = useTheme();
   const insets = useSafeAreaInsets();
+  const geo = useBackdropGeometry();
   const { lang, setLang } = useLang();
   const { me, identify, loginWithPassword, requestOtp, verifyOtp } = useSession();
   const [step, setStep] = useState<Step>('id');
@@ -109,10 +110,12 @@ function LoginForm() {
   return (
     <View style={{ flex: 1, width: '100%', backgroundColor: th.bg }}>
       <ThemeBackdrop />
+      {/* the tea-cup header, with no logo or name (nobody is signed in yet) */}
+      <ThemeHeaderBg emblem={false} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingTop: geo.barH + 12, paddingBottom: insets.bottom + 20 }}
           showsVerticalScrollIndicator={false}
         >
         <View style={{ width: '100%', maxWidth: 480, alignSelf: 'center', backgroundColor: th.dark ? 'rgba(40,26,18,0.94)' : 'rgba(255,250,244,0.94)', borderRadius: 28, borderWidth: th.dark ? 1 : 0, borderColor: th.border, padding: 20, gap: 22, shadowColor: '#47210e', shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
@@ -131,14 +134,14 @@ function LoginForm() {
                 <View style={{ gap: 6 }}>
                   <Text style={{ color: th.muted, fontSize: 13, fontWeight: '600' }}>Mobile number</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, borderRadius: 12, borderWidth: 1.5, borderColor: identifier ? th.brand : th.border, backgroundColor: th.fieldBg, overflow: 'hidden' }}>
-                    <View style={{ paddingHorizontal: 14, alignSelf: 'stretch', justifyContent: 'center', backgroundColor: th.brandLight, borderRightWidth: 1, borderRightColor: th.border }}>
-                      <Text style={{ color: th.ink, fontWeight: '800', fontSize: 16 }}>+91</Text>
+                    <View style={{ minWidth: 62, flexShrink: 0, paddingHorizontal: 12, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', backgroundColor: th.brandLight, borderRightWidth: 1, borderRightColor: th.border }}>
+                      <Text numberOfLines={1} style={{ color: th.ink, fontWeight: '800', fontSize: 16, flexShrink: 0 }}>+91</Text>
                     </View>
                     <TextInput
                       value={identifier} onChangeText={(v) => setIdentifier(v.replace(/\D/g, '').slice(0, 10))}
                       keyboardType="number-pad" maxLength={10} textContentType="telephoneNumber" autoComplete="tel" autoFocus
                       placeholder="10-digit number" placeholderTextColor={th.faint} onSubmitEditing={onIdentify} returnKeyType="next"
-                      style={{ flex: 1, paddingHorizontal: 14, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: th.ink, paddingVertical: 10 }}
+                      style={{ flex: 1, minWidth: 0, paddingHorizontal: 14, fontSize: 18, fontWeight: '600', letterSpacing: 1, color: th.ink, paddingVertical: 10 }}
                     />
                   </View>
                 </View>
