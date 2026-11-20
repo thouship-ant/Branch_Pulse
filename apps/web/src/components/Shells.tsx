@@ -425,7 +425,7 @@ export function OfficeShell({ children }: { children: ReactNode }) {
                   )}
                   <span className="hidden sm:block"><ThemeToggle onDark /></span>
                   <span className="hidden sm:block"><LangSwitch onDark /></span>
-                  <AccountMenu me={me}><span className="flex h-9 w-9 items-center justify-center"><Avatar name={me.fullName} className="bg-white text-[#4b210d]" /></span></AccountMenu>
+                  <span className="md:hidden"><AccountMenu me={me}><span className="flex h-9 w-9 items-center justify-center"><Avatar name={me.fullName} className="bg-white text-[#4b210d]" /></span></AccountMenu></span>
                 </div>
               </div>
               <TeaShopArtwork brandName={me.company.businessName || me.company.name} />

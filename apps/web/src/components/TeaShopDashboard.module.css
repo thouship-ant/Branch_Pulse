@@ -468,12 +468,14 @@
     padding: 12px 16px;
   }
 
-  .teaShopTopline { display: block; }
-  .teaShopBrandLockup { gap: 12px; }
+  .teaShopTopline { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .teaShopBrandLockup { gap: 12px; flex: 1 1 auto; min-width: 0; }
   .teaShopBrandMark { width: 56px; height: 56px; flex-basis: 56px; outline-offset: 2px; }
   .teaShopBrandCopy h1 { font-size: 20px; }
   .teaShopBrandCopy p { font-size: 14px; }
-  .teaShopActions { position: absolute; top: 68px; left: 0; gap: 6px; }
+  .teaShopActions { position: static; gap: 6px; margin-top: 2px; }
+  .teaShopDateControl button { min-height: 36px; gap: 5px; padding: 0 10px; font-size: 13px; }
+  .teaShopDateControl button svg { width: 15px; height: 15px; }
   .teaShopCup { right: 3%; transform: scale(.72); transform-origin: bottom right; }
   .teaShopBeans { right: 25%; bottom: 30px; }
   .teaShopBranchHero { height: 128px; padding: 12px 16px; }
@@ -532,4 +534,15 @@
   .homeStatCopy > span { font-size: clamp(13px, 1.15vw, 17px); }
   .homeStatCopy strong { margin-top: 10px; font-size: clamp(22px, 2.1vw, 32px); }
   .homeStatDecoration { right: 8px; bottom: 6px; width: 64px; height: 64px; }
+}
+
+/* wide screens: "All figures" shows four cards in a row (tiles tighten so amounts still fit) */
+@media (min-width: 1100px) {
+  .metricsGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .metricCard { min-height: 120px; gap: 12px; padding: 16px 14px; border-radius: 22px; }
+  .metricIcon { width: 52px; height: 52px; flex-basis: 52px; border-radius: 16px; }
+  .metricIcon svg { width: 26px; height: 26px; }
+  .metricTitle { font-size: clamp(14px, 1.1vw, 17px); }
+  .metricAmount { font-size: clamp(22px, 1.9vw, 28px); }
+  .metricChevron { width: 16px; }
 }

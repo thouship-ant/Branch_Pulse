@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { AdvancesPanel, AttendancePanel, EmployeeList } from '@/components/Employees';
-import { Loading, Screen, SegTabs } from '@/components/ui';
+import { Heading, Loading, PageTitle, Screen, SegTabs } from '@/components/ui';
 import { useBranch } from '@/lib/session';
+import { useIsTeaShop } from '@/lib/theme';
 
 type Tab = 'attendance' | 'advances' | 'team';
 
@@ -9,9 +10,11 @@ type Tab = 'attendance' | 'advances' | 'team';
 export default function BranchStaffScreen() {
   const { locationId } = useBranch();
   const [tab, setTab] = useState<Tab>('attendance');
+  const teaShop = useIsTeaShop();
   if (!locationId) return <Screen><Loading /></Screen>;
   return (
     <Screen>
+      {teaShop ? <PageTitle icon="account-group-outline" title="Employee" subtitle="Attendance, advances and your team" /> : <Heading onBlue title="Employee" />}
       <SegTabs value={tab} onChange={setTab} tabs={[{ key: 'attendance', label: 'Attendance' }, { key: 'advances', label: 'Advances' }, { key: 'team', label: 'Team' }]} />
       {tab === 'attendance' ? <AttendancePanel fixedLocationId={locationId} /> : tab === 'advances' ? <AdvancesPanel fixedLocationId={locationId} /> : <EmployeeList fixedLocationId={locationId} />}
     </Screen>
