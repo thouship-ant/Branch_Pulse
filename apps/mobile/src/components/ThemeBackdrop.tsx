@@ -25,7 +25,7 @@ const FRAME_CUP_SIZE = 85 / 1024;
 // (header band, the whole cup and saucer) and the page carries on with the same picture
 const FRAME_VISIBLE = 0.178;
 const FRAME_ZOOM = 1.0; // the picture at the screen's width: the header is the same height as the standard themed header
-const FRAME_SHIFT = 0.15; // the picture sits this much (of the width) below the status bar, so the cup is under the header buttons; the strip above is its own top row carried upward, so there is no seam
+const FRAME_SHIFT = 0.09; // the picture sits this much (of the width) below the status bar, so the cup is under the header buttons; the strip above is its own top row carried upward, so there is no seam
 const BOTTOM_SHARE = 0.25; // the leaves + tagline live in the last quarter of the background picture
 
 /**
