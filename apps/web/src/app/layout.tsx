@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Lora, Noto_Sans_Tamil, Nunito, Poppins, Roboto } from 'next/font/google';
+import { Inter, Noto_Sans_Tamil } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { PwaRegister } from '@/components/PwaRegister';
@@ -11,11 +11,6 @@ import { THEME_SCRIPT, ThemeProvider } from '@/lib/theme';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-// the other typefaces a company can pick (loaded only when used)
-const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--font-poppins', display: 'swap', preload: false });
-const nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito', display: 'swap', preload: false });
-const roboto = Roboto({ subsets: ['latin'], weight: ['400', '500', '700', '900'], variable: '--font-roboto', display: 'swap', preload: false });
-const lora = Lora({ subsets: ['latin'], variable: '--font-lora', display: 'swap', preload: false });
 const tamil = Noto_Sans_Tamil({ subsets: ['tamil'], variable: '--font-tamil', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -35,7 +30,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // suppressHydrationWarning: the inline script adds the "dark" class before React hydrates
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${tamil.variable} ${poppins.variable} ${nunito.variable} ${roboto.variable} ${lora.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${tamil.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

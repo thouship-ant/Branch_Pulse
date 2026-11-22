@@ -5,7 +5,7 @@ import { connectLive, disconnectLive, useLive } from './live';
 import { api, ApiError, refreshSession, setAccessToken, setAuthLostHandler } from './api';
 import { clearLocalData } from './outbox';
 import { useTheme } from './theme';
-import { fontCss, sizePx } from './typography';
+import { fontCss, loadFont, sizePx } from './typography';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
 
@@ -80,7 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     const font = me?.company?.businessFont;
     const size = me?.company?.businessFontSize;
-    if (font && font !== 'INTER') root.style.setProperty('--app-font', fontCss(font)); else root.style.removeProperty('--app-font');
+    if (font && font !== 'INTER') { loadFont(font); root.style.setProperty('--app-font', fontCss(font)); } else root.style.removeProperty('--app-font');
     if (size && size !== 'MEDIUM') root.style.fontSize = `${sizePx(size)}px`; else root.style.removeProperty('font-size');
   }, [me?.company?.businessFont, me?.company?.businessFontSize]);
   // the company's application frame (background picture), when it has one

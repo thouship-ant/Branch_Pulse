@@ -9,7 +9,7 @@ import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { passwordOk } from '@/lib/password';
 import { useSession } from '@/lib/session';
-import { FONT_OPTIONS, SIZE_OPTIONS, fontCss, sizePx } from '@/lib/typography';
+import { FONT_OPTIONS, SIZE_OPTIONS, fontCss, loadFont, sizePx } from '@/lib/typography';
 
 interface Company {
   id: string; code: string; name: string; address: string | null; gstin: string | null; fssai: string | null; email: string | null; status: string;
@@ -344,6 +344,7 @@ function CompanyForm({ company, onSaved }: { company?: Company; onSaved: () => v
   const [logoError, setLogoError] = useState<string | null>(null);
   const [font, setFont] = useState(company?.businessFont ?? 'INTER');
   const [fontSize, setFontSize] = useState(company?.businessFontSize ?? 'MEDIUM');
+  useEffect(() => { loadFont(font); }, [font]); // the sample line shows the chosen typeface
   const [logoOpen, setLogoOpen] = useState(false);
   const [frameOpen, setFrameOpen] = useState(false);
   const [frameError, setFrameError] = useState<string | null>(null);
