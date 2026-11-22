@@ -5,7 +5,7 @@ import { Text } from './Text';
 import { ACCENT, type AccentName, Banner, Button, Card, Heading, PageTitle, Screen, SelectField, Sheet, ThemeColorSwitch, ThemeSwitch, ToggleRow } from '@/components/ui';
 import { useAvatar } from '@/lib/avatar';
 import { roleLabel } from '@/lib/labels';
-import { pushEnabled, sendTestPush, setPushEnabled } from '@/lib/push';
+import { pushEnabled, pushProblem, registerForPush, sendTestPush, setPushEnabled } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { useLang } from '@/lib/language';
 import { useIsTeaShop, useTheme } from '@/lib/theme';
@@ -30,13 +30,19 @@ export function Account() {
   async function toggle(on: boolean) {
     setPush(on); setNote(null);
     const token = await setPushEnabled(on);
-    if (on && !token) setNote({ tone: 'warn', text: 'Notifications could not be turned on. Allow them for Branch Pulse in the phone settings.' });
+    if (on && !token) setNote({ tone: 'warn', text: `Notifications could not be turned on. ${pushProblem() ?? 'Allow them for Branch Pulse in the phone settings.'}` });
   }
   async function test() {
     setBusy(true); setNote(null);
     try {
-      const r = await sendTestPush();
-      setNote(r.sent > 0 ? { tone: 'ok', text: 'Test sent. It should arrive in a few seconds.' } : { tone: 'warn', text: 'No phone is registered for notifications yet.' });
+      let r = await sendTestPush();
+      if (r.sent === 0) {
+        // nothing registered yet: try to register this phone now, and say why if it cannot be done
+        const token = await registerForPush();
+        if (token) r = await sendTestPush();
+        else { setNote({ tone: 'warn', text: `No phone is registered for notifications yet. ${pushProblem() ?? ''}`.trim() }); setBusy(false); return; }
+      }
+      setNote(r.sent > 0 ? { tone: 'ok', text: 'Test sent. It should arrive in a few seconds.' } : { tone: 'warn', text: 'The server has no active phone for you, or notifications are switched off on the server.' });
     } catch (e) { setNote({ tone: 'warn', text: e instanceof Error ? e.message : 'Could not send the test' }); }
     setBusy(false);
   }

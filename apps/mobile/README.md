@@ -59,7 +59,7 @@ The app registers each signed-in phone with the API (`POST /push/register`) and 
 One-time setup (needs your Expo account):
 
 1. `cd apps/mobile && npx eas init` - writes `extra.eas.projectId` into `app.json`. Without it the app cannot get a push token.
-2. **Android:** add a Firebase project, put its `google-services.json` in `apps/mobile` and reference it as `android.googleServicesFile` in `app.json`, then upload the FCM v1 service-account key to Expo (`eas credentials`).
+2. **Android:** add a Firebase project with an Android app whose package is `pro.antstockpulse.branchpulse`, and put its `google-services.json` in `apps/mobile` (`app.config.js` picks it up; on EAS you can instead set the file variable `GOOGLE_SERVICES_JSON`). Then upload the FCM v1 service-account key to Expo (`eas credentials` > Android > Google Service Account). **Both are needed, and the APK must be rebuilt after adding the file**: a build made without `google-services.json` can never get a push token. If registration fails, **Account > Send a test notification** now says why.
 3. **iOS:** `eas build` sets up the push key for you.
 4. Notifications need a real phone and a development or production build (Expo Go on Android cannot receive remote pushes). Test from **Account > Send a test notification**.
 

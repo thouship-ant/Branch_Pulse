@@ -115,7 +115,9 @@ export class PushService {
       body: JSON.stringify(batch),
     });
     if (!res.ok) throw new Error(`Expo push service answered ${res.status}`);
-    const body = (await res.json()) as { data?: Array<{ status: string; details?: { error?: string } }> };
+    const body = (await res.json()) as { data?: Array<{ status: string; message?: string; details?: { error?: string } }> };
+    // Expo accepted the request but could not hand a message on (for example InvalidCredentials = the FCM key is missing or wrong in EAS)
+    for (const t of body.data ?? []) if (t.status === 'error') this.log.warn(`Push not delivered: ${t.details?.error ?? 'error'} - ${t.message ?? ''}`);
     // a phone that uninstalled the app or revoked the token: stop sending to it
     const dead = (body.data ?? []).flatMap((t, i) => (t.status === 'error' && t.details?.error === 'DeviceNotRegistered' ? [batch[i].to] : []));
     if (dead.length) {
