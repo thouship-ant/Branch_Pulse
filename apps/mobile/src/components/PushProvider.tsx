@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { api, ApiError } from '@/lib/api';
 import { tAlert } from '@/lib/i18n';
-import { ACTION, registerForPush, setupNotifications, type PushData } from '@/lib/push';
+import { ACTION, notificationPermission, openNotificationSettings, registerForPush, setupNotifications, shouldExplainOnce, type PushData } from '@/lib/push';
 import { useSession } from '@/lib/session';
 
 /**
@@ -20,7 +20,19 @@ export function PushProvider() {
   useEffect(() => {
     if (Platform.OS === 'web') return;
     void setupNotifications();
-    if (me && !me.isSuper) void registerForPush();
+    if (me && !me.isSuper) {
+      void registerForPush().then(async (token) => {
+        if (token) return;
+        // refused earlier and the system will not ask again: explain once and take them to the phone's settings
+        const p = await notificationPermission();
+        if (p.status === 'denied' && !p.canAskAgain && (await shouldExplainOnce())) {
+          tAlert('Turn on notifications', 'Branch Pulse sends approval requests, results and closing reminders. Allow notifications in the phone settings.', [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Open settings', onPress: () => void openNotificationSettings() },
+          ]);
+        }
+      });
+    }
   }, [me?.id]);
 
   useEffect(() => {

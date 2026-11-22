@@ -5,7 +5,8 @@ import { Text } from './Text';
 import { ACCENT, type AccentName, Banner, Button, Card, Heading, PageTitle, Screen, SelectField, Sheet, ThemeColorSwitch, ThemeSwitch, ToggleRow } from '@/components/ui';
 import { useAvatar } from '@/lib/avatar';
 import { roleLabel } from '@/lib/labels';
-import { pushEnabled, pushProblem, registerForPush, sendTestPush, setPushEnabled } from '@/lib/push';
+import { tAlert } from '@/lib/i18n';
+import { notificationPermission, openNotificationSettings, pushEnabled, pushProblem, registerForPush, sendTestPush, setPushEnabled } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { useLang } from '@/lib/language';
 import { useIsTeaShop, useTheme } from '@/lib/theme';
@@ -30,6 +31,12 @@ export function Account() {
   async function toggle(on: boolean) {
     setPush(on); setNote(null);
     const token = await setPushEnabled(on);
+    if (on && !token) {
+      const p = await notificationPermission();
+      if (p.status === 'denied' && !p.canAskAgain) {
+        tAlert('Notifications are blocked', 'Allow notifications for Branch Pulse in the phone settings, then come back.', [{ text: 'Not now', style: 'cancel' }, { text: 'Open settings', onPress: () => void openNotificationSettings() }]);
+      }
+    }
     if (on && !token) setNote({ tone: 'warn', text: `Notifications could not be turned on. ${pushProblem() ?? 'Allow them for Branch Pulse in the phone settings.'}` });
   }
   async function test() {

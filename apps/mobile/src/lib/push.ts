@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from '@/lib/storage';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { api } from './api';
 
 /**
@@ -83,7 +83,7 @@ export async function registerForPush(): Promise<string | null> {
   try {
     await setupNotifications();
     let { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') status = (await Notifications.requestPermissionsAsync()).status;
+    if (status !== 'granted') status = (await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowBadge: true, allowSound: true } })).status; // the system asks the person here
     if (status !== 'granted') { problem = 'Notifications are blocked for Branch Pulse. Allow them in the phone settings.'; return null; }
     // the Expo (EAS) project id: `eas init` writes it into app.json (extra.eas.projectId)
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? (Constants as any).easConfig?.projectId;
@@ -112,3 +112,23 @@ export async function unregisterPush() {
 }
 
 export const sendTestPush = () => api.post<{ sent: number }>('/push/test');
+
+/** 'granted' | 'denied' | 'undetermined' (never asked) - and whether the system will still show its permission question. */
+export async function notificationPermission(): Promise<{ status: string; canAskAgain: boolean }> {
+  if (!supported) return { status: 'unavailable', canAskAgain: false };
+  const p = await Notifications.getPermissionsAsync();
+  return { status: p.status, canAskAgain: p.canAskAgain };
+}
+
+/** The phone's own settings page for this app (where notifications can be switched on after they were refused). */
+export const openNotificationSettings = () => Linking.openSettings();
+
+const ASKED_KEY = 'bp_push_asked';
+/** True the first time only: used to explain once, in the app's words, why notifications are wanted and where to switch them on. */
+export async function shouldExplainOnce(): Promise<boolean> {
+  try {
+    if ((await SecureStore.getItemAsync(ASKED_KEY)) === '1') return false;
+    await SecureStore.setItemAsync(ASKED_KEY, '1');
+    return true;
+  } catch { return false; }
+}
