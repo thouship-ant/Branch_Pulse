@@ -39,7 +39,7 @@ BEGIN
         ('user_roles', 'user_id', 'users'), ('user_roles', 'role_id', 'roles'), ('user_locations', 'user_id', 'users'),
         ('role_permissions', 'role_id', 'roles'), ('sessions', 'user_id', 'users'), ('sync_operations', 'user_id', 'users'),
         ('notification_deliveries', 'notification_id', 'notifications'), ('notification_deliveries', 'user_id', 'users'),
-        ('purchase_items', 'purchase_id', 'purchases'), ('recipe_items', 'recipe_id', 'recipes'),
+        ('purchase_items', 'purchase_id', 'purchases'), ('order_payments', 'order_id', 'orders'), ('recipe_items', 'recipe_id', 'recipes'),
         ('recipe_cost_snapshots', 'recipe_id', 'recipes'), ('supplier_items', 'supplier_id', 'suppliers'),
         ('stock_count_items', 'stock_count_id', 'stock_counts'), ('stock_transfer_items', 'transfer_id', 'stock_transfers'),
         ('advance_repayments', 'advance_id', 'employee_advances'), ('daily_closing_events', 'daily_closing_id', 'daily_closing'),
