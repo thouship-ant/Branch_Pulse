@@ -48,7 +48,7 @@ export default function ClosingScreen() {
     } finally { setBusy(false); }
   }
 
-  if (!locationId) return <Screen><Loading /></Screen>;
+  if (!locationId) return <Screen><Loading page /></Screen>;
   const status = screen?.closing?.status ?? 'PENDING';
   const locked = status === 'SUBMITTED' || status === 'APPROVED';
   const tot = screen?.totals;

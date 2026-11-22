@@ -1,0 +1,22 @@
+/**
+ * The typefaces and text sizes a company can choose for its app (set by the Super Admin on the company form). The ids are what
+ * the server stores; every signed-in person of that company sees the app in the chosen face and size.
+ */
+export const FONT_OPTIONS = [
+  { id: 'INTER', label: 'Inter (standard)', css: 'var(--font-inter)' },
+  { id: 'POPPINS', label: 'Poppins (round, friendly)', css: 'var(--font-poppins)' },
+  { id: 'NUNITO', label: 'Nunito (soft)', css: 'var(--font-nunito)' },
+  { id: 'ROBOTO', label: 'Roboto (neutral)', css: 'var(--font-roboto)' },
+  { id: 'LORA', label: 'Lora (serif)', css: 'var(--font-lora)' },
+] as const;
+
+/** `px` is the root text size of the page (the whole interface is rem-based, so everything scales with it). */
+export const SIZE_OPTIONS = [
+  { id: 'SMALL', label: 'Small', short: 'S', px: 14 },
+  { id: 'MEDIUM', label: 'Medium', short: 'M', px: 16 },
+  { id: 'LARGE', label: 'Large', short: 'L', px: 17.5 },
+  { id: 'XLARGE', label: 'Extra large', short: 'XL', px: 19 },
+] as const;
+
+export const fontCss = (id?: string | null) => FONT_OPTIONS.find((f) => f.id === id)?.css ?? FONT_OPTIONS[0].css;
+export const sizePx = (id?: string | null) => SIZE_OPTIONS.find((s) => s.id === id)?.px ?? 16;

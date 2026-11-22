@@ -112,7 +112,7 @@ export default function DataUploadScreen() {
 
   return (
     <Screen>
-      <Heading onBlue title="Company - Data Upload" sub="Rows arrive as pending records for the company to approve" />
+      <View><Heading title="Company - Data Upload" sub="Rows arrive as pending records for the company to approve" /></View>
       <Button small variant="secondary" icon="download" title="Download sample Excel" onPress={sample} loading={busy === 'sample'} />
 
       <ErrorBox error={error} />

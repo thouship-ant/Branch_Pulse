@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Icon } from '@/components/Icon';
 import { OtpInput } from '@/components/OtpInput';
-import { ErrorBox, Sheet, TextField } from '@/components/ui';
+import { TextField } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { useSession, type SignInMethod } from '@/lib/session';
@@ -111,6 +111,14 @@ export default function LoginPage() {
 
   const back = () => { setStep('id'); setPassword(''); setOtp(''); setError(null); setWait(0); };
 
+  // shown right under the button of the step that failed (no pop-up); announced to screen readers
+  const inlineError = error ? (
+    <p role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium leading-snug text-red-700">
+      <Icon name="alert" size={16} className="mt-0.5 shrink-0" />
+      <span className="whitespace-pre-line">{error}</span>
+    </p>
+  ) : null;
+
   return (
     <main className="app-background loginBackdrop tea-shop flex min-h-dvh items-center justify-center overflow-x-hidden px-4 py-8">
       <section className="w-full max-w-md rounded-[28px] border border-white/60 bg-surface/95 px-6 py-8 shadow-2xl backdrop-blur-md sm:px-8">
@@ -130,6 +138,7 @@ export default function LoginPage() {
                 prefix={!identifier || /^\d/.test(identifier) ? '+91' : undefined}
               />
               <button className="btn-primary w-full" disabled={busy || !id || wait > 0}>{busy ? t('loading') : wait > 0 ? `${t('resendIn')} ${wait}s` : t('continueLabel')}</button>
+              {inlineError}
             </form>
           )}
 
@@ -155,6 +164,7 @@ export default function LoginPage() {
                 </div>
               </div>
               <button className="btn-primary w-full" disabled={busy || !password || wait > 0}>{busy ? t('loading') : wait > 0 ? `${t('resendIn')} ${wait}s` : method === 'PASSWORD' ? t('login') : t('continueLabel')}</button>
+              {inlineError}
             </form>
           )}
 
@@ -165,6 +175,7 @@ export default function LoginPage() {
                 <OtpInput value={otp} onChange={setOtp} autoFocus />
               </div>
               <button className="btn-primary w-full" disabled={busy || otp.length !== 6}>{busy ? t('loading') : t('verifyOtp')}</button>
+              {inlineError}
               <div className="flex items-center justify-between text-sm">
                 <button type="button" className="-ml-3 flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100" onClick={back}><Icon name="chevronLeft" size={16} />{t('changeNumber')}</button>
                 <button type="button" className="font-semibold text-brand disabled:text-slate-400" disabled={busy || wait > 0} onClick={() => void resend()}>
@@ -179,12 +190,6 @@ export default function LoginPage() {
           </button>
         </div>
       </section>
-      <Sheet open={!!error} onClose={() => setError(null)} title={t('errorTitle')}>
-        <ErrorBox error={error} />
-        <div className="mt-4 flex justify-end">
-          <button type="button" className="btn-primary min-h-[44px] px-6" autoFocus onClick={() => setError(null)}>{t('ok')}</button>
-        </div>
-      </Sheet>
     </main>
   );
 }

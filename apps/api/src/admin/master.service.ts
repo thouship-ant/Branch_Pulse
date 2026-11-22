@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { BUSINESS_TYPES } from '../common/business-types';
 import { Prisma } from '@prisma/client';
 import { IsBoolean, IsDefined, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { AppException, notFound, validation } from '../common/app-exception';
@@ -110,25 +111,30 @@ export class MasterService {
   }
 
   // ---- settings
-  allSettings() {
-    return this.settings.all();
+  async allSettings() {
+    const { 'business.frame': _frame, ...rest } = await this.settings.all(); // the big picture is fetched on its own
+    void _frame;
+    return rest;
   }
 
   async putSetting(ctx: ReqCtx, key: string, value: unknown) {
     if (!(key in SETTING_DEFAULTS)) throw validation('UNKNOWN_SETTING', `Unknown setting ${key}`, 'key');
-    if (key === 'business.name' || key === 'business.type') {
-      throw new AppException(403, 'FORBIDDEN', 'Only the Super Admin can change the business name or type');
+    if (key === 'business.name' || key === 'business.type' || key === 'business.font' || key === 'business.font_size') {
+      throw new AppException(403, 'FORBIDDEN', 'Only the Super Admin can change the business name, type, font or text size');
     }
     const expected = typeof SETTING_DEFAULTS[key];
     if (typeof value !== expected) throw validation('INVALID_SETTING', `${key} must be a ${expected}`, 'value');
     if (key === 'branch.code_prefix' && !/^[A-Z]{1,4}$/.test(String(value))) {
       throw validation('INVALID_SETTING', 'branch.code_prefix must be 1-4 upper-case letters', 'value');
     }
-    if (key === 'business.type' && !['TEA_SHOP', 'HOTEL', 'BAKERY', 'OTHER'].includes(String(value))) {
-      throw validation('INVALID_SETTING', 'business.type must be TEA_SHOP, HOTEL, BAKERY or OTHER', 'value');
+    if (key === 'business.type' && !(BUSINESS_TYPES as readonly string[]).includes(String(value))) {
+      throw validation('INVALID_SETTING', `business.type must be one of ${BUSINESS_TYPES.join(', ')}`, 'value');
     }
-    if (key === 'business.logo' && value !== '' && (String(value).length > 80_000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(String(value)))) {
-      throw validation('INVALID_SETTING', 'business.logo must be an uploaded JPEG logo under 80 KB', 'value');
+    if (key === 'business.logo' && value !== '' && (String(value).length > 80_000 || !/^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+/]+=*$/.test(String(value)))) {
+      throw validation('INVALID_SETTING', 'business.logo must be an uploaded JPEG or PNG logo under 80 KB', 'value');
+    }
+    if (key === 'business.frame' && value !== '' && (String(value).length > 600_000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(String(value)))) {
+      throw validation('INVALID_SETTING', 'business.frame must be a JPEG, PNG or WebP picture under 400 KB', 'value');
     }
     return this.prisma.runCurrent(async (tx) => {
       const before = await tx.setting.findUnique({ where: { company_id_key: { company_id: ctx.user.companyId!, key } } });

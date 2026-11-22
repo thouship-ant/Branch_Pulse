@@ -546,3 +546,29 @@
   .metricAmount { font-size: clamp(22px, 1.9vw, 28px); }
   .metricChevron { width: 16px; }
 }
+
+/* a company frame on a phone-sized window: the header has no colour of its own; it draws the same picture as the page behind it
+   (so it reads as one picture and still hides what scrolls under it), like the mobile app */
+.frameEmblem { display: none; }
+@media (max-width: 620px) {
+  :global(html.has-frame) .teaShopHero {
+    background: var(--app-frame) top center / 100% auto no-repeat fixed, #5f3013;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  :global(html.has-frame) .frameEmblem {
+    display: block;
+    position: absolute;
+    z-index: 1;
+    left: 83.1%;
+    top: 17.58vw;
+    width: 8.3vw;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fbf1e3;
+    box-shadow: 0 0 0 1px rgba(113, 56, 23, .35);
+    pointer-events: none;
+  }
+}

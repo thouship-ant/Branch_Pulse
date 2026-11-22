@@ -5,8 +5,11 @@ import { companyScope, PrismaService } from './prisma.service';
 /** Defaults used until the company's admin overrides them in Settings (LLD s2 settings keys, s10 rules). */
 export const SETTING_DEFAULTS: Record<string, unknown> = {
   'business.name': 'Branch Pulse',
-  'business.type': 'TEA_SHOP', // TEA_SHOP | HOTEL | BAKERY | OTHER
+  'business.type': 'TEA_SHOP', // see common/business-types.ts
   'business.logo': '',
+  'business.font': 'INTER', // see common/business-types.ts
+  'business.font_size': 'MEDIUM',
+  'business.frame': '', // the app's background picture (data URL); served at /branding/:companyId/frame, never sent with the other settings
   'fy.start_month': 4,
   'branch.code_prefix': 'BR', // prefix suggested for new branch codes (BR001, BR002 ...)
   'transliteration.external': true, // false = never send names to an external service; use the built-in fallback

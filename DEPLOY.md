@@ -69,7 +69,7 @@ openssl rand -hex 32     # BANK_DETAILS_KEY: must be exactly 64 hex characters (
 chmod 600 .env.prod
 ```
 
-`SEED_PASSWORD` becomes the **Super Admin** password (username `superadmin`). Keep `.env.prod` out of git (already in `.gitignore`). OTP sign-in needs the `SMS_FORTIUS_*` settings in the `api` service environment (and never `OTP_FIXED_CODE`).
+`SEED_PASSWORD` becomes the **Super Admin** password (username `5432167890`). Keep `.env.prod` out of git (already in `.gitignore`). OTP sign-in needs the `SMS_FORTIUS_*` settings in the `api` service environment (and never `OTP_FIXED_CODE`).
 
 ## 4. First deploy
 
@@ -86,11 +86,11 @@ $C exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-trans
 $C run --rm -v "$(pwd)/apps/api/prisma/set-superadmin-password.ts:/app/apps/api/prisma/set-superadmin-password.ts" seed npx tsx prisma/set-superadmin-password.ts
 ```
 
-Open `https://YOUR_DOMAIN`, enter `superadmin`, then `SEED_PASSWORD`. Caddy fetches the certificate on the first request (give it a minute).
+Open `https://YOUR_DOMAIN`, enter `5432167890`, then `SEED_PASSWORD`. Caddy fetches the certificate on the first request (give it a minute).
 
 ## 5. Create companies, branches and staff
 
-The seed creates no demo data. Sign in as **superadmin** and open **Companies → New company**: company name, the Admin's full name, mobile, email, main shop / head office address, GSTIN and FSSAI (both optional) and optionally the Admin's password (blank = the default `Admin@1234`; every user must change the default at the first sign-in). Default passwords: Admin `Admin@1234`, Accountant `Account@1234`, Stock Manager `StkMr@1234`, Branch Manager `Manager@1234`, Staff `Emp@1234`. Under **Companies** the Super Admin can also edit a company, open its **Users** to change a mobile number, and **Reset password**, which texts a temporary password through SMS Fortius (register a DLT template for it: `SMS_FORTIUS_TEMP_PASSWORD_TEMPLATE_ID` / `SMS_TEMP_PASSWORD_TEMPLATE`). Each company starts with its own roles (`ADMIN`, `ACCOUNTANT`, `STOCK_MANAGER`, `BRANCH_MANAGER`, `STAFF`), approval limits and expense categories.
+The seed creates no demo data. Sign in as **5432167890** and open **Companies → New company**: company name, the Admin's full name, mobile, email, main shop / head office address, GSTIN and FSSAI (both optional) and optionally the Admin's password (blank = the default `Admin@1234`; every user must change the default at the first sign-in). Default passwords: Admin `Admin@1234`, Accountant `Account@1234`, Stock Manager `StkMr@1234`, Branch Manager `Manager@1234`, Staff `Emp@1234`. Under **Companies** the Super Admin can also edit a company, open its **Users** to change a mobile number, and **Reset password**, which texts a temporary password through SMS Fortius (register a DLT template for it: `SMS_FORTIUS_TEMP_PASSWORD_TEMPLATE_ID` / `SMS_TEMP_PASSWORD_TEMPLATE`). Each company starts with its own roles (`ADMIN`, `ACCOUNTANT`, `STOCK_MANAGER`, `BRANCH_MANAGER`, `STAFF`), approval limits and expense categories.
 
 The company's **Admin** then signs in with the mobile number, the password and an OTP, and uses the **Branches** menu: **Add branch** suggests the next free branch ID (prefix configurable via the `branch.code_prefix` setting, default `BR`), and the branch manager's login can be created in the same form. The **Users** screen adds the other staff (Accountant, Stock Manager, ...): each needs a 10-digit mobile number, which is their sign-in name; only Admins have a password, everyone else signs in with an OTP.
 

@@ -133,7 +133,7 @@ export default function ExpenseScreen() {
     } finally { setBusy(false); }
   }
 
-  if (!boot) return <Screen onRefresh={load}>{error ? <ErrorBox error={error} /> : <Loading />}</Screen>;
+  if (!boot) return <Screen onRefresh={load}>{error ? <ErrorBox error={error} /> : <Loading page />}</Screen>;
   // stock items (milk, tea powder ...) are bought through Stock > Purchase, which carries the payment
   const top = boot.categories.filter((c) => !c.parentId && !c.requiresSupplier);
   const subs = boot.categories.filter((c) => c.parentId === categoryId);

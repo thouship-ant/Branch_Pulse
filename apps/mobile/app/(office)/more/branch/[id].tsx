@@ -60,7 +60,7 @@ export default function BranchDetail() {
     try { await api.post(`/locations/${id}/manager`, { userId }); setAssigning(false); await load(); } catch (e) { setError(e instanceof ApiError ? e.message : 'Failed'); } finally { setBusy(false); }
   }
 
-  if (!branch) return <Screen title="Branch">{error ? <ErrorBox error={error} /> : <Loading />}</Screen>;
+  if (!branch) return <Screen title="Branch">{error ? <ErrorBox error={error} /> : <Loading page />}</Screen>;
   const manage = can('location:manage');
   const tabs: Array<{ key: Tab; label: string }> = [{ key: 'overview', label: 'Overview' }];
   if (branch.type === 'BRANCH' && can('report:view')) tabs.push({ key: 'report', label: 'Report' });

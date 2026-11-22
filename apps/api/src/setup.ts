@@ -30,6 +30,8 @@ export function configureApp(app: INestApplication) {
   });
   app.use(helmet());
   app.use(cookieParser());
+  // the company frame picture travels as base64 inside a JSON body, so this limit is above the 100 KB default
+  (app as any).useBodyParser('json', { limit: '1mb' });
   // raw bytes for presigned local uploads (must precede the JSON parser)
   app.use('/api/v1/attachments/local-upload', raw({ type: '*/*', limit: '5mb' }));
 

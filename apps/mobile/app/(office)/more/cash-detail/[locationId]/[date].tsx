@@ -49,7 +49,7 @@ export default function CashDetail() {
     catch (e) { setError(e instanceof Error ? e.message : 'Could not open the photo'); }
   }
 
-  if (!cash || !closing) return <Screen title="Cash">{error ? <ErrorBox error={error} /> : <Loading />}</Screen>;
+  if (!cash || !closing) return <Screen title="Cash">{error ? <ErrorBox error={error} /> : <Loading page />}</Screen>;
   const locName = me?.locations.find((l) => l.id === locationId)?.name ?? 'Branch';
   const v = cash.variance === null ? null : dec(cash.variance);
   const canDecide = cash.varianceApproval === 'SUBMITTED' && can('cash:approve');

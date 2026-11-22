@@ -1,11 +1,13 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Image, Pressable, View } from 'react-native';
 import { tAlert } from '@/lib/i18n';
 import { Text } from '@/components/Text';
-import { CreateCompanyForm, EditCompanyForm, type Company } from '@/components/super/CompanyForms';
+import { CompanyBanner, BIZ_TYPES } from '@/components/super/CompanyBanner';
+import { CompanySheet, type Company } from '@/components/super/CompanyForms';
 import { CompanyUsers } from '@/components/super/CompanyUsers';
-import { Button, Card, Chip, ErrorBox, Heading, Loading, Muted, Screen, Sheet } from '@/components/ui';
+import { Button, ErrorBox, Heading, Loading, Muted, Screen, Sheet } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
 
@@ -46,42 +48,39 @@ export default function CompaniesScreen() {
 
   return (
     <Screen onRefresh={load}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <Heading onBlue title="Companies" sub={rows ? `${rows.length} total` : undefined} />
+      {/* below the blue header (not under its curve): readable dark title, count, and the add button */}
+      <View style={{ marginTop: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Heading title="Companies" sub={rows ? `${rows.length} total` : undefined} />
+        </View>
         <Button small icon="plus" title="New company" onPress={() => setAdding(true)} />
       </View>
       <ErrorBox error={error} />
       {!rows ? <Loading /> : rows.length === 0 ? <Muted>No companies yet. Add the first one.</Muted> : rows.map((c) => (
-        <Card key={c.id}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: th.faint, fontSize: 12 }}>{c.code}</Text>
-              <Text style={{ color: th.ink, fontSize: 18, fontWeight: '700' }}>{c.name}</Text>
+        <View key={c.id} style={{ borderRadius: 22, overflow: 'hidden', backgroundColor: th.surface, borderWidth: 1, borderColor: th.border, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}>
+          <CompanyBanner c={c} />
+          <View style={{ padding: 16, gap: 10 }}>
+            <Detail label="Admin" value={c.admin ? `${c.admin.name} · ${c.admin.mobile}` : '—'} />
+            <Detail label="Email" value={c.email ?? '—'} />
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <View style={{ flex: 1 }}><Detail label="GSTIN" value={c.gstin ?? '—'} /></View>
+              <View style={{ flex: 1 }}><Detail label="FSSAI" value={c.fssai ?? '—'} /></View>
             </View>
-            <Chip text={c.status === 'ACTIVE' ? 'Active' : 'Inactive'} tone={c.status === 'ACTIVE' ? 'ok' : 'neutral'} icon={c.status === 'ACTIVE' ? '●' : '○'} />
+            <Detail label="Main shop / head office" value={c.address ?? '—'} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: th.border, paddingTop: 12 }}>
+              <Muted>{c.branchCount} {c.branchCount === 1 ? 'branch' : 'branches'}</Muted>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <IconAction label="Users" icon="users" onPress={() => setUsersOf(c)} />
+                <IconAction label="Edit company" icon="edit-2" onPress={() => setEditing(c)} />
+                <IconAction label={c.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} icon={c.status === 'ACTIVE' ? 'slash' : 'check-circle'} tone={c.status === 'ACTIVE' ? 'danger' : 'ok'} busy={busy === c.id} onPress={() => toggle(c)} />
+              </View>
+            </View>
           </View>
-          <Detail label="Business name" value={c.businessName} />
-          <Detail label="Business type" value={BIZ_TYPES[c.businessType] ?? c.businessType} />
-          <Detail label="Admin" value={c.admin ? `${c.admin.name} · ${c.admin.mobile}` : '—'} />
-          <Detail label="Email" value={c.email ?? '—'} />
-          <Detail label="GSTIN" value={c.gstin ?? '—'} />
-          <Detail label="FSSAI" value={c.fssai ?? '—'} />
-          <Detail label="Main shop / head office" value={c.address ?? '—'} />
-          <Muted>{c.branchCount} {c.branchCount === 1 ? 'branch' : 'branches'}</Muted>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            <Button small variant="secondary" title="Users" onPress={() => setUsersOf(c)} />
-            <Button small variant="secondary" title="Edit" onPress={() => setEditing(c)} />
-            <Button small variant="secondary" title={c.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} loading={busy === c.id} onPress={() => toggle(c)} />
-          </View>
-        </Card>
+        </View>
       ))}
 
-      <Sheet open={adding} onClose={() => setAdding(false)} title="New company">
-        <CreateCompanyForm onSaved={() => { setAdding(false); void load(); }} />
-      </Sheet>
-      <Sheet open={!!editing} onClose={() => setEditing(null)} title={`Edit ${editing?.name ?? 'company'}`}>
-        {editing && <EditCompanyForm company={editing} onSaved={() => { setEditing(null); void load(); }} />}
-      </Sheet>
+      <CompanySheet open={adding} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); void load(); }} />
+      <CompanySheet open={!!editing} company={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />
       <Sheet open={!!usersOf} onClose={() => setUsersOf(null)} title={`Users · ${usersOf?.name ?? ''}`}>
         {usersOf && <CompanyUsers company={usersOf} onChanged={() => void load()} />}
       </Sheet>
@@ -89,7 +88,16 @@ export default function CompaniesScreen() {
   );
 }
 
-const BIZ_TYPES: Record<string, string> = { TEA_SHOP: 'Tea shop', HOTEL: 'Hotel', BAKERY: 'Bakery', OTHER: 'Other' };
+/** A round icon button on a company card. */
+function IconAction({ label, icon, onPress, tone = 'brand', busy }: { label: string; icon: 'users' | 'edit-2' | 'slash' | 'check-circle'; onPress: () => void; tone?: 'brand' | 'danger' | 'ok'; busy?: boolean }) {
+  const th = useTheme();
+  const color = tone === 'danger' ? '#b91c1c' : tone === 'ok' ? '#047857' : th.brand;
+  return (
+    <Pressable onPress={onPress} disabled={busy} accessibilityRole="button" accessibilityLabel={label} style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: th.border, backgroundColor: th.surface, alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.5 : 1 }}>
+      <Feather name={icon} size={18} color={color} />
+    </Pressable>
+  );
+}
 
 function Detail({ label, value }: { label: string; value: string }) {
   const th = useTheme();

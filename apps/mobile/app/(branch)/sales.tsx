@@ -62,7 +62,7 @@ export default function SalesScreen() {
     } finally { setBusy(false); }
   }
 
-  if (loading) return <Screen><Loading /></Screen>;
+  if (loading) return <Screen><Loading page /></Screen>;
 
   return (
     <Screen onRefresh={load}>

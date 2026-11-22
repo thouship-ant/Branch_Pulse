@@ -4,6 +4,7 @@ import { IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, Val
 import { provisionCompanyDefaults } from '../admin/company-defaults';
 import { assertStrongPassword, DEFAULT_PASSWORDS } from '../auth/passwords';
 import { AppException, notFound } from '../common/app-exception';
+import { BUSINESS_FONT_SIZES, BUSINESS_FONTS, BUSINESS_TYPES, frameUrl } from '../common/business-types';
 import { AuditService } from '../common/audit.service';
 import { ReqCtx } from '../common/auth-user';
 import { PrismaService } from '../common/prisma.service';
@@ -14,7 +15,9 @@ const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 export class CreateCompanyDto {
   @IsString() @MinLength(2) @MaxLength(120) companyName: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) businessName?: string;
-  @IsOptional() @IsIn(['TEA_SHOP', 'HOTEL', 'BAKERY', 'OTHER']) businessType?: string;
+  @IsOptional() @IsIn([...BUSINESS_TYPES]) businessType?: string;
+  @IsOptional() @IsIn([...BUSINESS_FONTS]) businessFont?: string;
+  @IsOptional() @IsIn([...BUSINESS_FONT_SIZES]) businessFontSize?: string;
   /** the first Admin of the company */
   @IsString() @MinLength(2) @MaxLength(100) adminName: string;
   @Matches(/^\d{10}$/, { message: 'Mobile must be 10 digits' }) mobile: string;
@@ -23,6 +26,8 @@ export class CreateCompanyDto {
   @IsString() @MinLength(5) @MaxLength(500) address: string;
   @IsOptional() @ValidateIf((o) => o.gstin) @Matches(GSTIN, { message: 'GSTIN must be 15 characters, e.g. 33ABCDE1234F1Z5' }) gstin?: string;
   @IsOptional() @ValidateIf((o) => o.fssai) @Matches(/^\d{14}$/, { message: 'FSSAI licence number must be 14 digits' }) fssai?: string;
+  @IsOptional() @IsString() @MaxLength(80_000) @Matches(/^(data:image\/(jpeg|png);base64,[A-Za-z0-9+/]+=*)?$/, { message: 'Logo must be a PNG or JPEG image under 80 KB' }) businessLogo?: string;
+  @IsOptional() @IsString() @MaxLength(600_000) @Matches(/^(data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*)?$/, { message: 'Frame must be a JPEG, PNG or WebP picture under 400 KB' }) businessFrame?: string;
   /** the Admin signs in with password + OTP; blank = the default Admin password (Admin@1234), changed at the first sign-in */
   @IsOptional() @IsString() @MaxLength(200) password?: string;
 }
@@ -30,7 +35,13 @@ export class CreateCompanyDto {
 export class UpdateCompanyDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) companyName?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) businessName?: string;
-  @IsOptional() @IsIn(['TEA_SHOP', 'HOTEL', 'BAKERY', 'OTHER']) businessType?: string;
+  @IsOptional() @IsIn([...BUSINESS_TYPES]) businessType?: string;
+  @IsOptional() @IsIn([...BUSINESS_FONTS]) businessFont?: string;
+  @IsOptional() @IsIn([...BUSINESS_FONT_SIZES]) businessFontSize?: string;
+  /** the business logo as a PNG/JPEG data URL under 80 KB; an empty string removes it */
+  @IsOptional() @IsString() @MaxLength(80_000) @Matches(/^(data:image\/(jpeg|png);base64,[A-Za-z0-9+/]+=*)?$/, { message: 'Logo must be a PNG or JPEG image under 80 KB' }) businessLogo?: string;
+  /** the app's background picture ("frame") as a data URL under ~400 KB; an empty string goes back to the default */
+  @IsOptional() @IsString() @MaxLength(600_000) @Matches(/^(data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*)?$/, { message: 'Frame must be a JPEG, PNG or WebP picture under 400 KB' }) businessFrame?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsOptional() @IsString() @MinLength(5) @MaxLength(500) address?: string;
   @IsOptional() @ValidateIf((o) => o.gstin) @Matches(GSTIN, { message: 'GSTIN must be 15 characters' }) gstin?: string;
@@ -57,9 +68,10 @@ export class CompanyService {
         }),
       ]);
       const settings = await tx.setting.findMany({
-        where: { company_id: { in: companies.map((c) => c.id) }, key: { in: ['business.name', 'business.type'] } },
+        where: { company_id: { in: companies.map((c) => c.id) }, key: { in: ['business.name', 'business.type', 'business.logo', 'business.font', 'business.font_size'] } },
         select: { company_id: true, key: true, value: true },
       });
+      const frames = await tx.$queryRaw<Array<{ company_id: string; at: Date }>>`SELECT company_id, updated_at AS at FROM settings WHERE key = 'business.frame' AND value <> '""'::jsonb`;
       const settingValues = new Map(settings.map((s) => [`${s.company_id}:${s.key}`, s.value]));
       return companies.map((c) => {
         const admin = admins.find((a) => a.company_id === c.id);
@@ -67,6 +79,10 @@ export class CompanyService {
           id: c.id, code: c.code, name: c.name, address: c.address, gstin: c.gstin, fssai: c.fssai, email: c.email, status: c.status, createdAt: c.created_at,
           businessName: settingValues.get(`${c.id}:business.name`) ?? c.name,
           businessType: settingValues.get(`${c.id}:business.type`) ?? 'TEA_SHOP',
+          businessFrame: ((f) => (f ? frameUrl(f.company_id, f.at) : null))(frames.find((x) => x.company_id === c.id)),
+          businessFont: (settingValues.get(`${c.id}:business.font`) as string | undefined) ?? 'INTER',
+          businessFontSize: (settingValues.get(`${c.id}:business.font_size`) as string | undefined) ?? 'MEDIUM',
+          businessLogo: (settingValues.get(`${c.id}:business.logo`) as string | undefined) || null,
           branchCount: branches.find((b) => b.company_id === c.id)?._count ?? 0,
           admin: admin ? { name: admin.full_name, mobile: admin.mobile, status: admin.status } : null,
         };
@@ -97,6 +113,16 @@ export class CompanyService {
       const businessName = dto.businessName?.trim() || name;
       const businessType = dto.businessType ?? 'TEA_SHOP';
       const roleId = await provisionCompanyDefaults(tx, company.id, businessName, businessType);
+
+      // the logo and the application frame picked on the form
+      for (const [key, value] of [['business.logo', dto.businessLogo], ['business.frame', dto.businessFrame], ['business.font', dto.businessFont], ['business.font_size', dto.businessFontSize]] as const) {
+        if (!value) continue;
+        await tx.setting.upsert({
+          where: { company_id_key: { company_id: company.id, key } },
+          create: { company_id: company.id, key, value, updated_by: ctx.user.id },
+          update: { value, updated_by: ctx.user.id },
+        });
+      }
 
       // the company's head office / main shop is its first location
       await tx.location.create({
@@ -143,14 +169,45 @@ export class CompanyService {
           status: dto.status, updated_by: ctx.user.id, version: { increment: 1 },
         },
       });
-      if (dto.businessName !== undefined) {
+      // the company name saved here is the business name its people see in the app header, always (unless a business name is given separately)
+      const newBusinessName = dto.businessName?.trim() ?? dto.companyName?.trim();
+      if (newBusinessName !== undefined) {
         const settingBefore = await tx.setting.findUnique({ where: { company_id_key: { company_id: id, key: 'business.name' } } });
         const settingAfter = await tx.setting.upsert({
           where: { company_id_key: { company_id: id, key: 'business.name' } },
-          create: { company_id: id, key: 'business.name', value: dto.businessName.trim(), updated_by: ctx.user.id },
-          update: { value: dto.businessName.trim(), updated_by: ctx.user.id },
+          create: { company_id: id, key: 'business.name', value: newBusinessName, updated_by: ctx.user.id },
+          update: { value: newBusinessName, updated_by: ctx.user.id },
         });
         await this.audit.log(tx, ctx, { action: 'SETTINGS_CHANGE', entityType: 'SETTING', entityCode: 'business.name', companyId: id, before: { value: settingBefore?.value ?? before.name }, after: { value: settingAfter.value } });
+      }
+      if (dto.businessLogo !== undefined) {
+        const settingBefore = await tx.setting.findUnique({ where: { company_id_key: { company_id: id, key: 'business.logo' } } });
+        const settingAfter = await tx.setting.upsert({
+          where: { company_id_key: { company_id: id, key: 'business.logo' } },
+          create: { company_id: id, key: 'business.logo', value: dto.businessLogo, updated_by: ctx.user.id },
+          update: { value: dto.businessLogo, updated_by: ctx.user.id },
+        });
+        // the image itself is not copied into the audit trail
+        await this.audit.log(tx, ctx, { action: 'SETTINGS_CHANGE', entityType: 'SETTING', entityCode: 'business.logo', companyId: id, before: { value: settingBefore?.value ? '(logo)' : '' }, after: { value: settingAfter.value ? '(logo)' : '' } });
+      }
+      if (dto.businessFrame !== undefined) {
+        const settingBefore = await tx.setting.findUnique({ where: { company_id_key: { company_id: id, key: 'business.frame' } }, select: { value: true } });
+        const settingAfter = await tx.setting.upsert({
+          where: { company_id_key: { company_id: id, key: 'business.frame' } },
+          create: { company_id: id, key: 'business.frame', value: dto.businessFrame, updated_by: ctx.user.id },
+          update: { value: dto.businessFrame, updated_by: ctx.user.id },
+        });
+        await this.audit.log(tx, ctx, { action: 'SETTINGS_CHANGE', entityType: 'SETTING', entityCode: 'business.frame', companyId: id, before: { value: settingBefore?.value ? '(picture)' : '' }, after: { value: settingAfter.value ? '(picture)' : '' } });
+      }
+      for (const [key, value] of [['business.font', dto.businessFont], ['business.font_size', dto.businessFontSize]] as const) {
+        if (value === undefined) continue;
+        const settingBefore = await tx.setting.findUnique({ where: { company_id_key: { company_id: id, key } } });
+        const settingAfter = await tx.setting.upsert({
+          where: { company_id_key: { company_id: id, key } },
+          create: { company_id: id, key, value, updated_by: ctx.user.id },
+          update: { value, updated_by: ctx.user.id },
+        });
+        await this.audit.log(tx, ctx, { action: 'SETTINGS_CHANGE', entityType: 'SETTING', entityCode: key, companyId: id, before: { value: settingBefore?.value ?? null }, after: { value: settingAfter.value } });
       }
       if (dto.businessType !== undefined) {
         const settingBefore = await tx.setting.findUnique({ where: { company_id_key: { company_id: id, key: 'business.type' } } });

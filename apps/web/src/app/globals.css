@@ -146,7 +146,7 @@ html { scroll-behavior: smooth; }
 html, body { overflow-x: hidden; }
 @supports (overflow-x: clip) { html, body { overflow-x: clip; } }
 /* standard Inter (no stylistic alternates: they turn the 'a' single-storey and the digits open, which reads oddly in tables) */
-html, body { color: rgb(var(--ink)); font-family: theme('fontFamily.sans'); font-size: 16px; line-height: 1.55; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+html, body { color: rgb(var(--ink)); font-family: theme('fontFamily.sans'); font-size: 1rem; line-height: 1.55; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 h1, h2, h3 { letter-spacing: -0.015em; line-height: 1.25; }
 h2 { color: rgb(var(--ink)); }
 td, th, input, select, textarea, button { font-family: inherit; }
@@ -186,6 +186,41 @@ html.dark.tea-shop body.app-background,
   .dark .loginBackdrop.app-background {
     background-image: linear-gradient(rgb(27 18 13 / 0.52), rgb(27 18 13 / 0.52)), url('/images/tricups-tablet-1920x1200.jpg'), url('/tea-shop-theme.png');
     background-size: 100% 100%, 100% 100%, cover;
+  }
+}
+/* the company's own application frame (set from the session as --app-frame); replaces the default picture */
+html.has-frame body.app-background {
+  background-color: rgb(var(--slate-50));
+  background-image: var(--app-frame);
+  background-size: cover;
+  background-position: top center;
+}
+html.dark.has-frame body.app-background {
+  background-image: linear-gradient(rgb(27 18 13 / 0.52), rgb(27 18 13 / 0.52)), var(--app-frame);
+  background-size: 100% 100%, cover;
+}
+/* phone-sized window: like the mobile app - the frame's top (header band, cup) at the top, flat cream, its bottom quarter (leaves, tagline) at the bottom */
+@media (max-width: 620px) {
+  html.has-frame body.app-background {
+    background-color: #fef1db;
+    background-image: var(--app-frame);
+    background-size: 100% auto;
+    background-position: top center;
+    background-repeat: no-repeat;
+  }
+  html.dark.has-frame body.app-background {
+    background-image: linear-gradient(rgb(27 18 13 / 0.52), rgb(27 18 13 / 0.52)), var(--app-frame);
+    background-size: 100% 100%, 100% auto;
+    background-position: top left, top center;
+  }
+  html.has-frame body.app-background::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 37.5vw;
+    background: var(--app-frame) bottom center / 100% auto no-repeat;
+    pointer-events: none;
+    z-index: -1;
   }
 }
 .dark .loginBackdrop.tea-shop {

@@ -7,7 +7,7 @@
  *   SEED_PASSWORD=...               password for the Super Admin (required in production)
  *
  * Demo sign-ins (OTP is whatever OTP_FIXED_CODE says, 123456 in .env.example):
- *   Super Admin  username superadmin + password
+ *   Super Admin  username 5432167890 + password
  *   Admin        mobile 9000000001 + password Admin@1234, then OTP
  *   others       mobile + OTP (Accountant 9000000002, Stock Manager 9000000003, branch managers 9000000011..)
  *   Every user also has a role-based default password (Account@1234, StkMr@1234, Manager@1234 ...) and is asked to change it after the first sign-in.
@@ -98,17 +98,17 @@ async function main() {
 
   // ---- the Super Admin: signs in with username + password only; creates companies
   const superRoleId = await ensureSuperAdminRole(prisma);
-  if (!(await prisma.user.findUnique({ where: { username: 'superadmin' } }))) {
+  if (!(await prisma.user.findUnique({ where: { username: '5432167890' } }))) {
     await prisma.user.create({
-      data: { username: 'superadmin', full_name: 'Super Admin', password_hash: passwordHash, company_id: null, roles: { create: [{ role_id: superRoleId }] } },
+      data: { username: '5432167890', full_name: 'Super Admin', password_hash: passwordHash, company_id: null, roles: { create: [{ role_id: superRoleId }] } },
     });
   }
   const unitId = await seedUnits();
 
   // Production bootstrap: no demo company. The Super Admin signs in and creates each company (with its Admin).
   if (MINIMAL) {
-    console.log("Minimal seed done: units and Super Admin 'superadmin'.");
-    console.log('Sign in as superadmin with SEED_PASSWORD, change it straight away, then create your first company.');
+    console.log("Minimal seed done: units and Super Admin '5432167890'.");
+    console.log('Sign in as 5432167890 with SEED_PASSWORD, change it straight away, then create your first company.');
     return;
   }
 
@@ -198,8 +198,8 @@ async function main() {
     if (m && !b.manager_user_id) await prisma.location.update({ where: { id: b.id }, data: { manager_user_id: m.id } });
   }
 
-  console.log(`Seeded ${company.name} (${company.code}): ${users.length} users. Super Admin 'superadmin', Admin mobile 9000000001 (password Admin@1234).`);
-  if (!process.env.SEED_PASSWORD) console.log('Password for superadmin (dev only): ChangeMe@123. OTP: see OTP_FIXED_CODE in .env (123456 in .env.example).');
+  console.log(`Seeded ${company.name} (${company.code}): ${users.length} users. Super Admin '5432167890', Admin mobile 9000000001 (password Admin@1234).`);
+  if (!process.env.SEED_PASSWORD) console.log('Password for 5432167890 (dev only): ChangeMe@123. OTP: see OTP_FIXED_CODE in .env (123456 in .env.example).');
 
   if (DEMO) {
     await seedDemoHistory(companyId, branches);

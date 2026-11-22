@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, useWindowDimensions, View, type ListRenderItem, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Animated, Easing, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, useWindowDimensions, View, type ListRenderItem, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { STATUS_LABEL } from '@/lib/labels';
 import { useHeader } from './HeaderContext';
 import { HeaderRight, ThemeBackdrop, ThemeHeaderBg, useBackdropGeometry } from './ThemeBackdrop';
 import { useLang } from '@/lib/language';
+import { useSession } from '@/lib/session';
 import { tr } from '@/lib/i18n';
 import { cleanAmount } from '@/lib/money';
 import { useEntryDay } from '@/lib/workDate';
@@ -39,7 +40,7 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerLeft, 
   const [headerH, setHeaderH] = useState(190);
   // tea shop: the header is part of the themed picture (same for every page and role); the page slides away under it
   const themed = teaShop && !!header;
-  const contentTop = themed ? geo.headerH : headerH - 30;
+  const contentTop = themed ? (geo.framed ? geo.headerH - 6 : geo.headerH + 2) : headerH - (HEADER_PAD - 32);
   const [refreshing, setRefreshing] = useState(false);
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -55,20 +56,20 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerLeft, 
       {bar && !overlap ? bar : null}
       {bar && overlap && !themed ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>{bar}</View> : null}
       {top ? <View style={{ paddingHorizontal: 16, paddingTop: overlap ? contentTop : 16, paddingBottom: 4, gap: 12, backgroundColor: overlap || teaShop ? 'transparent' : th.bg }}>{top}</View> : null}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1, marginTop: themed && geo.framed && overlap && !top ? geo.headerH - 8 : 0 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {list ? (
           <FlatList
             data={list.data} renderItem={list.renderItem} keyExtractor={list.keyExtractor}
             initialNumToRender={10} maxToRenderPerBatch={10} windowSize={7} removeClippedSubviews
             ListHeaderComponent={children ? <View style={{ gap: 16 }}>{children}</View> : null}
             ListEmptyComponent={list.empty ? <View>{list.empty}</View> : null}
-            contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? contentTop : 16, paddingBottom: padBottom, gap: 16 }}
+            contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? (themed && geo.framed ? 0 : contentTop) : 16, paddingBottom: padBottom, gap: 16 }}
             keyboardShouldPersistTaps="handled"
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap && !themed ? '#fff' : th.brand} progressViewOffset={overlap ? (themed ? geo.headerH : headerH) - 60 : 0} /> : undefined}
           />
         ) : (
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? contentTop : 16, paddingBottom: padBottom, gap: 16 }}
+          contentContainerStyle={{ padding: 16, paddingTop: top ? 12 : overlap ? (themed && geo.framed ? 0 : contentTop) : 16, paddingBottom: padBottom, gap: 16 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={overlap && !themed ? '#fff' : th.brand} progressViewOffset={overlap ? (themed ? geo.headerH : headerH) - 60 : 0} /> : undefined}
         >
@@ -84,7 +85,7 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerLeft, 
           {bar}
         </View>
       ) : overlap && bar ? (
-        <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, headerH - 52), overflow: 'hidden', backgroundColor: th.brand, zIndex: 20, elevation: 20 }}>
+        <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, headerH - (HEADER_PAD - 10)), overflow: 'hidden', backgroundColor: geo.framed ? 'transparent' : th.brand, zIndex: 20, elevation: 20 }}>
           <AppBar {...header!} subtitle={headerSubtitle ?? header.subtitle} left={headerLeft} right={right} />
         </View>
       ) : null}
@@ -371,17 +372,63 @@ export function Banner({ tone, children }: { tone: ToneName; children: ReactNode
   );
 }
 
+/**
+ * An error message: a round icon, a short heading and the message, on a soft card with a red edge. A connection problem gets its
+ * own icon and heading; everything else is "Couldn't complete that".
+ */
 export function ErrorBox({ error }: { error: string | null | undefined }) {
-  return error ? <Banner tone="bad">✕ {error}</Banner> : null;
+  const th = useTheme();
+  if (!error) return null;
+  const offline = /connection|network|internet|offline/i.test(error);
+  const t = th.bad;
+  return (
+    <View
+      accessibilityRole="alert"
+      style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 14, paddingLeft: 12, borderRadius: 16, borderWidth: 1, borderColor: t.border, borderLeftWidth: 5, borderLeftColor: '#dc2626', backgroundColor: t.bg, shadowColor: '#dc2626', shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }}
+    >
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: th.dark ? '#7f1d1d' : '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
+        <MaterialCommunityIcons name={offline ? 'wifi-off' : 'alert-circle-outline'} size={21} color={th.dark ? '#fecaca' : '#b91c1c'} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ color: t.text, fontSize: 15, fontWeight: '800' }}>{offline ? 'Connection problem' : "Couldn't complete that"}</Text>
+        <Text style={{ color: t.text, fontSize: 13.5, lineHeight: 19, opacity: 0.9 }}>{error}</Text>
+      </View>
+    </View>
+  );
 }
 
 export function Warnings({ items }: { items: Array<{ code: string; message: string }> }) {
   return items.length ? <View style={{ gap: 8 }}>{items.map((w) => <Banner key={w.code + w.message} tone="warn">⚠ {w.message}</Banner>)}</View> : null;
 }
 
-export function Loading() {
+/** The loader: the business logo (the Branch Pulse one when there is none) with a ring turning around it. */
+/** `page`: the loader fills the page and sits in the middle of the screen (use it when the whole page is waiting). */
+export function Loading({ size = 76, page = false }: { size?: number; page?: boolean }) {
   const th = useTheme();
-  return <View style={{ padding: 48, alignItems: 'center' }}><ActivityIndicator size="large" color={th.brand} /></View>;
+  const { height } = useWindowDimensions();
+  const { me } = useSession();
+  const spin = useRef(new Animated.Value(0)).current;
+  const [logoFailed, setLogoFailed] = useState(false);
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1100, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web' }));
+    loop.start();
+    return () => loop.stop();
+  }, [spin]);
+  const logo = me?.company?.businessLogo && !logoFailed ? { uri: me.company.businessLogo } : require('../../assets/logo.png');
+  const ring = 4;
+  const inner = size - ring * 2 - 10;
+  return (
+    <View accessibilityRole="progressbar" accessibilityLabel="Loading" style={page ? { minHeight: Math.round(height * 0.6), alignItems: 'center', justifyContent: 'center' } : { padding: 40, alignItems: 'center' }}>
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        {/* the track, and the bright arc that turns on it */}
+        <View style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: th.dark ? 'rgba(255,255,255,0.12)' : 'rgba(113,56,23,0.14)' }} />
+        <Animated.View
+          style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: 'transparent', borderTopColor: th.brand, borderRightColor: th.brand, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}
+        />
+        <Image source={logo} onError={() => setLogoFailed(true)} resizeMode="contain" style={{ width: inner, height: inner, borderRadius: inner / 2, backgroundColor: '#fff8ef' }} />
+      </View>
+    </View>
+  );
 }
 
 export function Empty({ text }: { text: string }) {
@@ -389,7 +436,8 @@ export function Empty({ text }: { text: string }) {
 }
 
 // ------------------------------------------------------------------ modal sheet
-export function Sheet({ open, onClose, title, children, tall = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; tall?: boolean }) {
+/** `pinned`: stays fixed under the title while the content scrolls (e.g. a live preview). `bare`: no padding or gap around the content. */
+export function Sheet({ open, onClose, title, children, tall = false, pinned, bare = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; tall?: boolean; pinned?: ReactNode; bare?: boolean }) {
   const th = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions(); // a number: a '90%' maxHeight has no parent height to measure against, so tall content got cut
@@ -404,7 +452,8 @@ export function Sheet({ open, onClose, title, children, tall = false }: { open: 
               <Feather name="x" size={22} color={th.muted} />
             </Pressable>
           </View>
-          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 16 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+          {pinned}
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={bare ? undefined : { padding: 16, paddingTop: 0, gap: 16 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -414,6 +463,8 @@ export function Sheet({ open, onClose, title, children, tall = false }: { open: 
 // ------------------------------------------------------------------ app bar
 /** A soft shadow keeps white header text readable over the picture's bokeh. */
 const SHADOW = { textShadowColor: 'rgba(40,16,4,0.55)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 } as const;
+/** Space under the blue header's content: the first card / title overlaps the curve by HEADER_PAD - 32, and the fixed top part ends HEADER_PAD - 10 above the bottom. */
+const HEADER_PAD = 36;
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good Morning,' : h < 17 ? 'Good Afternoon,' : 'Good Evening,'; };
 
 /**
@@ -426,15 +477,15 @@ export function AppBar({ title, subtitle, left, right, onLayout }: { title: stri
   const insets = useSafeAreaInsets();
   const teaShop = header?.teaShop;
   const geo = useBackdropGeometry();
-  const logoSize = Math.max(56, Math.min(88, Math.round(geo.width * 0.17)));
-  const titleSize = Math.max(18, Math.min(28, Math.round(geo.width * 0.047)));
+  const logoSize = Math.max(60, Math.min(96, Math.round(geo.width * 0.2)));
+  const titleSize = Math.max(19, Math.min(30, Math.round(geo.width * 0.054)));
   return (
     <View
       onLayout={onLayout}
       // tea shop: no bar of its own, the themed picture shows through (the picture draws the curve and the cup)
       style={teaShop
-        ? { height: geo.barH, paddingTop: geo.top, paddingHorizontal: Math.round(geo.width * 0.04), flexDirection: 'row', alignItems: 'center', gap: Math.round(geo.width * 0.028) }
-        : { backgroundColor: th.brand, paddingTop: insets.top + 14, paddingBottom: 62, paddingHorizontal: 20, borderBottomLeftRadius: 34, borderBottomRightRadius: 34, flexDirection: 'row', alignItems: 'center', gap: 8, overflow: 'hidden' }}
+        ? { height: geo.framed ? geo.bandH : geo.barH, paddingTop: geo.top, paddingHorizontal: Math.round(geo.width * 0.04), flexDirection: 'row', alignItems: 'center', gap: Math.round(geo.width * 0.028) }
+        : { backgroundColor: geo.framed ? 'transparent' : th.brand, paddingTop: insets.top + 10, paddingBottom: HEADER_PAD, paddingHorizontal: 20, borderBottomLeftRadius: geo.framed ? 0 : 34, borderBottomRightRadius: geo.framed ? 0 : 34, flexDirection: 'row', alignItems: 'center', gap: 8, overflow: 'hidden' }}
     >
       {left}
       {header?.teaShop ? (
@@ -446,7 +497,7 @@ export function AppBar({ title, subtitle, left, right, onLayout }: { title: stri
           </View>
         )
       ) : (
-        <Image source={require('../../assets/logo.png')} accessibilityLabel="Branch Pulse" style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#fff' }} />
+        <Image source={header?.logo ? { uri: header.logo } : require('../../assets/logo.png')} accessibilityLabel={header?.logo ? `${title} logo` : 'Branch Pulse'} style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#fff' }} />
       )}
       <View style={{ flex: 1, minWidth: 0 }}>
         {!header?.teaShop ? <Text numberOfLines={1} style={{ color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>{greeting()}</Text> : null}
@@ -543,13 +594,13 @@ export function SubHeader({ title, right }: { title: string; right?: ReactNode }
   const teaShopHeader = header?.teaShop ? header : null;
   const teaShop = !!teaShopHeader;
   const geo = useBackdropGeometry();
-  const logoSize = Math.max(56, Math.min(88, Math.round(geo.width * 0.17)));
-  const nameSize = Math.max(18, Math.min(28, Math.round(geo.width * 0.047)));
+  const logoSize = Math.max(60, Math.min(96, Math.round(geo.width * 0.2)));
+  const nameSize = Math.max(19, Math.min(30, Math.round(geo.width * 0.054)));
   return (
     <View
       style={teaShop
-        ? { height: geo.barH, paddingTop: geo.top, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }
-        : { backgroundColor: th.brand, paddingTop: insets.top + 6, paddingBottom: 14, paddingHorizontal: 8, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}
+        ? { height: geo.framed ? geo.bandH : geo.barH, paddingTop: geo.top, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }
+        : { backgroundColor: geo.framed ? 'transparent' : th.brand, paddingTop: insets.top + 6, paddingBottom: 14, paddingHorizontal: 8, borderBottomLeftRadius: geo.framed ? 0 : 24, borderBottomRightRadius: geo.framed ? 0 : 24, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}
     >
       <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Back" hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
         <Feather name="arrow-left" size={24} color="#fff" />

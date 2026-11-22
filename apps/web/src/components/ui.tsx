@@ -222,7 +222,9 @@ export function Overlay({ children }: { children: ReactNode }) {
   return ready ? createPortal(children, document.body) : null;
 }
 
-export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+const openSheets: object[] = [];
+
+export function Sheet({ open, onClose, title, children, wide = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
   const { t } = useT();
   const ref = useRef<HTMLDivElement>(null);
   // parents pass a new onClose on every render: keep the latest in a ref so typing in a field never re-runs the effect
@@ -231,31 +233,37 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current();
+    // Escape closes only the dialog on top (a dialog opened from inside another one)
+    const token = {};
+    openSheets.push(token);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && openSheets[openSheets.length - 1] === token && closeRef.current();
     window.addEventListener('keydown', onKey);
     ref.current?.focus();
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); openSheets.splice(openSheets.indexOf(token), 1); };
   }, [open]);
   if (!open) return null;
   return createPortal(
     <div className="anim-fade fixed inset-0 z-50 flex h-[100dvh] items-end justify-center bg-slate-900/45 pb-4 backdrop-blur-sm sm:items-center sm:pb-0" onClick={onClose}>
       <div
         ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title}
-        className="anim-sheet max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-[24px] border border-slate-200/70 bg-surface p-5 pt-3 outline-none sm:rounded-2xl sm:pt-5"
+        className={`anim-sheet max-h-[90dvh] w-full ${wide ? 'flex max-w-3xl flex-col overflow-hidden' : 'max-w-lg overflow-y-auto overscroll-contain p-5 pt-3 sm:pt-5'} rounded-[24px] border border-slate-200/70 bg-surface outline-none sm:rounded-2xl`}
         style={{ boxShadow: 'var(--shadow-pop)', WebkitOverflowScrolling: 'touch' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden />
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-lg font-bold tracking-tight">{title}</h2>
-          <button
-            type="button" onClick={onClose} aria-label={t('close')}
-            className="-mr-1.5 -mt-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-ink"
-          >
-            <Icon name="close" size={18} />
-          </button>
+        {/* wide dialogs: the title stays put and only the content below it scrolls */}
+        <div className={wide ? 'shrink-0 border-b border-slate-200/70 px-5 pb-3 pt-3 sm:px-7 sm:pt-5' : ''}>
+          <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden />
+          <div className={`flex items-start justify-between gap-3 ${wide ? '' : 'mb-4'}`}>
+            <h2 className="text-lg font-bold tracking-tight">{title}</h2>
+            <button
+              type="button" onClick={onClose} aria-label={t('close')}
+              className="-mr-1.5 -mt-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-ink"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
         </div>
-        {children}
+        {wide ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6 sm:px-7">{children}</div> : children}
       </div>
     </div>,
     document.body,

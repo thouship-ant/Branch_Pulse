@@ -8,7 +8,7 @@ import { useWorkDate } from '@/lib/workDate';
 export default function PurchasesScreen() {
   const { locationId } = useBranch();
   const date = useWorkDate();
-  if (!locationId) return <Screen><Loading /></Screen>;
+  if (!locationId) return <Screen><Loading page /></Screen>;
   return (
     <Screen top={<Heading onBlue sub={prettyDate(date)} title="Purchases" />}>
       <PurchaseList fixedLocationId={locationId} period={{ id: 'custom', from: date, to: date }} />

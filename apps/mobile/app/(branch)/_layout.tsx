@@ -35,7 +35,7 @@ export default function BranchLayout() {
       value={{
         title: teaShop ? me.company?.businessName || me.company?.name || me.fullName : me.fullName,
         subtitle: teaShop ? [me.fullName, branch?.name].filter(Boolean).join(' · ') : [me.company?.name, branch?.name].filter(Boolean).join(' · '),
-        teaShop, logo: teaShop ? me.company?.businessLogo : undefined,
+        teaShop, logo: me.company?.businessLogo || undefined,
         right: <IconButton icon="log-out" label="Sign out" onPress={() => void logout()} />,
       }}
     >

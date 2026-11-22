@@ -9,7 +9,7 @@ export default {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      fontFamily: { sans: ['var(--font-inter)', 'var(--font-tamil)', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
+      fontFamily: { sans: ['var(--app-font, var(--font-inter))', 'var(--font-tamil)', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
       colors: {
         brand: {
           DEFAULT: 'rgb(var(--brand) / <alpha-value>)',

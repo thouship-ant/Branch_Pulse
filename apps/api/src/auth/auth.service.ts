@@ -5,7 +5,8 @@ import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto
 import { AppException, notFound, validation } from '../common/app-exception';
 import { AuditService } from '../common/audit.service';
 import { AuthUser, ReqCtx } from '../common/auth-user';
-import { PrismaService } from '../common/prisma.service';
+import { frameUrl } from '../common/business-types';
+import { companyScope, PrismaService } from '../common/prisma.service';
 import { SettingsService } from '../common/settings.service';
 import { env } from '../config/env';
 import { assertStrongPassword, userLabel } from './passwords';
@@ -297,13 +298,21 @@ export class AuthService {
     const company = user.companyId
       ? await this.prisma.runAuth((tx) => tx.company.findUnique({ where: { id: user.companyId! }, select: { id: true, code: true, name: true } }))
       : null;
-    const [businessType, businessName, businessLogo] = company
+    const [businessType, businessName, businessLogo, businessFont, businessFontSize] = company
       ? await Promise.all([
           this.settings.get<string>('business.type', company.id),
           this.settings.get<string>('business.name', company.id),
           this.settings.get<string>('business.logo', company.id),
+          this.settings.get<string>('business.font', company.id),
+          this.settings.get<string>('business.font_size', company.id),
         ])
-      : [undefined, undefined, undefined];
+      : [undefined, undefined, undefined, undefined, undefined];
+    // the company's own background picture, if it has one (the apps fetch it from this address)
+    const frame = company
+      ? (await this.prisma.runScoped(companyScope(company.id), (tx) =>
+          tx.$queryRaw<Array<{ at: Date }>>`SELECT updated_at AS at FROM settings WHERE company_id = ${company.id}::uuid AND key = 'business.frame' AND value <> '""'::jsonb`,
+        ))[0]
+      : undefined;
     const locations = user.isSuper
       ? []
       : await this.prisma.runScoped(user, (tx) =>
@@ -328,7 +337,7 @@ export class AuthService {
       isSuper: user.isSuper,
       /** true until the user replaces the default / temporary password: the app shows the change-password prompt */
       mustChangePassword: profile.must_change_password && user.roles.includes('ADMIN'),
-      company: company ? { ...company, businessType, businessName, businessLogo } : null,
+      company: company ? { ...company, businessType, businessName, businessLogo, businessFont, businessFontSize, businessFrame: frame ? frameUrl(company.id, frame.at) : null } : null,
       locations,
     };
   }

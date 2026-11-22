@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Skeleton } from '@/components/ui';
+import { ScreenLoader } from '@/components/Loader';
 import { useSession } from '@/lib/session';
 
 export default function Index() {
@@ -12,5 +12,5 @@ export default function Index() {
     if (loading) return;
     router.replace(!me ? '/login' : me.isSuper ? '/super' : isBranchUser ? '/b/home' : '/dashboard');
   }, [loading, me, isBranchUser, router]);
-  return <div className="mx-auto max-w-md p-6"><Skeleton className="h-32" /></div>;
+  return <ScreenLoader />;
 }

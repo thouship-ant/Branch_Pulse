@@ -9,7 +9,7 @@ export default function CashScreen() {
   const router = useRouter();
   const { locationId } = useBranch();
   const date = todayIST();
-  if (!locationId) return <Screen><Loading /></Screen>;
+  if (!locationId) return <Screen><Loading page /></Screen>;
   return (
     <Screen>
       <Heading onBlue sub={prettyDate(date)} title="Cash reconciliation" />

@@ -48,7 +48,7 @@ export default function ClosingDetail() {
     } finally { setBusy(false); }
   }
 
-  if (!screen) return <Screen title="Closing">{error ? <ErrorBox error={error} /> : <Loading />}</Screen>;
+  if (!screen) return <Screen title="Closing">{error ? <ErrorBox error={error} /> : <Loading page />}</Screen>;
   const c = screen.closing;
   const cash = screen.cash;
   const locName = me?.locations.find((l) => l.id === locationId)?.name ?? 'Branch';

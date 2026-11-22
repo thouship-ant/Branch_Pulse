@@ -22,12 +22,12 @@ async function main() {
   if (!pw) throw new Error('Set SEED_PASSWORD (or NEW_PASSWORD) first');
   assertStrongPassword(pw);
   const r = await prisma.user.updateMany({
-    where: { username: 'superadmin', company_id: null },
+    where: { username: '5432167890', company_id: null },
     data: { password_hash: await argon2.hash(pw), failed_logins: 0, locked_until: null, must_change_password: false, password_changed_at: new Date() },
   });
-  if (r.count === 0) throw new Error("No Super Admin ('superadmin') found - run the seed first");
-  await prisma.session.updateMany({ where: { user: { username: 'superadmin', company_id: null }, revoked_at: null }, data: { revoked_at: new Date() } });
-  console.log("Super Admin password updated. Sign in as 'superadmin'.");
+  if (r.count === 0) throw new Error("No Super Admin ('5432167890') found - run the seed first");
+  await prisma.session.updateMany({ where: { user: { username: '5432167890', company_id: null }, revoked_at: null }, data: { revoked_at: new Date() } });
+  console.log("Super Admin password updated. Sign in as '5432167890'.");
 }
 
 main().finally(() => prisma.$disconnect());

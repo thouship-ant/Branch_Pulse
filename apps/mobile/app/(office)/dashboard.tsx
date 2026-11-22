@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { DashboardOrders } from '@/components/DashboardOrders';
@@ -15,10 +15,14 @@ import { useTheme } from '@/lib/theme';
 import { useSession } from '@/lib/session';
 import { useBranches } from '@/lib/useLookups';
 import { useLive } from '@/lib/live';
+import { loadSnapshot, peekSnapshot, saveSnapshot } from '@/lib/snapshot';
 
 interface Exc { code: string; severity: 'CRITICAL' | 'WARNING' | 'INFO'; title: string; locationName?: string; businessDate?: string; metric?: string }
 interface PendingClosing { locationId: string; locationName: string; businessDate: string; status: string }
 
+type Wait = { expenses: number; amount: number; closings: number; requests: number; oldestExpense: string | null; oldestClosing: string | null; overdue: number };
+type Snap = { summary: any; exceptions: Exc[]; pending: PendingClosing[]; wait: Wait };
+const EMPTY_WAIT: Wait = { expenses: 0, amount: 0, closings: 0, requests: 0, oldestExpense: null, oldestClosing: null, overdue: 0 };
 const SEV = { CRITICAL: { tone: 'bad', icon: '⛔' }, WARNING: { tone: 'warn', icon: '⚠' }, INFO: { tone: 'sky', icon: 'ⓘ' } } as const;
 const whole = (v: string | number | null | undefined) => formatINR(v == null ? null : String(v), { decimals: false });
 const compactMoney = (v: string | number | null | undefined) => {
@@ -35,16 +39,30 @@ export default function DashboardScreen() {
   const isTeaShop = me?.company?.businessType === 'TEA_SHOP';
   const today = todayIST();
   const [period, setPeriod] = useState<Period>(() => resolvePeriod('today', today));
-  const [summary, setSummary] = useState<any>(null);
-  const [exceptions, setExceptions] = useState<Exc[]>([]);
-  const [pending, setPending] = useState<PendingClosing[]>([]);
+  // what this screen showed last time (same user and period): drawn straight away while the fresh numbers load
+  const snapKey = `dashboard-${me?.id ?? 'x'}-${periodQuery(period)}`;
+  const snap0 = peekSnapshot<Snap>(snapKey);
+  const [summary, setSummary] = useState<any>(snap0?.summary ?? null);
+  const [exceptions, setExceptions] = useState<Exc[]>(snap0?.exceptions ?? []);
+  const [pending, setPending] = useState<PendingClosing[]>(snap0?.pending ?? []);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [pendingOpen, setPendingOpen] = useState(false);
   const [pendingPage, setPendingPage] = useState(1);
   const [hideAmounts, setHideAmounts] = useState(false);
   const branchList = useBranches();
-  const [wait, setWait] = useState({ expenses: 0, amount: 0, closings: 0, requests: 0, oldestExpense: null as string | null, oldestClosing: null as string | null, overdue: 0 });
+  const [wait, setWait] = useState<Wait>(snap0?.wait ?? EMPTY_WAIT);
+  const [fresh, setFresh] = useState(false);
+
+  useEffect(() => {
+    setFresh(false);
+    let live = true;
+    void loadSnapshot<Snap>(snapKey).then((snap) => {
+      if (!live || !snap) return;
+      setFresh((isFresh) => { if (!isFresh) { setSummary(snap.summary); setExceptions(snap.exceptions); setPending(snap.pending); setWait(snap.wait); } return isFresh; });
+    });
+    return () => { live = false; };
+  }, [snapKey]);
 
   const load = useCallback(async () => {
     try {
@@ -59,17 +77,20 @@ export default function DashboardScreen() {
         api.get<any[]>('/backdate-requests?status=PENDING').catch(() => [] as any[]),
         api.get<any>(`/purchases/summary?from=${addDays(todayIST(), -29)}&to=${todayIST()}`).catch(() => null),
       ]);
-      setWait({
+      const nextWait: Wait = {
         expenses: we.length, amount: we.reduce((a, r) => a + Number(r.amount), 0), closings: wc.length, requests: wr.length,
         oldestExpense: we.map((r) => String(r.createdAt)).sort()[0] ?? null,
         oldestClosing: wc.map((r) => String(r.submittedAt ?? r.businessDate)).sort()[0] ?? null,
         overdue: pu ? Number(pu.outstanding?.overdue ?? 0) : 0,
-      });
-      setSummary(s); setPending(pc); setExceptions(ex.data.filter((e) => e.code !== 'CLOSING_PENDING')); setError(null);
+      };
+      const nextEx = ex.data.filter((e) => e.code !== 'CLOSING_PENDING');
+      setWait(nextWait); setSummary(s); setPending(pc); setExceptions(nextEx); setError(null); setFresh(true);
+      saveSnapshot(snapKey, { summary: s, exceptions: nextEx, pending: pc, wait: nextWait } satisfies Snap);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load'); }
-  }, [period]);
+  }, [period, snapKey]);
 
-  useFocusEffect(useCallback(() => { setSummary(null); void load(); }, [load]));
+  // no clearing here: the previous numbers stay on screen until the new ones arrive
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
   useLive(load);
 
   const tl = summary?.tiles;
@@ -117,15 +138,15 @@ export default function DashboardScreen() {
 
   return (
     <Screen hero onRefresh={load} headerSubtitle={isTeaShop ? 'All Figures' : undefined} headerRight={headerRight}>
-      {isTeaShop && tl ? (
+      {isTeaShop ? (
         <View style={{ gap: 12 }}>
-          <View style={{ minHeight: 78, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 8 }}>
+          <View style={{ justifyContent: 'center', paddingHorizontal: 10, paddingTop: 0, paddingBottom: 4 }}>
             
             <Text numberOfLines={2} style={{ color: '#32190f', fontSize: 24, lineHeight: 30, fontWeight: '800' }}>
               {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, {me?.fullName} 👋
             </Text>
             <Text numberOfLines={2} style={{ color: '#4a3020', fontSize: 13, lineHeight: 18 }}>
-              {prettyDate(today)} · {Math.max(0, Number(tl.branchCount ?? branchList.length) - Number(tl.pendingClosings ?? pendingBranchCount))}/{Number(tl.branchCount ?? branchList.length)} branches closed today
+              {prettyDate(today)}{tl ? ` · ${Math.max(0, Number(tl.branchCount ?? branchList.length) - Number(tl.pendingClosings ?? pendingBranchCount))}/${Number(tl.branchCount ?? branchList.length)} branches closed today` : ''}
             </Text>
           </View>
           {showAttention && (
@@ -146,10 +167,10 @@ export default function DashboardScreen() {
             </View>
           )}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
-            <HomeShopMetric label={`Total sales · ${when}`} value={amount(tl.totalSales)} icon="trending-up" background="#b65317" onPress={() => router.push('/more/pl' as any)} />
-            <HomeShopMetric label="Cash" value={amount(tl.cash)} icon="dollar-sign" mdi="purse-outline" background="#23933d" onPress={() => router.push('/more/cash' as any)} />
-            <HomeShopMetric label={`Expenses · ${when}`} value={amount(tl.totalExpenses)} icon="credit-card" background="#8436a8" onPress={() => router.push('/more/expenses' as any)} />
-            <HomeShopMetric label="Supplier outstanding" value={compactAmount(tl.supplierOutstanding)} sub={wait.overdue > 0 ? `${compactAmount(wait.overdue)} overdue` : undefined} icon="shopping-bag" mdi="storefront-outline" background="#bd3549" onPress={() => router.push('/more/purchases' as any)} />
+            <HomeShopMetric label={`Total sales · ${when}`} value={tl ? amount(tl.totalSales) : "—"} icon="trending-up" background="#b65317" onPress={() => router.push('/more/pl' as any)} />
+            <HomeShopMetric label="Cash" value={tl ? amount(tl.cash) : "—"} icon="dollar-sign" mdi="purse-outline" background="#23933d" onPress={() => router.push('/more/cash' as any)} />
+            <HomeShopMetric label={`Expenses · ${when}`} value={tl ? amount(tl.totalExpenses) : "—"} icon="credit-card" background="#8436a8" onPress={() => router.push('/more/expenses' as any)} />
+            <HomeShopMetric label="Supplier outstanding" value={tl ? compactAmount(tl.supplierOutstanding) : "—"} sub={wait.overdue > 0 ? `${compactAmount(wait.overdue)} overdue` : undefined} icon="shopping-bag" mdi="storefront-outline" background="#bd3549" onPress={() => router.push('/more/purchases' as any)} />
           </View>
         </View>
       ) : !isTeaShop && tl ? (

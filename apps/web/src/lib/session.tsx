@@ -1,10 +1,11 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { connectLive, disconnectLive } from './live';
+import { connectLive, disconnectLive, useLive } from './live';
 import { api, ApiError, refreshSession, setAccessToken, setAuthLostHandler } from './api';
 import { clearLocalData } from './outbox';
 import { useTheme } from './theme';
+import { fontCss, sizePx } from './typography';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
 
@@ -23,7 +24,7 @@ export interface Me {
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;
-  company?: { id: string; code: string; name: string; businessType?: string; businessName?: string; businessLogo?: string } | null;
+  company?: { id: string; code: string; name: string; businessType?: string; businessName?: string; businessLogo?: string; businessFrame?: string | null; businessFont?: string; businessFontSize?: string } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 
@@ -70,6 +71,34 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // live updates run while someone is signed in
   useEffect(() => { if (me) connectLive(); else disconnectLive(); }, [!!me]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setBusinessType(me?.company?.businessType); }, [me?.company?.businessType, setBusinessType]);
+  // the company's name, logo or business type was changed (by the Super Admin or the Admin): everyone signed in picks it up now
+  useLive(() => { if (me) void api.get<Me>('/me').then(setMe).catch(() => undefined); }, ['COMPANY', 'SETTING']);
+  // the loader shows this business's logo on the next cold start, before the session is restored
+  useEffect(() => { const logo = me?.company?.businessLogo; if (logo) { try { localStorage.setItem('bp_last_logo', logo); } catch { /* storage blocked */ } } }, [me?.company?.businessLogo]);
+  // the company's typeface and text size (everything is rem-based, so the root size scales the whole interface)
+  useEffect(() => {
+    const root = document.documentElement;
+    const font = me?.company?.businessFont;
+    const size = me?.company?.businessFontSize;
+    if (font && font !== 'INTER') root.style.setProperty('--app-font', fontCss(font)); else root.style.removeProperty('--app-font');
+    if (size && size !== 'MEDIUM') root.style.fontSize = `${sizePx(size)}px`; else root.style.removeProperty('font-size');
+  }, [me?.company?.businessFont, me?.company?.businessFontSize]);
+  // the company's application frame (background picture), when it has one
+  useEffect(() => {
+    const root = document.documentElement;
+    const url = me?.company?.businessFrame;
+    if (url) root.style.setProperty('--app-frame', `url("${url}")`); else root.style.removeProperty('--app-frame');
+    root.classList.toggle('has-frame', !!url);
+  }, [me?.company?.businessFrame]);
+  // browser tab: the signed-in business's name and logo (Branch Pulse when there is none)
+  useEffect(() => {
+    const name = me?.company?.businessName;
+    const logo = me?.company?.businessLogo;
+    document.title = name || 'Branch Pulse';
+    const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+    if (!links.length) return;
+    links.forEach((l) => { l.dataset.orig ??= l.href; l.href = logo || l.dataset.orig; });
+  }, [me?.company?.businessName, me?.company?.businessLogo]);
 
   const start = (res: any) => { setAccessToken(res.accessToken); setMe(res.user); };
 

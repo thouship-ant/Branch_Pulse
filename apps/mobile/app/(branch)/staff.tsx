@@ -11,7 +11,7 @@ export default function BranchStaffScreen() {
   const { locationId } = useBranch();
   const [tab, setTab] = useState<Tab>('attendance');
   const teaShop = useIsTeaShop();
-  if (!locationId) return <Screen><Loading /></Screen>;
+  if (!locationId) return <Screen><Loading page /></Screen>;
   return (
     <Screen>
       {teaShop ? <PageTitle icon="account-group-outline" title="Employee" subtitle="Attendance, advances and your team" /> : <Heading onBlue title="Employee" />}

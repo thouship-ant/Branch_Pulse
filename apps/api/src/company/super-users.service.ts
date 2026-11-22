@@ -94,6 +94,8 @@ export class SuperUsersService {
     const user = await this.prisma.runScoped(ctx.user, async (tx) => {
       const u = await tx.user.findUnique({ where: { id }, include: { roles: { include: { role: true } } } });
       if (!u || !u.company_id) throw notFound('User');
+      // only an Admin has a password; every other role signs in with an OTP
+      if (!u.roles.some((r) => r.role.code === 'ADMIN')) throw new AppException(422, 'NO_PASSWORD_SIGN_IN', 'Only an Admin has a password. Other users sign in with an OTP.');
       if (!u.mobile) throw new AppException(422, 'NO_MOBILE', 'This user has no mobile number to send the password to. Add one first.');
       await tx.user.update({
         where: { id },

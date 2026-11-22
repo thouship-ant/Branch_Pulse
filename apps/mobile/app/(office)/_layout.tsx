@@ -18,8 +18,8 @@ export default function OfficeLayout() {
   return (
     <HeaderProvider value={{
       title: teaShop ? me.company?.businessName || me.company?.name || me.fullName : me.fullName,
-      subtitle: teaShop ? 'Multi-Branch Operations' : me.company?.name,
-      teaShop, logo: teaShop ? me.company?.businessLogo : undefined,
+      subtitle: teaShop ? 'Multi-Branch Operations' : me.company?.businessName || me.company?.name,
+      teaShop, logo: me.company?.businessLogo || undefined,
     }}>
     <Tabs
       tabBar={() => <OfficeTabBar />}

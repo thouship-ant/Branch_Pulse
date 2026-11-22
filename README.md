@@ -24,7 +24,7 @@ Sign-in (dev seed: Super Admin password `ChangeMe@123`; the OTP is `123456` for 
 
 | Who | Sign in with | Example |
 |---|---|---|
-| Super Admin | username + password (no OTP) | `superadmin` |
+| Super Admin | username + password (no OTP) | `5432167890` |
 | Admin | mobile + password (`Admin@1234`), then OTP | `9000000001` |
 | Accountant, Stock Manager, Branch Managers, Staff | mobile + OTP | `9000000002` Accountant, `9000000003` Stock Manager, `9000000011`..`9000000016` branch managers |
 

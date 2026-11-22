@@ -65,7 +65,7 @@ export function OfficeTabBar() {
   if (overflow.length === 1 && main.length <= SLOTS) { main = [...main, overflow[0]]; overflow = []; }
   const isActive = (l: Link) => path === l.match || path.startsWith(l.match + '/') || (l.match === '/more/closing' && path.startsWith('/more/closing'));
   const badge = (l: Link) => (l.path === '/approvals' ? { n: att.waiting, bg: '#dc2626' } : l.path === '/more/closings' ? { n: att.unclosedBranches, bg: '#f59e0b' } : { n: 0, bg: '' });
-  const bottom = Math.max(insets.bottom, 14);
+  const bottom = Math.max(insets.bottom, 4); // a little room under the labels where there is no system bar (web preview, iOS without a home bar ...)
   const moreActive = overflow.some(isActive);
 
   const Slot = ({ active, label, onPress, children, n, bg }: { active: boolean; label: string; onPress: () => void; children: React.ReactNode; n?: number; bg?: string }) => (

@@ -10,6 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/lora": "^0.4.2",
+    "@expo-google-fonts/nunito": "^0.4.2",
+    "@expo-google-fonts/poppins": "^0.4.1",
+    "@expo-google-fonts/roboto": "^0.4.3",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "~14.0.4",
     "decimal.js": "^10.4.3",

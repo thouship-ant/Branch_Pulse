@@ -46,7 +46,7 @@ const GROUPS: Array<{ title: string; fields: F[] }> = [
     { key: 'alerts.advance_pending_hours', label: 'Advance pending alert (hours)', kind: 'number' },
   ] },
 ];
-const BIZ = [{ value: 'TEA_SHOP', label: 'Tea shop' }, { value: 'HOTEL', label: 'Hotel' }, { value: 'BAKERY', label: 'Bakery' }, { value: 'OTHER', label: 'Other' }];
+const BIZ = [{ value: 'TEA_SHOP', label: 'Tea shop' }, { value: 'HOTEL', label: 'Hotel' }, { value: 'RESTAURANT', label: 'Restaurant' }, { value: 'BAKERY', label: 'Bakery' }, { value: 'FRUIT_STALL', label: 'Fruit stall' }, { value: 'VEGETABLE_SHOP', label: 'Vegetable shop' }, { value: 'GROCERY', label: 'Grocery' }, { value: 'OTHER', label: 'Other' }];
 // GET camel-cases each key part (fy.start_month -> fy.startMonth); PUT takes the raw key
 const responseKey = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 

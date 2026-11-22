@@ -16,7 +16,7 @@ export default function BranchStockScreen() {
   const [tab, setTab] = useState<Tab>('count');
   const day = useDay();
   const teaShop = useIsTeaShop();
-  if (!locationId) return <Screen><Loading /></Screen>;
+  if (!locationId) return <Screen><Loading page /></Screen>;
   const tabs: Array<{ key: Tab; label: string }> = [{ key: 'count', label: 'Count' }, { key: 'wastage', label: 'Wastage' }, { key: 'stock', label: 'Items' }, { key: 'transfers', label: 'Transfers' }];
   if (can('count:view')) tabs.push({ key: 'variance', label: 'Variance' });
   return (

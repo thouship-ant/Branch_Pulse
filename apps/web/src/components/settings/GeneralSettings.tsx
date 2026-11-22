@@ -54,7 +54,7 @@ const GROUPS: Array<{ titleKey: MessageKey; fields: Field[] }> = [
   },
 ];
 
-const BIZ_TYPES: Array<[string, MessageKey]> = [['TEA_SHOP', 'bizTeaShop'], ['HOTEL', 'bizHotel'], ['BAKERY', 'bizBakery'], ['OTHER', 'bizOther']];
+const BIZ_TYPES: Array<[string, MessageKey]> = [['TEA_SHOP', 'bizTeaShop'], ['HOTEL', 'bizHotel'], ['RESTAURANT', 'bizRestaurant'], ['BAKERY', 'bizBakery'], ['FRUIT_STALL', 'bizFruitStall'], ['VEGETABLE_SHOP', 'bizVegetableShop'], ['GROCERY', 'bizGrocery'], ['OTHER', 'bizOther']];
 
 // GET responses camelCase every key server-side (fy.start_month -> fy.startMonth); PUT still takes the raw key.
 const responseKey = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());

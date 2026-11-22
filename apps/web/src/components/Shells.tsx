@@ -12,6 +12,7 @@ import { useTheme } from '@/lib/theme';
 import { Icon, type IconName } from './Icon';
 import { LogoMark } from './Logo';
 import { CommandPalette } from './CommandPalette';
+import { ScreenLoader } from './Loader';
 import { Sheet, Skeleton, SyncBanner } from './ui';
 import { useAttention } from '@/lib/useAttention';
 import { OfficeHeaderContext, type OfficeHeaderContent } from './OfficeHeaderSlot';
@@ -72,20 +73,23 @@ const roleLabel = (code: string) => code.toLowerCase().split('_').map((w) => w.c
 
 function Logo({ compact, onDark = false }: { compact?: boolean; onDark?: boolean }) {
   const { t } = useT();
+  const { me } = useSession();
+  // a business partner signed in: its own logo and name replace the Branch Pulse ones
+  const logo = me?.company?.businessLogo;
+  const name = me?.company?.businessName || (logo ? me?.company?.name : '') || t('appName');
   return (
     <div className="flex items-center gap-2.5">
-      <LogoMark size={compact ? 34 : 36} />
-      {!compact && <span className={`text-[19px] font-extrabold tracking-tight ${onDark ? 'text-on-brand' : 'text-ink'}`}>{t('appName')}</span>}
+      {logo
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={logo} alt="" aria-hidden="true" className="shrink-0 rounded-xl bg-white object-contain shadow-sm ring-1 ring-black/5" style={{ width: compact ? 34 : 36, height: compact ? 34 : 36 }} />
+        : <LogoMark size={compact ? 34 : 36} />}
+      {!compact && <span className={`truncate text-[19px] font-extrabold tracking-tight ${onDark ? 'text-on-brand' : 'text-ink'}`}>{name}</span>}
     </div>
   );
 }
 
 function Splash() {
-  return (
-    <div className="mx-auto max-w-md space-y-3 p-6">
-      <Skeleton className="h-10" /><Skeleton className="h-32" /><Skeleton className="h-32" />
-    </div>
-  );
+  return <ScreenLoader />;
 }
 
 /** Redirect helper for guarded layouts. */
@@ -165,7 +169,7 @@ export function BranchShell({ children }: { children: ReactNode }) {
               </span>
               <div className="min-w-0">
                 <p className="truncate text-xs text-on-brand/75">{me.fullName}</p>
-                <h1 className="truncate text-lg font-bold leading-tight">{branch ? pick(branch.name, branch.nameTa) : t('appName')}</h1>
+                <h1 className="truncate text-lg font-bold leading-tight">{branch ? pick(branch.name, branch.nameTa) : me.company?.businessName || t('appName')}</h1>
               </div>
             </div>
             <div className="relative flex items-center">
@@ -429,6 +433,11 @@ export function OfficeShell({ children }: { children: ReactNode }) {
                 </div>
               </div>
               <TeaShopArtwork brandName={me.company.businessName || me.company.name} />
+              {/* the logo on the cup of the company's frame picture (phone-sized windows only, see the stylesheet) */}
+              {me.company.businessFrame && me.company.businessLogo
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={me.company.businessLogo} alt="" aria-hidden="true" className={teaShopStyles.frameEmblem} />
+                : null}
             </>
           ) : (
             <>
