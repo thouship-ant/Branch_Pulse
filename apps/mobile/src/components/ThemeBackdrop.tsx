@@ -25,7 +25,7 @@ const FRAME_CUP_SIZE = 85 / 1024;
 // (header band, the whole cup and saucer) and the page carries on with the same picture
 const FRAME_VISIBLE = 0.178;
 const FRAME_ZOOM = 1.0; // the picture at the screen's width: the header is the same height as the standard themed header
-const FRAME_SHIFT = 0; // (raise to push the picture down; the strip above is its own top row carried upward, so there is no seam)
+const FRAME_SHIFT = 0.09; // the picture sits this much (of the width) below the status bar, so the cup is under the header buttons; the strip above is its own top row carried upward, so there is no seam
 const BOTTOM_SHARE = 0.25; // the leaves + tagline live in the last quarter of the background picture
 
 /**
@@ -43,8 +43,8 @@ export function useBackdropGeometry() {
   const barH = insets.top + Math.round(width * HEADER_RATIO) + frameShift; // the standard header height, with or without a frame
   const artH = barH - insets.top;
   // framed: the brown band above the picture's curve (its left edge), where the logo and title are centred
-  const bandH = Math.round(width * 0.2295 * FRAME_ZOOM) + frameShift;
-  return { width, artH, top: insets.top, barH, headerH: barH, imgH, framed: hasFrame, bandH, frameShift };
+  const bandH = insets.top + Math.round(width * 0.2295 * FRAME_ZOOM) + frameShift;
+  return { width, artH, top: insets.top, barH, headerH: barH, imgH, framed: hasFrame, bandH, frameShift, frameTop: insets.top + frameShift };
 }
 
 /** The strip above a lowered frame: the picture's own top row, carried upward (it is soft brown), so the picture starts without a seam. */
@@ -62,7 +62,7 @@ function FrameTopSmear({ source, width, shift }: { source: any; width: number; s
 export function ThemeBackdrop() {
   const th = useTheme();
   const { me } = useSession();
-  const { width, imgH, frameShift } = useBackdropGeometry();
+  const { width, imgH, frameTop } = useBackdropGeometry();
   // the company's own application frame (about 2:3, like the default picture), when it has one
   const frame = me?.company?.businessFrame;
   const source = frame ? { uri: `${API_ORIGIN}${frame}` } : PICTURE;
@@ -71,9 +71,9 @@ export function ThemeBackdrop() {
       <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: CREAM, opacity: th.dark ? 0.4 : 1 }}>
         {/* a company frame carries on under the header: the same picture at the same place, so there is no line between header and page */}
         {frame ? (
-          <View style={{ position: 'absolute', left: 0, top: 0, width, height: Math.round(imgH * FRAME_ZOOM * 0.3) + frameShift, overflow: 'hidden' }}>
-            <FrameTopSmear source={source} width={width} shift={frameShift} />
-            <Image source={source} resizeMode="stretch" style={{ position: 'absolute', left: width - Math.round(width * FRAME_ZOOM), top: frameShift, width: Math.round(width * FRAME_ZOOM), height: Math.round(imgH * FRAME_ZOOM) }} />
+          <View style={{ position: 'absolute', left: 0, top: 0, width, height: Math.round(imgH * FRAME_ZOOM * 0.3) + frameTop, overflow: 'hidden' }}>
+            <FrameTopSmear source={source} width={width} shift={frameTop} />
+            <Image source={source} resizeMode="stretch" style={{ position: 'absolute', left: width - Math.round(width * FRAME_ZOOM), top: frameTop, width: Math.round(width * FRAME_ZOOM), height: Math.round(imgH * FRAME_ZOOM) }} />
           </View>
         ) : null}
         <View style={{ position: 'absolute', bottom: 0, left: 0, width, height: Math.round(imgH * BOTTOM_SHARE), overflow: 'hidden' }}>
@@ -88,7 +88,7 @@ export function ThemeBackdrop() {
 export function ThemeHeaderBg({ emblem = true }: { emblem?: boolean } = {}) {
   const th = useTheme();
   const { me } = useSession();
-  const { width, artH, top, barH, frameShift } = useBackdropGeometry();
+  const { width, artH, top, barH, frameTop } = useBackdropGeometry();
   // the company's own application frame (about 2:3): its top is the header, its empty cup carries the company logo
   const frame = me?.company?.businessFrame ? `${API_ORIGIN}${me.company.businessFrame}` : null;
   const frameH = Math.round(width * PICTURE_RATIO);
@@ -96,7 +96,7 @@ export function ThemeHeaderBg({ emblem = true }: { emblem?: boolean } = {}) {
     // the picture itself is the page background (ThemeBackdrop), so the header has no edge of its own: only the logo on the cup is drawn here
     return (
       <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: barH }}>
-        {emblem ? <CupEmblem x={1 - FRAME_ZOOM * (1 - FRAME_CUP_X)} y={frameShift + frameH * FRAME_ZOOM * FRAME_CUP_Y} size={FRAME_CUP_SIZE * FRAME_ZOOM} /> : null}
+        {emblem ? <CupEmblem x={1 - FRAME_ZOOM * (1 - FRAME_CUP_X)} y={frameTop + frameH * FRAME_ZOOM * FRAME_CUP_Y} size={FRAME_CUP_SIZE * FRAME_ZOOM} /> : null}
       </View>
     );
   }
