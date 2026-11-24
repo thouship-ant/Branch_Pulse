@@ -5,7 +5,7 @@
 #   ALSO_REMOVE="CMP002 CMP003" ./infra/import-dev-data.sh   # also delete these (test) companies
 #
 # Replaces ONLY the default company (found by code or id). The Super Admin and every other company in production are
-# left untouched. A user whose mobile number is already taken is renumbered to the next free one. A backup is written first.
+# left untouched (the Super Admin password is then set again from SEED_PASSWORD). A user whose mobile number is already taken is renumbered to the next free one. A backup is written first.
 # dev-export/data.sql is self-contained, so this wrapper is optional:
 #   docker compose ... exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --single-transaction -q < dev-export/data.sql
 set -eu
@@ -42,7 +42,14 @@ if $COMPOSE exec -T db psql -U postgres -d branch_pulse -v ON_ERROR_STOP=1 --sin
   echo "Import FAILED - nothing was changed. Restarting the app."; $COMPOSE start api web; exit 1
 fi
 
-# 3. receipts and photos
+# 3. the Super Admin password from SEED_PASSWORD in .env.prod (the import leaves the Super Admin alone, so this keeps it in step with .env.prod)
+#    the script is mounted into the container so it works even when the image was built before it existed
+if $COMPOSE run --rm -v "$PWD/apps/api/prisma/set-superadmin-password.ts:/app/apps/api/prisma/set-superadmin-password.ts" seed npx tsx prisma/set-superadmin-password.ts; then :; else
+  echo "WARNING: the data is loaded, but setting the Super Admin password failed. Run it by hand:"
+  echo "  $COMPOSE run --rm seed npx tsx prisma/set-superadmin-password.ts"
+fi
+
+# 4. receipts and photos
 if [ -f dev-export/uploads.tgz ]; then
   docker run --rm -v branch-pulse_uploads:/data -v "$PWD/dev-export":/in alpine tar xzf /in/uploads.tgz -C /data
 fi

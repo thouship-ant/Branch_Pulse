@@ -111,7 +111,7 @@ Carries the **default company (`CMP000`)** over: its details, branches, users, r
 
 # on the server: git pull, then rebuild and migrate FIRST (the data needs the newest migration), seed once for the Super Admin
 #   $C build && $C run --rm migrate && $C run --rm seed
-./infra/import-dev-data.sh     # backs up production, replaces CMP000, leaves everything else alone
+./infra/import-dev-data.sh     # backs up production, replaces CMP000, leaves everything else alone, then sets the Super Admin password from SEED_PASSWORD
 ```
 
 - Only `CMP000` is replaced. Production's Super Admin (password from `SEED_PASSWORD`) and any company created there stay untouched; running the import again simply replaces `CMP000` again.
