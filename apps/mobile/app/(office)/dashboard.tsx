@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/Text';
+import { ClosingModal } from '@/components/ClosingDetailBody';
 import { DashboardOrders } from '@/components/DashboardOrders';
 import { PeriodPill } from '@/components/PeriodPill';
 import { ProfilePill } from '@/components/TeaShopHeaderActions';
@@ -10,6 +11,7 @@ import { ACCENT, Banner, Button, Card, Chip, ErrorBox, H3, HeroCard, Loading, Mu
 import { api } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { periodLabel, periodQuery, resolvePeriod, type Period } from '@/lib/period';
+import { periodParams } from '@/lib/usePeriodParams';
 import { dec, formatINR } from '@/lib/money';
 import { useTheme } from '@/lib/theme';
 import { useSession } from '@/lib/session';
@@ -48,6 +50,7 @@ export default function DashboardScreen() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [pendingOpen, setPendingOpen] = useState(false);
+  const [viewing, setViewing] = useState<{ locationId: string; date: string } | null>(null);
   const [pendingPage, setPendingPage] = useState(1);
   const [hideAmounts, setHideAmounts] = useState(false);
   const branchList = useBranches();
@@ -99,8 +102,12 @@ export default function DashboardScreen() {
   const pendingBranchCount = new Set(pending.map((p) => p.locationId)).size;
   const oldestPendingDate = [...pendingDates].sort()[0];
   const when = periodLabel(period);
+  // the P&L opens on the period picked here, for the whole business
+  const plLink = `/more/pl?scope=all&${periodParams(period)}`;
+  const expensesLink = `/more/expenses?${periodParams(period)}`;
+  const purchasesLink = `/more/purchases?${periodParams(period)}`;
+  const cashLink = `/more/cash?date=${period.to}`; // the cash page shows one day: the last day of the period
   const vs = summary?.vsLastWeek.comparedWith === 'PREVIOUS_PERIOD' ? 'vs previous period' : 'vs last week';
-  const teaShopVs = period.id === 'today' ? 'vs same day last week' : vs;
   const amount = (value: string | number | null | undefined) => hideAmounts ? '••••' : whole(value);
   const compactAmount = (value: string | number | null | undefined) => hideAmounts ? '••••' : compactMoney(value);
   const attentionSummary = [
@@ -167,10 +174,10 @@ export default function DashboardScreen() {
             </View>
           )}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
-            <HomeShopMetric label={`Total sales · ${when}`} value={tl ? amount(tl.totalSales) : "—"} icon="trending-up" background="#b65317" onPress={() => router.push('/more/pl' as any)} />
-            <HomeShopMetric label="Cash" value={tl ? amount(tl.cash) : "—"} icon="dollar-sign" mdi="purse-outline" background="#23933d" onPress={() => router.push('/more/cash' as any)} />
-            <HomeShopMetric label={`Expenses · ${when}`} value={tl ? amount(tl.totalExpenses) : "—"} icon="credit-card" background="#8436a8" onPress={() => router.push('/more/expenses' as any)} />
-            <HomeShopMetric label="Supplier outstanding" value={tl ? compactAmount(tl.supplierOutstanding) : "—"} sub={wait.overdue > 0 ? `${compactAmount(wait.overdue)} overdue` : undefined} icon="shopping-bag" mdi="storefront-outline" background="#bd3549" onPress={() => router.push('/more/purchases' as any)} />
+            <HomeShopMetric label={`Total sales · ${when}`} value={tl ? amount(tl.totalSales) : "—"} icon="trending-up" background="#b65317" onPress={() => router.push(plLink as any)} />
+            <HomeShopMetric label="Cash" value={tl ? amount(tl.cash) : "—"} icon="dollar-sign" mdi="purse-outline" background="#23933d" onPress={() => router.push(cashLink as any)} />
+            <HomeShopMetric label={`Expenses · ${when}`} value={tl ? amount(tl.totalExpenses) : "—"} icon="credit-card" background="#8436a8" onPress={() => router.push(expensesLink as any)} />
+            <HomeShopMetric label="Supplier outstanding" value={tl ? compactAmount(tl.supplierOutstanding) : "—"} sub={wait.overdue > 0 ? `${compactAmount(wait.overdue)} overdue` : undefined} icon="shopping-bag" mdi="storefront-outline" background="#bd3549" onPress={() => router.push(purchasesLink as any)} />
           </View>
         </View>
       ) : !isTeaShop && tl ? (
@@ -237,16 +244,12 @@ export default function DashboardScreen() {
       {isTeaShop && tl ? (
         <>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
-            <ShopMetric label="Total sales" value={amount(tl.totalSales)} icon="trending-up" accent="blue" subColor={change == null ? undefined : Number(change) >= 0 ? th.ok.text : th.bad.text} sub={change == null ? undefined : `${Number(change) >= 0 ? '▲' : '▼'} ${Math.abs(Number(change))}% ${teaShopVs}`} onPress={() => router.push('/more/pl' as any)} />
-            <ShopMetric label="Expenses" value={amount(tl.totalExpenses)} icon="credit-card" accent="amber" onPress={() => router.push('/more/expenses' as any)} />
-            <ShopMetric label="Net" value={amount(tl.netOperating)} icon="bar-chart-2" accent="green" onPress={() => router.push('/more/pl' as any)} />
-            <ShopMetric label="Purchases" value={amount(tl.totalPurchases)} icon="shopping-cart" mdi="cart-outline" accent="purple" onPress={() => router.push('/more/purchases' as any)} />
-            <ShopMetric label="Cash" value={amount(tl.cash)} icon="dollar-sign" mdi="purse-outline" accent="green" onPress={() => router.push('/more/cash' as any)} />
-            <ShopMetric label="UPI" value={amount(tl.upi)} icon="smartphone" mdi="qrcode-scan" accent="sky" onPress={() => router.push('/more/cash' as any)} />
-            <ShopMetric label="Card" value={amount(tl.card)} icon="credit-card" accent="blue" onPress={() => router.push('/more/cash' as any)} />
+            <ShopMetric label="Net" value={amount(tl.netOperating)} icon="bar-chart-2" accent="green" onPress={() => router.push(plLink as any)} />
+            <ShopMetric label="Purchases" value={amount(tl.totalPurchases)} icon="shopping-cart" mdi="cart-outline" accent="purple" onPress={() => router.push(`${purchasesLink}&tab=purchases` as any)} />
+            <ShopMetric label="UPI" value={amount(tl.upi)} icon="smartphone" mdi="qrcode-scan" accent="sky" onPress={() => router.push(cashLink as any)} />
+            <ShopMetric label="Card" value={amount(tl.card)} icon="credit-card" accent="blue" onPress={() => router.push(cashLink as any)} />
             <ShopMetric label="Wastage" value={amount(tl.wastage)} icon="trash-2" accent="red" onPress={() => router.push('/more/inventory' as any)} />
-            <ShopMetric label="Profit/Loss" value={amount(tl.netOperating)} icon="bar-chart-2" mdi="scale-balance" accent="green" onPress={() => router.push('/more/pl' as any)} />
-            <ShopMetric label="Pending bills" value={amount(tl.supplierOutstanding)} icon="clock" accent="amber" onPress={() => router.push('/more/purchases' as any)} />
+            <ShopMetric label="Profit/Loss" value={amount(tl.netOperating)} icon="bar-chart-2" mdi="scale-balance" accent="green" onPress={() => router.push(plLink as any)} />
           </View>
         </>
       ) : null}
@@ -279,7 +282,7 @@ export default function DashboardScreen() {
               {pending.filter((p) => p.businessDate === d).map((p) => (
                 <Pressable
                   key={p.locationId} accessibilityRole="button"
-                  onPress={() => { setPendingOpen(false); router.push(`/more/closing/${p.locationId}/${d}` as any); }}
+                  onPress={() => { setPendingOpen(false); setViewing({ locationId: p.locationId, date: d }); }}
                   style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, justifyContent: 'center', borderColor: th.bad.border, backgroundColor: th.bad.bg }}
                 >
                   <Text style={{ color: th.bad.text, fontWeight: '600' }}>⛔ {p.locationName}</Text>
@@ -296,6 +299,7 @@ export default function DashboardScreen() {
           </View>
         ) : null}
       </Sheet>
+      {viewing ? <ClosingModal view={viewing} onClose={() => { setViewing(null); setPendingOpen(true); void load(); }} onDecided={() => { setViewing(null); void load(); }} /> : null}
 
       {tl ? (
         <>

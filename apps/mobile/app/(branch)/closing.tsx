@@ -89,7 +89,7 @@ export default function ClosingScreen() {
             <Row label="· Paid to suppliers" value={formatINR(tot.purchasePaid)} />
             <Row label="· On credit" value={formatINR(tot.purchaseCredit)} />
             <Row label="Wastage" value={formatINR(tot.totalWastageValue)} />
-            <Row label="Expected cash" value={formatINR(cash.expectedClosing, { decimals: false })} />
+            <Row label="Expected cash" value={formatINR(cash.expectedClosing)} />
             <Row label="Actual cash" value={formatINR(cash.actualClosing)} />
             <Row label={`Variance · ${cash.varianceLabel ?? ''}`} value={formatINR(cash.variance)} bold />
           </Card>

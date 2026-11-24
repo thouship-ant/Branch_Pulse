@@ -112,8 +112,8 @@ export function WastagePanel({ fixedLocationId }: { fixedLocationId?: string }) 
                   {w.receiptCount > 0 ? <Button small variant="secondary" icon="image" title="Photo" onPress={() => receipt(w.id)} /> : null}
                   {w.approvalStatus === 'SUBMITTED' && w.status === 'ACTIVE' && can('wastage:approve') ? (
                     <>
-                      <Button small title="✓ Approve" loading={busy === w.id} onPress={() => act(w.id, 'approve')} />
-                      <Button small variant="danger" title="✕ Reject" onPress={() => { setWhy(''); setRejecting(w); }} />
+                      <Button small variant="approve" title="✓ Approve" loading={busy === w.id} onPress={() => act(w.id, 'approve')} />
+                      <Button small variant="reject" title="✕ Reject" onPress={() => { setWhy(''); setRejecting(w); }} />
                     </>
                   ) : null}
                   {w.approvalStatus === 'SUBMITTED' && w.status === 'ACTIVE' && can('wastage:create') ? <Button small variant="secondary" title="Cancel" onPress={() => act(w.id, 'cancel', {})} /> : null}
@@ -238,7 +238,7 @@ export function TransfersPanel({ fixedLocationId }: { fixedLocationId?: string }
             ))}
             {detail.remarks ? <Muted>{detail.remarks}</Muted> : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-              {detail.status === 'PENDING_APPROVAL' && can('transfer:approve') ? <Button title="✓ Approve" loading={busy} onPress={() => act('approve')} /> : null}
+              {detail.status === 'PENDING_APPROVAL' && can('transfer:approve') ? <Button variant="approve" title="✓ Approve" loading={busy} onPress={() => act('approve')} /> : null}
               {detail.status === 'APPROVED' && can('transfer:dispatch') && mine(detail.fromLocationId) ? <Button title="➜ Dispatch" loading={busy} onPress={() => act('dispatch')} /> : null}
               {canReceiveNow ? <Button title="Receive" loading={busy} disabled={detail.items.some((i: any) => dec(toBase(got[i.itemId] ?? '0', i.displayFactor)).lessThan(dec(i.sentQty)) && !why[i.itemId]?.trim())} onPress={receive} /> : null}
               {['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(detail.status) && can('transfer:create') ? <Button variant="danger" title="Cancel transfer" disabled={busy} onPress={() => act('cancel')} /> : null}

@@ -1,9 +1,10 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
+import { useCashDetail } from '@/components/CashDetailBody';
 import { useTeaHeaderRight } from '@/components/TeaShopHeaderActions';
-import { Chip, DateStepper, Empty, ErrorBox, ListRow, Loading, PageTitle, Screen, SectionTitle, SegTabs, SelectField, StatCard, StatusPill } from '@/components/ui';
+import { Chip, DateStepper, Empty, ErrorBox, ListRow, Loading, PageTitle, Screen, SectionTitle, SegTabs, SelectField, Sheet, StatCard, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { addDays, prettyDate, todayIST } from '@/lib/dates';
 import { approvalTone, REASON_LABEL } from '@/lib/labels';
@@ -18,6 +19,9 @@ const whole = (v: string | number | null | undefined) => formatINR(v == null ? n
 export default function CashScreen() {
   const [tab, setTab] = useState<Tab>('daily');
   const day = useDay();
+  // opened from a Home card: the day (the end of the period) picked there
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  useEffect(() => { if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) day.setDate(dateParam); }, [dateParam]); // eslint-disable-line react-hooks/exhaustive-deps
   const [days, setDays] = useState<'7' | '30' | '90'>('30');
   const [locationId, setLocationId] = useState('');
   const [branches, setBranches] = useState<any[]>([]);
@@ -66,9 +70,16 @@ export default function CashScreen() {
   );
 }
 
+/** One branch's cash for one day opened over this page, with a close button; only mounted while open. */
+function CashModal({ view, onClose }: { view: { locationId: string; date: string }; onClose: () => void }) {
+  const { body } = useCashDetail(view.locationId, view.date);
+  const teaShop = useIsTeaShop();
+  return <Sheet open onClose={onClose} title="Cash" tall themed={teaShop}>{body}</Sheet>;
+}
+
 function Daily({ day }: { day: ReturnType<typeof useDay> }) {
   const th = useTheme();
-  const router = useRouter();
+  const [viewing, setViewing] = useState<{ locationId: string; date: string } | null>(null);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,19 +111,20 @@ function Daily({ day }: { day: ReturnType<typeof useDay> }) {
                   {v ? <Text style={{ color: v.isNegative() ? th.bad.text : v.isZero() ? th.ok.text : th.warn.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{v.isZero() ? '✓' : v.isNegative() ? '▼' : '▲'} {v.isZero() ? '' : formatINR(v.abs(), { decimals: false })}</Text> : <Text style={{ color: th.faint }}>—</Text>}
                   <StatusPill status={r.closingStatus} />
                 </>}
-                onPress={() => router.push(`/more/cash-detail/${r.locationId}/${day.date}` as any)}
+                onPress={() => setViewing({ locationId: r.locationId, date: day.date })}
               />
             );
           })}
         </>
       )}
+      {viewing ? <CashModal view={viewing} onClose={() => { setViewing(null); void load(); }} /> : null}
     </>
   );
 }
 
 function Report({ days, locationId }: { days: '7' | '30' | '90'; locationId: string }) {
   const th = useTheme();
-  const router = useRouter();
+  const [viewing, setViewing] = useState<{ locationId: string; date: string } | null>(null);
   const today = todayIST();
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -139,10 +151,11 @@ function Report({ days, locationId }: { days: '7' | '30' | '90'; locationId: str
               <Text style={{ color: neg ? th.bad.text : th.warn.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{neg ? '▼' : '▲'} {formatINR(dec(r.variance).abs(), { decimals: false })}</Text>
               <Chip text={r.approvalStatus ?? 'Not sent'} tone={approvalTone(r.approvalStatus)} />
             </>}
-            onPress={() => router.push(`/more/cash-detail/${r.locationId}/${d}` as any)}
+            onPress={() => setViewing({ locationId: r.locationId, date: d })}
           />
         );
       })}
+      {viewing ? <CashModal view={viewing} onClose={() => { setViewing(null); void load(); }} /> : null}
     </>
   );
 }

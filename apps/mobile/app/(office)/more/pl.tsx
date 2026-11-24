@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
@@ -6,7 +7,8 @@ import { Card, ErrorBox, Loading, Muted, Row, Screen, SegTabs, SelectField, Stat
 import { api } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
 import { dec, formatINR } from '@/lib/money';
-import { periodLabel, resolvePeriod, type Period } from '@/lib/period';
+import { periodLabel } from '@/lib/period';
+import { usePeriodParams } from '@/lib/usePeriodParams';
 import { useTheme } from '@/lib/theme';
 import { useBranches } from '@/lib/useLookups';
 
@@ -21,8 +23,11 @@ interface PLLines {
 /** Management P&L: one branch, or the whole business, for a chosen period. */
 export default function PLScreen() {
   const today = todayIST();
-  const [period, setPeriod] = useState<Period>(() => resolvePeriod('month', today));
-  const [tab, setTab] = useState<Tab>('branch');
+  // opened from a Home card: the period shown there (and the whole business); opened from More: this month, as always
+  const [period, setPeriod] = usePeriodParams(today);
+  const { scope } = useLocalSearchParams<{ scope?: string }>();
+  const [tab, setTab] = useState<Tab>(scope === 'all' ? 'consolidated' : 'branch');
+  useEffect(() => { if (scope === 'all') setTab('consolidated'); }, [scope]);
   const branches = useBranches();
   const [locationId, setLocationId] = useState('');
   const [data, setData] = useState<PLLines | null>(null);

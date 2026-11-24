@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
+import { ClosingModal } from '@/components/ClosingDetailBody';
 import { ClosingBacklog } from '@/components/ClosingBacklog';
 import { DateStepper, Empty, ErrorBox, ListRow, Loading, Screen, SegTabs, Sheet, StatusPill } from '@/components/ui';
 import { TeaShopHeaderActions } from '@/components/TeaShopHeaderActions';
@@ -26,6 +27,7 @@ export default function ClosingsScreen() {
   const [view, setView] = useState<'backlog' | 'day'>('backlog');
   const [hideAmounts, setHideAmounts] = useState(false);
   const [dayOpen, setDayOpen] = useState(false);
+  const [viewing, setViewing] = useState<{ locationId: string; date: string; fromDay: boolean } | null>(null);
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +59,7 @@ export default function ClosingsScreen() {
             key={r.locationId} title={r.locationName}
             lines={[`Sales: ${hideAmounts ? '••••' : formatINR(r.totalSales, { decimals: false })}`, `Cash variance: ${v == null ? '—' : `${neg ? '▼ ' : ''}${hideAmounts ? '••••' : formatINR(v, { decimals: false })}`}`, r.reopenCount > 0 && `↺ reopened ×${r.reopenCount}`]}
             right={<><StatusPill status={r.status} />{r.submittedAt ? <Text style={{ color: th.faint, fontSize: 12 }}>{prettyTime(r.submittedAt)}</Text> : null}</>}
-            onPress={() => { setDayOpen(false); router.push(`/more/closing/${r.locationId}/${day.date}` as any); }}
+            onPress={() => { setViewing({ locationId: r.locationId, date: day.date, fromDay: dayOpen }); setDayOpen(false); }}
           />
         );
       })}
@@ -82,6 +84,7 @@ export default function ClosingsScreen() {
           </View>
           <ClosingBacklog hidden={hideAmounts} onOpen={() => setDayOpen(true)} />
           <Sheet open={dayOpen} onClose={() => setDayOpen(false)} title="Closings by day">{dailyContent}</Sheet>
+          {viewing ? <ClosingModal view={viewing} onClose={() => { if (viewing.fromDay) setDayOpen(true); setViewing(null); void load(); }} onDecided={() => { setViewing(null); void load(); }} /> : null}
         </View>
       </Screen>
     );
@@ -100,6 +103,7 @@ export default function ClosingsScreen() {
       {view === 'backlog' ? <ClosingBacklog /> : <>
       {dailyContent}
       </>}
+      {viewing ? <ClosingModal view={viewing} onClose={() => { if (viewing.fromDay) setDayOpen(true); setViewing(null); void load(); }} onDecided={() => { setViewing(null); void load(); }} /> : null}
     </Screen>
   );
 }

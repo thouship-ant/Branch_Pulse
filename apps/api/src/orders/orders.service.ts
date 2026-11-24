@@ -10,6 +10,17 @@ import { D, parseMoney, ZERO } from '../common/money';
 import { PrismaService } from '../common/prisma.service';
 
 export const EVENT_TYPES = ['BUSINESS_MEETING', 'FUNCTION', 'PARTY', 'CORPORATE', 'OTHER'] as const;
+/** The sub-events offered for each event type (the mobile app shows the same lists); Other has none. */
+export const SUB_EVENTS: Record<string, string[]> = {
+  BUSINESS_MEETING: ['Association'],
+  FUNCTION: ['Annual Day', 'Engagement', 'Wedding Reception'],
+  PARTY: ['Anniversary Party', 'Birthday Party', 'Farewell Party', 'Baby Shower', 'Get-together', 'Other'],
+  CORPORATE: ['Meeting', 'Exports', 'IT', 'Manufacturing', 'Retail', 'Education', 'Other'],
+};
+const checkSubEvent = (eventType: string | undefined, subEvent: string | undefined) => {
+  if (!subEvent) return;
+  if (!eventType || !(SUB_EVENTS[eventType] ?? []).includes(subEvent)) throw validation('INVALID_SUB_EVENT', `"${subEvent}" is not a sub-event of this event type`, 'subEvent');
+};
 const MODES = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CHEQUE'] as const;
 
 export class CreateOrderDto {
@@ -17,6 +28,7 @@ export class CreateOrderDto {
   @IsString() @MaxLength(100) customerName: string;
   @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' }) customerPhone: string; // the customer's number is mandatory on a new order
   @IsIn(EVENT_TYPES as unknown as string[]) eventType: string;
+  @IsOptional() @IsString() @MaxLength(40) subEvent?: string;
   @IsDateString() eventDate: string;
   @IsOptional() @Matches(/^\d{2}:\d{2}$/, { message: 'Time must be HH:MM' }) eventTime?: string;
   @IsOptional() @IsString() venue?: string;
@@ -33,6 +45,7 @@ export class UpdateOrderDto {
   @IsOptional() @IsString() @MaxLength(100) customerName?: string;
   @IsOptional() @Matches(/^\d{10}$/, { message: 'Phone must be 10 digits' }) customerPhone?: string;
   @IsOptional() @IsIn(EVENT_TYPES as unknown as string[]) eventType?: string;
+  @IsOptional() @IsString() @MaxLength(40) subEvent?: string;
   @IsOptional() @IsDateString() eventDate?: string;
   @IsOptional() @Matches(/^\d{2}:\d{2}$/) eventTime?: string;
   @IsOptional() @IsString() venue?: string;
@@ -99,6 +112,7 @@ export class OrdersService {
 
   async create(ctx: ReqCtx, dto: CreateOrderDto) {
     if (!canAccessLocation(ctx.user, dto.locationId)) throw new AppException(403, 'FORBIDDEN', 'You cannot book orders for this branch');
+    checkSubEvent(dto.eventType, dto.subEvent);
     const amount = parseMoney(dto.amount, 'amount', { allowZero: false });
     const advance = dto.advance ? parseMoney(dto.advance, 'advance', { allowZero: false }) : ZERO;
     if (advance.greaterThan(amount)) throw validation('INVALID_AMOUNT', 'The advance cannot be more than the order amount', 'advance');
@@ -109,7 +123,7 @@ export class OrdersService {
       const o = await tx.order.create({
         data: {
           code: await this.codes.next(tx, 'order', dto.locationId), location_id: dto.locationId, customer_name: dto.customerName.trim(), customer_phone: dto.customerPhone,
-          event_type: dto.eventType, event_date: toDate(dto.eventDate, 'eventDate'), event_time: dto.eventTime, venue: dto.venue?.trim() || null,
+          event_type: dto.eventType, sub_event: dto.subEvent || null, event_date: toDate(dto.eventDate, 'eventDate'), event_time: dto.eventTime, venue: dto.venue?.trim() || null,
           items_summary: dto.itemsSummary?.trim() || null, people_count: dto.peopleCount, amount, paid_amount: advance, payment_status: statusOf(amount, advance),
           notes: dto.notes?.trim() || null, entered_by: ctx.user.id, created_by: ctx.user.id, updated_by: ctx.user.id,
           ...(advance.greaterThan(0) ? { payments: { create: [{ paid_on: toDate(todayIST()), amount: advance, mode: dto.advanceMode as any, reference: 'Advance', created_by: ctx.user.id }] } } : {}),
@@ -124,12 +138,16 @@ export class OrdersService {
     return this.prisma.runScoped(ctx.user, async (tx) => {
       const before = await tx.order.findUnique({ where: { id } });
       if (!before) throw notFound('Order');
+      // changing the event type clears a sub-event that no longer belongs to it
+      const typeNow = dto.eventType ?? before.event_type;
+      const subNow = dto.subEvent !== undefined ? dto.subEvent : dto.eventType && dto.eventType !== before.event_type ? '' : before.sub_event ?? '';
+      checkSubEvent(typeNow, subNow || undefined);
       const amount = dto.amount ? parseMoney(dto.amount, 'amount', { allowZero: false }) : before.amount;
       if (amount.lessThan(before.paid_amount)) throw validation('INVALID_AMOUNT', 'The amount cannot be less than what is already paid', 'amount');
       const after = await tx.order.update({
         where: { id },
         data: {
-          customer_name: dto.customerName?.trim(), customer_phone: dto.customerPhone, event_type: dto.eventType, event_date: dto.eventDate ? toDate(dto.eventDate, 'eventDate') : undefined,
+          customer_name: dto.customerName?.trim(), customer_phone: dto.customerPhone, event_type: dto.eventType, sub_event: subNow || null, event_date: dto.eventDate ? toDate(dto.eventDate, 'eventDate') : undefined,
           event_time: dto.eventTime, venue: dto.venue?.trim(), items_summary: dto.itemsSummary?.trim(), people_count: dto.peopleCount, amount, status: dto.status,
           payment_status: statusOf(amount, before.paid_amount), notes: dto.notes?.trim(), updated_by: ctx.user.id, version: { increment: 1 },
         },

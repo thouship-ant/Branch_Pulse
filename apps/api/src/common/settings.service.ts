@@ -9,6 +9,7 @@ export const SETTING_DEFAULTS: Record<string, unknown> = {
   'business.logo': '',
   'business.font': 'INTER', // see common/business-types.ts
   'business.font_size': 'MEDIUM',
+  'business.nav_color': '', // background of the bottom navigation bar in the mobile app (#RRGGBB); empty = the theme's own colour
   'business.frame': '', // the app's background picture (data URL); served at /branding/:companyId/frame, never sent with the other settings
   'fy.start_month': 4,
   'branch.code_prefix': 'BR', // prefix suggested for new branch codes (BR001, BR002 ...)

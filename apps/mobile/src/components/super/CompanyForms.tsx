@@ -6,12 +6,12 @@ import { passwordOk } from '@/lib/password';
 import { useTheme } from '@/lib/theme';
 import { PasswordChecklist } from '../PasswordChecklist';
 import { Button, Chips, ErrorBox, Field, Sheet } from '../ui';
-import { FontFields, PictureEditor, pictureUri } from './Branding';
+import { FontFields, NavColorField, PictureEditor, pictureUri } from './Branding';
 import { BANNER_H, CompanyBanner, FrameBackground } from './CompanyBanner';
 
 export interface Company {
   id: string; code: string; name: string; address: string | null; gstin: string | null; fssai: string | null; email: string | null; status: string;
-  businessName: string; businessType: string; businessLogo?: string | null; businessFrame?: string | null; businessFont?: string; businessFontSize?: string;
+  businessName: string; businessType: string; businessLogo?: string | null; businessFrame?: string | null; businessFont?: string; businessFontSize?: string; businessNavColor?: string | null;
   branchCount: number; admin: { name: string; mobile: string; status: string } | null;
 }
 
@@ -53,6 +53,7 @@ function CompanySheetBody({ onClose, company, onSaved }: { onClose: () => void; 
   const [frame, setFrame] = useState<string | null>(null); // null = unchanged (edit) / none (add), '' = back to the default
   const [font, setFont] = useState(company?.businessFont ?? 'INTER');
   const [fontSize, setFontSize] = useState(company?.businessFontSize ?? 'MEDIUM');
+  const [navColor, setNavColor] = useState((company?.businessNavColor ?? '').toUpperCase());
   const [panel, setPanel] = useState<'logo' | 'frame' | null>(null);
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,7 +63,8 @@ function CompanySheetBody({ onClose, company, onSaved }: { onClose: () => void; 
 
   const framePreview = frame === null ? company?.businessFrame ?? '' : frame;
   const baseOk = f.companyName.trim().length >= 2 && EMAIL.test(f.email) && f.address.trim().length >= 5;
-  const ready = editing ? baseOk : baseOk && f.adminName.trim() && /^\d{10}$/.test(f.mobile) && (!f.password || passwordOk(f.password));
+  const navOk = navColor === '' || /^#[0-9A-F]{6}$/.test(navColor);
+  const ready = !navOk ? false : editing ? baseOk : baseOk && f.adminName.trim() && /^\d{10}$/.test(f.mobile) && (!f.password || passwordOk(f.password));
 
   async function submit() {
     setBusy(true); setError(null); setErrors({});
@@ -74,12 +76,13 @@ function CompanySheetBody({ onClose, company, onSaved }: { onClose: () => void; 
           ...(frame !== null ? { businessFrame: frame } : {}),
           ...(font !== (company.businessFont ?? 'INTER') ? { businessFont: font } : {}),
           ...(fontSize !== (company.businessFontSize ?? 'MEDIUM') ? { businessFontSize: fontSize } : {}),
+          ...(navColor !== (company.businessNavColor ?? '').toUpperCase() ? { businessNavColor: navColor } : {}),
         });
       } else {
         await api.post('/super/companies', {
           companyName: f.companyName.trim(), businessType: f.businessType, adminName: f.adminName.trim(), mobile: f.mobile, email: f.email.trim(), address: f.address.trim(),
           gstin: f.gstin.trim().toUpperCase() || undefined, fssai: f.fssai.trim() || undefined, password: f.password || undefined,
-          businessLogo: logo || undefined, businessFrame: frame || undefined, businessFont: font, businessFontSize: fontSize,
+          businessLogo: logo || undefined, businessFrame: frame || undefined, businessFont: font, businessFontSize: fontSize, businessNavColor: navColor || undefined,
         });
       }
       onSaved();
@@ -118,6 +121,10 @@ function CompanySheetBody({ onClose, company, onSaved }: { onClose: () => void; 
               <Section title="Font">
                 <Text style={{ color: th.muted, fontSize: 12.5 }}>The typeface and text size the Admin, Branch Admin, Accountant and Stock Manager of this company see in the app.</Text>
                 <FontFields font={font} fontSize={fontSize} onFont={setFont} onSize={setFontSize} />
+              </Section>
+              <Section title="Theme colour">
+                <Text style={{ color: th.muted, fontSize: 12.5 }}>The main colour of this company's app: the bottom menu, page headers, buttons, tabs and highlights. “Default” keeps the standard colours of its shop type.</Text>
+                <NavColorField value={navColor} onChange={setNavColor} defaultColor={f.businessType === 'TEA_SHOP' ? '#713817' : '#1E2A8A'} />
               </Section>
               <Section title="Contact">
                 <Field label="Email" required value={f.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" error={errors.email} />

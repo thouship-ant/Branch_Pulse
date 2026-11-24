@@ -1,8 +1,8 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text } from '@/components/Text';
+import { ClosingModal } from '@/components/ClosingDetailBody';
 import { Card, ErrorBox, Loading } from '@/components/ui';
 import { api } from '@/lib/api';
 import { addDays, prettyDate, prettyDay, todayIST } from '@/lib/dates';
@@ -17,7 +17,6 @@ const BRANCH_COLORS = ['#d84b4b', '#e19a18', '#31934c', '#3375bd', '#8f55b5', '#
 /** Every branch and day on one grid: closed, waiting for you (with its age) or not submitted. Tap a day to open it. */
 export function ClosingBacklog({ hidden = false, onOpen }: { hidden?: boolean; onOpen?: () => void }) {
   const th = useTheme();
-  const router = useRouter();
   const teaShop = useIsTeaShop();
   const branches = useBranches();
   const [pending, setPending] = useState<any[] | null>(null);
@@ -27,13 +26,14 @@ export function ClosingBacklog({ hidden = false, onOpen }: { hidden?: boolean; o
   const today = todayIST();
   const scroller = useRef<ScrollView>(null);
 
-  useEffect(() => {
-    let alive = true;
+  const [viewing, setViewing] = useState<{ locationId: string; date: string } | null>(null);
+  const alive = useRef(true);
+  const load = useCallback(() => {
     Promise.all([api.get<any[]>('/pending-closings'), api.get<any[]>('/closings/awaiting').catch(() => [] as any[])])
-      .then(([p, a]) => { if (alive) { setPending(p); setAwaiting(a); } })
-      .catch((e) => alive && setError(e instanceof Error ? e.message : 'Could not load'));
-    return () => { alive = false; };
+      .then(([p, a]) => { if (alive.current) { setPending(p); setAwaiting(a); } })
+      .catch((e) => alive.current && setError(e instanceof Error ? e.message : 'Could not load'));
   }, []);
+  useEffect(() => { alive.current = true; load(); return () => { alive.current = false; }; }, [load]);
 
   const days = useMemo(() => Array.from({ length: daysToShow }, (_, i) => addDays(today, i - (daysToShow - 1))), [today, daysToShow]);
   const open = useMemo(() => new Set((pending ?? []).map((p) => `${p.locationId}|${String(p.businessDate).slice(0, 10)}`)), [pending]);
@@ -115,7 +115,7 @@ export function ClosingBacklog({ hidden = false, onOpen }: { hidden?: boolean; o
                     return (
                       <Pressable
                         key={d} accessibilityRole="button" accessibilityLabel={`${b.name} ${prettyDate(d)}`}
-                        onPress={() => router.push(`/more/closing/${b.id}/${d}` as any)}
+                        onPress={() => setViewing({ locationId: b.id, date: d })}
                         style={{ width: CELL_W, alignItems: 'center', justifyContent: 'center' }}
                       >
                         <View style={{ width: teaShop ? 34 : 32, height: 32, borderRadius: teaShop ? 10 : 9, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -136,6 +136,8 @@ export function ClosingBacklog({ hidden = false, onOpen }: { hidden?: boolean; o
         <Text style={{ color: teaShop ? th.ink : th.muted, fontSize: teaShop ? 13 : 12 }}><Text style={{ color: teaShop ? '#D88A08' : '#B45309', fontWeight: '800' }}>◷</Text> Waiting for you</Text>
         <Text style={{ color: teaShop ? th.ink : th.muted, fontSize: teaShop ? 13 : 12 }}><Text style={{ color: teaShop ? '#1f7a35' : '#047857', fontWeight: '800' }}>✓</Text> Closed</Text>
       </View>
+
+      {viewing ? <ClosingModal view={viewing} onClose={() => { setViewing(null); load(); }} onDecided={() => { setViewing(null); load(); }} /> : null}
     </View>
   );
 }
@@ -143,17 +145,16 @@ export function ClosingBacklog({ hidden = false, onOpen }: { hidden?: boolean; o
 type MdiIcon = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 function ClosingCount({ label, value, background, foreground, kind, deco }: { label: string; value: string; background: string; foreground: string; kind: 'open' | 'wait' | 'done'; deco: MdiIcon }) {
   return (
-    <View style={{ flex: 1, minHeight: 88, justifyContent: 'space-between', padding: 10, borderRadius: 16, backgroundColor: background, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)', shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        {kind === 'wait'
-          ? <MaterialCommunityIcons name="clock-outline" size={26} color={foreground} />
-          : <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: foreground, alignItems: 'center', justifyContent: 'center' }}>
-              {kind === 'open' ? <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16, lineHeight: 20 }}>!</Text> : <Feather name="check" size={16} color="#fff" />}
-            </View>}
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: '#2d211b', fontSize: 26, fontWeight: '800', fontVariant: ['tabular-nums'], flexShrink: 1 }}>{value}</Text>
-        <MaterialCommunityIcons name={deco} size={24} color={foreground} style={{ marginLeft: 'auto', opacity: 0.7 }} />
+    <View style={{ flex: 1, minHeight: 104, padding: 12, gap: 8, borderRadius: 20, overflow: 'hidden', backgroundColor: background, borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', shadowColor: '#45220f', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 }}>
+      {/* big faint picture behind, bleeding off the corner */}
+      <MaterialCommunityIcons name={deco} size={64} color={foreground} style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.14 }} />
+      <View style={{ width: 32, height: 32, borderRadius: 11, backgroundColor: foreground, alignItems: 'center', justifyContent: 'center' }}>
+        {kind === 'open' ? <Feather name="alert-circle" size={18} color="#fff" /> : kind === 'wait' ? <MaterialCommunityIcons name="clock-outline" size={19} color="#fff" /> : <Feather name="check" size={18} color="#fff" />}
       </View>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: '#2d211b', fontSize: 12, fontWeight: '600', textAlign: 'center' }}>{label}</Text>
+      <View style={{ marginTop: 'auto' }}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: '#2d211b', fontSize: 30, lineHeight: 34, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: '#5a463a', fontSize: 12, fontWeight: '700' }}>{label}</Text>
+      </View>
     </View>
   );
 }

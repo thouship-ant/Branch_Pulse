@@ -1,4 +1,7 @@
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { BackHandler } from 'react-native';
+import { goBackInTrail, useNavTrail } from '@/lib/navTrail';
 import { HeaderProvider } from '@/components/HeaderContext';
 import { OfficeTabBar } from '@/components/OfficeTabBar';
 import { useSession } from '@/lib/session';
@@ -9,6 +12,13 @@ const ROUTES = ['dashboard', 'approvals', 'reports', 'more', 'account'];
 /** Back-office layout for Admin, Accountant and Stock Manager. */
 export default function OfficeLayout() {
   const th = useTheme();
+  const router = useRouter();
+  useNavTrail();
+  // the phone's back button goes to the page the person came from (open pop-ups take the press first)
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => goBackInTrail(router));
+    return () => sub.remove();
+  }, [router]);
   const { me, loading, isBranchUser } = useSession();
   if (loading) return null;
   if (!me) return <Redirect href="/login" />;

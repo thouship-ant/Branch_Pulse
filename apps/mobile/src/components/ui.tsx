@@ -1,12 +1,13 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Easing, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text as PlainText, TextInput, useWindowDimensions, View, type ListRenderItem, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STATUS_LABEL } from '@/lib/labels';
 import { useHeader } from './HeaderContext';
-import { HeaderRight, ThemeBackdrop, ThemeHeaderBg, useBackdropGeometry } from './ThemeBackdrop';
+import { goBackInTrail } from '@/lib/navTrail';
+import { HeaderRight, ThemeBackdrop, ThemeHeaderBg, ThemeSheetBackdrop, ThemeSheetHeader, useBackdropGeometry } from './ThemeBackdrop';
 import { useLang } from '@/lib/language';
 import { useSession } from '@/lib/session';
 import { tr } from '@/lib/i18n';
@@ -92,11 +93,11 @@ export function Screen({ children, onRefresh, padBottom = 24, hero, headerLeft, 
     </View>
   );
   return teaShop ? (
-    <View style={{ flex: 1, width: '100%', backgroundColor: th.bg }}>
+    <LoadingHost style={{ backgroundColor: th.bg }}>
       <ThemeBackdrop />
       {content}
-    </View>
-  ) : content;
+    </LoadingHost>
+  ) : <LoadingHost>{content}</LoadingHost>;
 }
 
 /** Soft card look: a shadow in light mode, a hairline in dark mode. */
@@ -247,13 +248,16 @@ export function Divider() {
 export function Button({
   title, onPress, variant = 'primary', disabled, loading, icon, small, style,
 }: {
-  title: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger'; disabled?: boolean; loading?: boolean; icon?: IconName; small?: boolean; style?: StyleProp<ViewStyle>;
+  title: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'approve' | 'reject'; disabled?: boolean; loading?: boolean; icon?: IconName; small?: boolean; style?: StyleProp<ViewStyle>;
 }) {
   const th = useTheme();
   const off = disabled || loading;
-  const bg = variant === 'primary' ? th.brand : variant === 'danger' ? th.bad.bg : th.surface;
-  const fg = variant === 'primary' ? th.onBrand : variant === 'danger' ? th.bad.text : th.ink;
-  const border = variant === 'primary' ? th.brand : variant === 'danger' ? th.bad.border : th.border;
+  // approve / reject show a thumb instead of the ✓ / ✕ typed in the title
+  if (variant === 'approve' || variant === 'reject') { title = title.replace(/^[✓✕]\s*/, ''); icon = icon ?? (variant === 'approve' ? 'thumbs-up' : 'thumbs-down'); }
+  // approve: solid green; reject: solid red
+  const bg = variant === 'primary' ? th.brand : variant === 'approve' ? '#1f7a35' : variant === 'reject' ? '#c62828' : variant === 'danger' ? th.bad.bg : th.surface;
+  const fg = variant === 'primary' ? th.onBrand : variant === 'approve' ? '#fff' : variant === 'reject' ? '#fff' : variant === 'danger' ? th.bad.text : th.ink;
+  const border = variant === 'primary' ? th.brand : variant === 'approve' ? '#1f7a35' : variant === 'reject' ? '#c62828' : variant === 'danger' ? th.bad.border : th.border;
   return (
     <Pressable
       accessibilityRole="button" accessibilityState={{ disabled: !!off, busy: !!loading }}
@@ -401,11 +405,9 @@ export function Warnings({ items }: { items: Array<{ code: string; message: stri
   return items.length ? <View style={{ gap: 8 }}>{items.map((w) => <Banner key={w.code + w.message} tone="warn">⚠ {w.message}</Banner>)}</View> : null;
 }
 
-/** The loader: the business logo (the Branch Pulse one when there is none) with a ring turning around it. */
-/** `page`: the loader fills the page and sits in the middle of the screen (use it when the whole page is waiting). */
-export function Loading({ size = 76, page = false }: { size?: number; page?: boolean }) {
+/** The turning ring with the business logo (the Branch Pulse one when there is none). */
+function Spinner({ size }: { size: number }) {
   const th = useTheme();
-  const { height } = useWindowDimensions();
   const { me } = useSession();
   const spin = useRef(new Animated.Value(0)).current;
   const [logoFailed, setLogoFailed] = useState(false);
@@ -418,15 +420,44 @@ export function Loading({ size = 76, page = false }: { size?: number; page?: boo
   const ring = 4;
   const inner = size - ring * 2 - 10;
   return (
-    <View accessibilityRole="progressbar" accessibilityLabel="Loading" style={page ? { minHeight: Math.round(height * 0.6), alignItems: 'center', justifyContent: 'center' } : { padding: 40, alignItems: 'center' }}>
-      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-        {/* the track, and the bright arc that turns on it */}
-        <View style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: th.dark ? 'rgba(255,255,255,0.12)' : 'rgba(113,56,23,0.14)' }} />
-        <Animated.View
-          style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: 'transparent', borderTopColor: th.brand, borderRightColor: th.brand, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}
-        />
-        <Image source={logo} onError={() => setLogoFailed(true)} resizeMode="contain" style={{ width: inner, height: inner, borderRadius: inner / 2, backgroundColor: '#fff8ef' }} />
-      </View>
+    <View accessibilityRole="progressbar" accessibilityLabel="Loading" style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      {/* the track, and the bright arc that turns on it */}
+      <View style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: th.dark ? 'rgba(255,255,255,0.12)' : 'rgba(113,56,23,0.14)' }} />
+      <Animated.View
+        style={{ position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: 'transparent', borderTopColor: th.brand, borderRightColor: th.brand, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}
+      />
+      <Image source={logo} onError={() => setLogoFailed(true)} resizeMode="contain" style={{ width: inner, height: inner, borderRadius: inner / 2, backgroundColor: '#fff8ef' }} />
+    </View>
+  );
+}
+
+/**
+ * Wraps a screen (or a pop-up). A `Loading` inside it does not draw itself where the data will appear: it asks this host, which shows
+ * the loader in the middle of the whole screen (pop-up) instead, over the page.
+ */
+const LoadingHostContext = createContext<(() => () => void) | null>(null);
+function LoadingHost({ children, style, inline = false }: { children: ReactNode; style?: StyleProp<ViewStyle>; inline?: boolean }) {
+  const [count, setCount] = useState(0);
+  const add = useMemo(() => () => { setCount((c) => c + 1); return () => setCount((c) => Math.max(0, c - 1)); }, []);
+  const overlay = count > 0 ? <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 50, elevation: 50 }}><Spinner size={76} /></View> : null;
+  // inline: no extra box around the content (a pop-up sizes itself from its content); the spinner covers the pop-up that holds it
+  return (
+    <LoadingHostContext.Provider value={add}>
+      {inline ? <>{children}{overlay}</> : <View style={[{ flex: 1, width: '100%' }, style]}>{children}{overlay}</View>}
+    </LoadingHostContext.Provider>
+  );
+}
+
+/** The loader: shown in the middle of the screen. `size` only applies where there is no screen to host it. */
+export function Loading({ size = 76, page = false }: { size?: number; page?: boolean }) {
+  const { height } = useWindowDimensions();
+  const host = useContext(LoadingHostContext);
+  useEffect(() => (host ? host() : undefined), [host]);
+  // hosted: keep some room so the page does not collapse; the spinner itself is drawn by the host
+  if (host) return <View style={{ height: page ? Math.round(height * 0.5) : 120 }} />;
+  return (
+    <View style={page ? { minHeight: Math.round(height * 0.6), alignItems: 'center', justifyContent: 'center' } : { padding: 40, alignItems: 'center' }}>
+      <Spinner size={size} />
     </View>
   );
 }
@@ -437,23 +468,28 @@ export function Empty({ text }: { text: string }) {
 
 // ------------------------------------------------------------------ modal sheet
 /** `pinned`: stays fixed under the title while the content scrolls (e.g. a live preview). `bare`: no padding or gap around the content. */
-export function Sheet({ open, onClose, title, children, tall = false, pinned, bare = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; tall?: boolean; pinned?: ReactNode; bare?: boolean }) {
+export function Sheet({ open, onClose, title, children, tall = false, pinned, bare = false, themed: themedProp }: { open: boolean; onClose: () => void; title: string; children: ReactNode; tall?: boolean; pinned?: ReactNode; bare?: boolean; themed?: boolean }) {
   const th = useTheme();
   const insets = useSafeAreaInsets();
+  const teaShop = useIsTeaShop();
+  const themed = themedProp ?? teaShop; // every pop-up of the tea-shop theme gets the picture frame and the header art
   const { height } = useWindowDimensions(); // a number: a '90%' maxHeight has no parent height to measure against, so tall content got cut
   return (
     <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(15,23,42,0.5)' }} onPress={onClose} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ backgroundColor: th.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...(tall ? { height: height - insets.top - 24 } : { maxHeight: height - insets.top - 24 }), paddingBottom: insets.bottom + 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
-            <Text style={{ color: th.ink, fontSize: 18, fontWeight: '700', flexShrink: 1 }}>{title}</Text>
-            <Pressable onPress={onClose} accessibilityLabel="Close" hitSlop={12} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name="x" size={22} color={th.muted} />
-            </Pressable>
-          </View>
+        <View style={{ backgroundColor: th.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', ...(tall ? { height: height - insets.top - 24 } : { maxHeight: height - insets.top - 24 }), paddingBottom: insets.bottom + 12 }}>
+          {themed ? <ThemeSheetBackdrop /> : null}
+          {themed ? <ThemeSheetHeader title={title} onClose={onClose} /> : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+              <Text style={{ color: th.ink, fontSize: 18, fontWeight: '700', flexShrink: 1 }}>{title}</Text>
+              <Pressable onPress={onClose} accessibilityLabel="Close" hitSlop={12} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+                <Feather name="x" size={22} color={th.muted} />
+              </Pressable>
+            </View>
+          )}
           {pinned}
-          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={bare ? undefined : { padding: 16, paddingTop: 0, gap: 16 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+          <LoadingHost inline><ScrollView style={{ flexShrink: 1 }} contentContainerStyle={bare ? undefined : { padding: 16, paddingTop: themed ? 8 : 0, gap: 16 }} keyboardShouldPersistTaps="handled">{children}</ScrollView></LoadingHost>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -477,8 +513,8 @@ export function AppBar({ title, subtitle, left, right, onLayout }: { title: stri
   const insets = useSafeAreaInsets();
   const teaShop = header?.teaShop;
   const geo = useBackdropGeometry();
-  const logoSize = Math.max(60, Math.min(96, Math.round(geo.width * 0.2)));
-  const titleSize = Math.max(19, Math.min(30, Math.round(geo.width * 0.054)));
+  const logoSize = Math.max(44, Math.min(64, Math.round(geo.width * 0.14)));
+  const titleSize = Math.max(16, Math.min(22, Math.round(geo.width * 0.042)));
   return (
     <View
       onLayout={onLayout}
@@ -594,15 +630,15 @@ export function SubHeader({ title, right }: { title: string; right?: ReactNode }
   const teaShopHeader = header?.teaShop ? header : null;
   const teaShop = !!teaShopHeader;
   const geo = useBackdropGeometry();
-  const logoSize = Math.max(60, Math.min(96, Math.round(geo.width * 0.2)));
-  const nameSize = Math.max(19, Math.min(30, Math.round(geo.width * 0.054)));
+  const logoSize = Math.max(44, Math.min(64, Math.round(geo.width * 0.14)));
+  const nameSize = Math.max(16, Math.min(22, Math.round(geo.width * 0.042)));
   return (
     <View
       style={teaShop
         ? { height: geo.framed ? geo.bandH : geo.barH, paddingTop: geo.top, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }
         : { backgroundColor: geo.framed ? 'transparent' : th.brand, paddingTop: insets.top + 6, paddingBottom: 14, paddingHorizontal: 8, borderBottomLeftRadius: geo.framed ? 0 : 24, borderBottomRightRadius: geo.framed ? 0 : 24, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}
     >
-      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Back" hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+      <Pressable onPress={() => { if (!goBackInTrail(router)) { if (router.canGoBack()) router.back(); else router.replace('/'); } }} accessibilityLabel="Back" hitSlop={8} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
         <Feather name="arrow-left" size={24} color="#fff" />
       </Pressable>
       {teaShopHeader?.logo ? (

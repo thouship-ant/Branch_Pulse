@@ -1,11 +1,12 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, type ReactNode } from 'react';
-import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_ORIGIN } from '@/lib/api';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 import { useHeader } from './HeaderContext';
+import { Text } from './Text';
 
 const PICTURE = require('../../assets/tea-shop-theme.png'); // page background: coffee leaves + tagline at the bottom
 const HEADER = require('../../assets/theme-header.png'); // header art: brown gradient, table, cup and beans (904 x 234)
@@ -25,7 +26,7 @@ const FRAME_CUP_SIZE = 85 / 1024;
 // (header band, the whole cup and saucer) and the page carries on with the same picture
 const FRAME_VISIBLE = 0.178;
 const FRAME_ZOOM = 1.0; // the picture at the screen's width: the header is the same height as the standard themed header
-const FRAME_SHIFT = 0.09; // the picture sits this much (of the width) below the status bar, so the cup is under the header buttons; the strip above is its own top row carried upward, so there is no seam
+const FRAME_SHIFT = 0.05; // the picture sits this much (of the width) below the status bar, so the cup is under the header buttons; the strip above is its own top row carried upward, so there is no seam
 const BOTTOM_SHARE = 0.25; // the leaves + tagline live in the last quarter of the background picture
 
 /**
@@ -80,6 +81,42 @@ export function ThemeBackdrop() {
           <Image source={source} resizeMode="stretch" style={{ position: 'absolute', left: 0, bottom: 0, width, height: imgH }} />
         </View>
       </View>
+    </View>
+  );
+}
+
+/** The theme picture inside a pop-up: flat cream with the coffee leaves and tagline along the bottom (it sits behind the pop-up's content). */
+export function ThemeSheetBackdrop() {
+  const th = useTheme();
+  const { me } = useSession();
+  const { width, imgH } = useBackdropGeometry();
+  const frame = me?.company?.businessFrame;
+  const source = frame ? { uri: `${API_ORIGIN}${frame}` } : PICTURE;
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { overflow: 'hidden', backgroundColor: CREAM, opacity: th.dark ? 0.4 : 1 }]}>
+      <View style={{ position: 'absolute', bottom: 0, left: 0, width, height: Math.round(imgH * BOTTOM_SHARE), overflow: 'hidden' }}>
+        <Image source={source} resizeMode="stretch" style={{ position: 'absolute', left: 0, bottom: 0, width, height: imgH }} />
+      </View>
+    </View>
+  );
+}
+
+/** The themed header of a pop-up: the same art as the page header (the company's own frame when it has one), the title on the left and the close button at the top right; the body scrolls below it. */
+export function ThemeSheetHeader({ title, onClose }: { title: string; onClose: () => void }) {
+  const { me } = useSession();
+  const { width, imgH } = useBackdropGeometry();
+  const h = Math.round(width * HEADER_RATIO);
+  const frame = me?.company?.businessFrame ? `${API_ORIGIN}${me.company.businessFrame}` : null;
+  return (
+    <View style={{ height: h, width, overflow: 'hidden' }}>
+      {frame
+        ? <Image source={{ uri: frame }} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: 0, width, height: imgH }} />
+        : <Image source={HEADER} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: 0, width, height: h }} />}
+      <CupEmblem x={frame ? FRAME_CUP_X : CUP_X} y={frame ? imgH * FRAME_CUP_Y : h * CUP_Y} size={frame ? FRAME_CUP_SIZE : CUP_SIZE} />
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{ position: 'absolute', left: 18, top: Math.round(h * 0.16), right: Math.round(width * 0.4), color: '#fff', fontSize: 20, fontWeight: '800', textShadowColor: 'rgba(40,16,4,0.55)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{title}</Text>
+      <Pressable onPress={onClose} accessibilityLabel="Close" hitSlop={12} style={({ pressed }) => ({ position: 'absolute', right: Math.round(width * 0.025), top: 6, transform: [{ translateY: pressed ? 2 : 0 }], width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fffaf4', borderWidth: 1, borderColor: '#f0d9bd', borderBottomWidth: 3, borderBottomColor: '#d9b48a', shadowColor: '#2a0e03', shadowOpacity: 0.45, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 6 })}>
+        <Feather name="x" size={22} color="#6a2a0e" />
+      </Pressable>
     </View>
   );
 }

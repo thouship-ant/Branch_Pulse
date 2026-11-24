@@ -7,6 +7,7 @@ import { OtpInput } from '@/components/OtpInput';
 import { TextField } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { chosenPlatform, isPhone, mobileAppUrl, mobileLoginUrl, rememberPlatform } from '@/lib/platform';
 import { useSession, type SignInMethod } from '@/lib/session';
 
 type Step = 'id' | 'password' | 'otp';
@@ -42,6 +43,17 @@ export default function LoginPage() {
     if (loading || !me) return;
     router.replace(me.isSuper ? '/super' : isBranchUser ? '/b/home' : '/dashboard');
   }, [loading, me, isBranchUser, router]);
+
+  // web or mobile-app pages: a phone that never chose goes to the mobile app by itself; a desktop stays here
+  const [canMobile, setCanMobile] = useState(false);
+  useEffect(() => {
+    setCanMobile(!!mobileAppUrl());
+    // arriving from the mobile app's "Open web version" link: that is a choice for the web
+    if (new URLSearchParams(window.location.search).get('platform') === 'web') rememberPlatform('web');
+    if (chosenPlatform() === null && isPhone() && mobileLoginUrl()) window.location.replace(mobileLoginUrl());
+  }, []);
+  const chooseMobile = () => { rememberPlatform('mobile'); window.location.href = mobileLoginUrl(); };
+  const chooseWeb = () => rememberPlatform('web');
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -123,6 +135,16 @@ export default function LoginPage() {
     <main className="app-background loginBackdrop tea-shop flex min-h-dvh items-center justify-center overflow-x-hidden px-4 py-8">
       <section className="w-full max-w-md rounded-[28px] border border-white/60 bg-surface/95 px-6 py-8 shadow-2xl backdrop-blur-md sm:px-8">
         <div className="mx-auto w-full max-w-sm space-y-6">
+          {canMobile && (
+            <div role="group" aria-label={t('platformLabel')} className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1">
+              <button type="button" aria-pressed="true" onClick={chooseWeb} className="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-brand shadow-sm">
+                <Icon name="globe" size={18} />{t('platformWeb')}
+              </button>
+              <button type="button" aria-pressed="false" onClick={chooseMobile} className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-white/70">
+                <Icon name="phone" size={18} />{t('platformMobile')}
+              </button>
+            </div>
+          )}
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight">{step === 'otp' ? t('enterOtp') : t('loginTitle')}</h2>
             <p className="mt-1 text-slate-600">

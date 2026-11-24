@@ -18,6 +18,7 @@ export class CreateCompanyDto {
   @IsOptional() @IsIn([...BUSINESS_TYPES]) businessType?: string;
   @IsOptional() @IsIn([...BUSINESS_FONTS]) businessFont?: string;
   @IsOptional() @IsIn([...BUSINESS_FONT_SIZES]) businessFontSize?: string;
+  @IsOptional() @IsString() @Matches(/^(#[0-9A-Fa-f]{6})?$/, { message: 'Navigation bar colour must look like #3C1708' }) businessNavColor?: string;
   /** the first Admin of the company */
   @IsString() @MinLength(2) @MaxLength(100) adminName: string;
   @Matches(/^\d{10}$/, { message: 'Mobile must be 10 digits' }) mobile: string;
@@ -38,6 +39,7 @@ export class UpdateCompanyDto {
   @IsOptional() @IsIn([...BUSINESS_TYPES]) businessType?: string;
   @IsOptional() @IsIn([...BUSINESS_FONTS]) businessFont?: string;
   @IsOptional() @IsIn([...BUSINESS_FONT_SIZES]) businessFontSize?: string;
+  @IsOptional() @IsString() @Matches(/^(#[0-9A-Fa-f]{6})?$/, { message: 'Navigation bar colour must look like #3C1708' }) businessNavColor?: string;
   /** the business logo as a PNG/JPEG data URL under 80 KB; an empty string removes it */
   @IsOptional() @IsString() @MaxLength(80_000) @Matches(/^(data:image\/(jpeg|png);base64,[A-Za-z0-9+/]+=*)?$/, { message: 'Logo must be a PNG or JPEG image under 80 KB' }) businessLogo?: string;
   /** the app's background picture ("frame") as a data URL under ~400 KB; an empty string goes back to the default */
@@ -68,7 +70,7 @@ export class CompanyService {
         }),
       ]);
       const settings = await tx.setting.findMany({
-        where: { company_id: { in: companies.map((c) => c.id) }, key: { in: ['business.name', 'business.type', 'business.logo', 'business.font', 'business.font_size'] } },
+        where: { company_id: { in: companies.map((c) => c.id) }, key: { in: ['business.name', 'business.type', 'business.logo', 'business.font', 'business.font_size', 'business.nav_color'] } },
         select: { company_id: true, key: true, value: true },
       });
       const frames = await tx.$queryRaw<Array<{ company_id: string; at: Date }>>`SELECT company_id, updated_at AS at FROM settings WHERE key = 'business.frame' AND value <> '""'::jsonb`;
@@ -82,6 +84,7 @@ export class CompanyService {
           businessFrame: ((f) => (f ? frameUrl(f.company_id, f.at) : null))(frames.find((x) => x.company_id === c.id)),
           businessFont: (settingValues.get(`${c.id}:business.font`) as string | undefined) ?? 'INTER',
           businessFontSize: (settingValues.get(`${c.id}:business.font_size`) as string | undefined) ?? 'MEDIUM',
+          businessNavColor: (settingValues.get(`${c.id}:business.nav_color`) as string | undefined) || null,
           businessLogo: (settingValues.get(`${c.id}:business.logo`) as string | undefined) || null,
           branchCount: branches.find((b) => b.company_id === c.id)?._count ?? 0,
           admin: admin ? { name: admin.full_name, mobile: admin.mobile, status: admin.status } : null,
@@ -115,7 +118,7 @@ export class CompanyService {
       const roleId = await provisionCompanyDefaults(tx, company.id, businessName, businessType);
 
       // the logo and the application frame picked on the form
-      for (const [key, value] of [['business.logo', dto.businessLogo], ['business.frame', dto.businessFrame], ['business.font', dto.businessFont], ['business.font_size', dto.businessFontSize]] as const) {
+      for (const [key, value] of [['business.logo', dto.businessLogo], ['business.frame', dto.businessFrame], ['business.font', dto.businessFont], ['business.font_size', dto.businessFontSize], ['business.nav_color', dto.businessNavColor?.toUpperCase()]] as const) {
         if (!value) continue;
         await tx.setting.upsert({
           where: { company_id_key: { company_id: company.id, key } },
@@ -199,7 +202,7 @@ export class CompanyService {
         });
         await this.audit.log(tx, ctx, { action: 'SETTINGS_CHANGE', entityType: 'SETTING', entityCode: 'business.frame', companyId: id, before: { value: settingBefore?.value ? '(picture)' : '' }, after: { value: settingAfter.value ? '(picture)' : '' } });
       }
-      for (const [key, value] of [['business.font', dto.businessFont], ['business.font_size', dto.businessFontSize]] as const) {
+      for (const [key, value] of [['business.font', dto.businessFont], ['business.font_size', dto.businessFontSize], ['business.nav_color', dto.businessNavColor?.toUpperCase()]] as const) {
         if (value === undefined) continue;
         const settingBefore = await tx.setting.findUnique({ where: { company_id_key: { company_id: id, key } } });
         const settingAfter = await tx.setting.upsert({

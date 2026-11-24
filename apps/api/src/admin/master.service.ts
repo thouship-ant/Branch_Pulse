@@ -119,8 +119,8 @@ export class MasterService {
 
   async putSetting(ctx: ReqCtx, key: string, value: unknown) {
     if (!(key in SETTING_DEFAULTS)) throw validation('UNKNOWN_SETTING', `Unknown setting ${key}`, 'key');
-    if (key === 'business.name' || key === 'business.type' || key === 'business.font' || key === 'business.font_size') {
-      throw new AppException(403, 'FORBIDDEN', 'Only the Super Admin can change the business name, type, font or text size');
+    if (key === 'business.name' || key === 'business.type' || key === 'business.font' || key === 'business.font_size' || key === 'business.nav_color') {
+      throw new AppException(403, 'FORBIDDEN', 'Only the Super Admin can change the business name, type, font, text size or navigation colour');
     }
     const expected = typeof SETTING_DEFAULTS[key];
     if (typeof value !== expected) throw validation('INVALID_SETTING', `${key} must be a ${expected}`, 'value');

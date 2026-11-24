@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { unregisterPush } from './push';
 import { connectLive, disconnectLive, useLive } from './live';
 import { api, ApiError, clientInfo, endSession, loadStoredRefresh, refreshSession, setAuthLostHandler, startSession } from './api';
-import { setBusinessType } from './theme';
+import { setBusinessType, setCompanyColor } from './theme';
 import { setTypography } from './typography';
 
 export type SignInMethod = 'PASSWORD' | 'PASSWORD_OTP' | 'OTP';
@@ -13,7 +13,7 @@ export interface Me {
   isSuper?: boolean;
   /** still on the default / temporary password: the app asks for a new one */
   mustChangePassword?: boolean;
-  company?: { id: string; code: string; name: string; businessType?: string; businessName?: string; businessLogo?: string; businessFrame?: string | null; businessFont?: string; businessFontSize?: string } | null;
+  company?: { id: string; code: string; name: string; businessType?: string; businessName?: string; businessLogo?: string; businessFrame?: string | null; businessFont?: string; businessFontSize?: string; businessNavColor?: string | null } | null;
   locations: Array<{ id: string; code: string; name: string; nameTa?: string | null; type: string; cardEnabled: boolean; defaultOpeningCash: string }>;
 }
 
@@ -55,6 +55,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // live updates run while someone is signed in
   useEffect(() => { if (me) connectLive(); else disconnectLive(); }, [!!me]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setBusinessType(me?.company?.businessType); }, [me?.company?.businessType]);
+  useEffect(() => { setCompanyColor(me?.company?.businessNavColor); }, [me?.company?.businessNavColor]);
   // the company's typeface and text size
   useEffect(() => { void setTypography(me?.company?.businessFont, me?.company?.businessFontSize); }, [me?.company?.businessFont, me?.company?.businessFontSize]);
   // the company's name, logo or business type was changed (by the Super Admin or the Admin): everyone signed in picks it up now

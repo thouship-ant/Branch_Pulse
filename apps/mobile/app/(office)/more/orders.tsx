@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { Text } from '@/components/Text';
 import { Banner, Button, HeaderButton, Chip, Chips, ErrorBox, Field, ListRow, Loading, MoneyField, Muted, Screen, SegTabs, SelectField, Sheet } from '@/components/ui';
@@ -11,15 +12,42 @@ import { useBranches } from '@/lib/useLookups';
 
 const TYPES = [{ value: 'BUSINESS_MEETING', label: 'Business meeting' }, { value: 'FUNCTION', label: 'Function' }, { value: 'PARTY', label: 'Party' }, { value: 'CORPORATE', label: 'Corporate' }, { value: 'OTHER', label: 'Other' }];
 const TYPE_LABEL = Object.fromEntries(TYPES.map((t) => [t.value, t.label])) as Record<string, string>;
+/** The sub-events of each event type (the server checks against the same lists); Other has none. */
+const SUB_EVENTS: Record<string, string[]> = {
+  BUSINESS_MEETING: ['Association'],
+  FUNCTION: ['Annual Day', 'Engagement', 'Wedding Reception'],
+  PARTY: ['Anniversary Party', 'Birthday Party', 'Farewell Party', 'Baby Shower', 'Get-together', 'Other'],
+  CORPORATE: ['Meeting', 'Exports', 'IT', 'Manufacturing', 'Retail', 'Education', 'Other'],
+};
 const MODES = [{ value: 'CASH', label: 'Cash' }, { value: 'UPI', label: 'UPI' }, { value: 'CARD', label: 'Card' }, { value: 'BANK_TRANSFER', label: 'Bank' }, { value: 'CHEQUE', label: 'Cheque' }];
 const PAY: Record<string, { text: string; tone: 'bad' | 'warn' | 'ok'; icon: string }> = {
   UNPAID: { text: 'Not paid', tone: 'bad', icon: '○' }, PARTIAL: { text: 'Partly paid', tone: 'warn', icon: '◐' }, PAID: { text: 'Paid', tone: 'ok', icon: '●' },
 };
 const STATUS: Record<string, string> = { PLANNED: 'Upcoming', DELIVERED: 'Delivered', CANCELLED: 'Cancelled' };
+/** The name an order goes by in the list and in its pop-up: "Customer's Sub-event" ("Builders Association" for a business meeting, no 's); just the customer when there is no sub-event. */
+const orderTitle = (o: any) => (o.subEvent ? (o.eventType === 'BUSINESS_MEETING' ? `${o.customerName} ${o.subEvent}` : `${o.customerName}'s ${o.subEvent}`) : o.customerName);
 const money = (v: unknown) => formatINR(String(v ?? 0), { decimals: false });
+const MODE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = { CASH: 'dollar-sign', UPI: 'smartphone', CARD: 'credit-card', BANK_TRANSFER: 'briefcase', CHEQUE: 'file-text' };
+
+/** One line of the order card: an icon chip, the main text and a smaller line under it. */
+function OrderLine({ icon, text, sub }: { icon: React.ComponentProps<typeof Feather>['name']; text: string; sub?: string }) {
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: '#f3e6d6', alignItems: 'center', justifyContent: 'center' }}>
+        <Feather name={icon} size={17} color="#6a351c" />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ color: th.ink, fontWeight: '700', fontSize: 14 }}>{text}</Text>
+        {sub ? <Text style={{ color: th.muted, fontSize: 12 }}>{sub}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
 type Tab = 'ALL' | 'PLANNED' | 'DELIVERED' | 'CANCELLED';
 
-const blank = () => ({ locationId: '', customerName: '', customerPhone: '', eventType: 'FUNCTION', eventDate: todayIST(), eventTime: '', venue: '', itemsSummary: '', peopleCount: '', amount: '', advance: '', advanceMode: 'CASH', notes: '' });
+const blank = () => ({ locationId: '', customerName: '', customerPhone: '', eventType: 'FUNCTION', subEvent: '', eventDate: todayIST(), eventTime: '', venue: '', itemsSummary: '', peopleCount: '', amount: '', advance: '', advanceMode: 'CASH', notes: '' });
 
 /** Outside-shop orders (meetings, functions, parties) with their payment status. */
 export default function OrdersScreen() {
@@ -58,7 +86,7 @@ export default function OrdersScreen() {
     setBusy(true); setFormError(null);
     try {
       await api.post('/orders', {
-        locationId: adding.locationId || branches[0]?.id, customerName: adding.customerName.trim(), customerPhone: adding.customerPhone, eventType: adding.eventType, eventDate: adding.eventDate,
+        locationId: adding.locationId || branches[0]?.id, customerName: adding.customerName.trim(), customerPhone: adding.customerPhone, eventType: adding.eventType, subEvent: adding.subEvent || undefined, eventDate: adding.eventDate,
         eventTime: adding.eventTime || undefined, venue: adding.venue || undefined, itemsSummary: adding.itemsSummary || undefined, peopleCount: adding.peopleCount ? Number(adding.peopleCount) : undefined,
         amount: dec(adding.amount).toFixed(2), advance: adding.advance ? dec(adding.advance).toFixed(2) : undefined, advanceMode: adding.advance ? adding.advanceMode : undefined, notes: adding.notes || undefined,
       });
@@ -96,7 +124,7 @@ export default function OrdersScreen() {
       ) : null}
       {!rows ? <Loading /> : rows.length === 0 ? <Muted>No orders found.</Muted> : rows.map((o) => (
         <ListRow
-          key={o.id} title={o.customerName} onPress={() => void openOrder(o.id)}
+          key={o.id} title={orderTitle(o)} onPress={() => void openOrder(o.id)}
           lines={[`${TYPE_LABEL[o.eventType] ?? o.eventType} · ${prettyDate(String(o.eventDate).slice(0, 10))}${o.eventTime ? ` · ${o.eventTime}` : ''}`, o.venue, `${o.code} · ${o.locationName ?? ''}`]}
           right={<><Text style={{ color: th.ink, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{money(o.amount)}</Text><Chip text={PAY[o.paymentStatus].text} tone={PAY[o.paymentStatus].tone} icon={PAY[o.paymentStatus].icon} />{Number(o.balance) > 0 && o.status !== 'CANCELLED' ? <Text style={{ color: th.bad.text, fontSize: 12 }}>Balance {money(o.balance)}</Text> : null}</>}
         />
@@ -107,7 +135,10 @@ export default function OrdersScreen() {
           <>
             <Field label="Customer" required value={adding.customerName} onChangeText={(v) => setAdding({ ...adding, customerName: v })} maxLength={100} />
             <Field label="Phone" required value={adding.customerPhone} onChangeText={(v) => setAdding({ ...adding, customerPhone: v.replace(/\D/g, '').slice(0, 10) })} keyboardType="number-pad" />
-            <Chips label="Event type" value={adding.eventType as any} onChange={(v) => setAdding({ ...adding, eventType: v })} options={TYPES} />
+            <Chips label="Event type" value={adding.eventType as any} onChange={(v) => setAdding({ ...adding, eventType: v, subEvent: '' })} options={TYPES} />
+            {SUB_EVENTS[adding.eventType] ? (
+              <SelectField label="Sub-event" value={adding.subEvent} onChange={(v) => setAdding({ ...adding, subEvent: v })} placeholder="Choose…" options={SUB_EVENTS[adding.eventType].map((x) => ({ value: x, label: x }))} />
+            ) : null}
             <Chips label="Event date" value={adding.eventDate as any} onChange={(v) => setAdding({ ...adding, eventDate: v })} options={[0, 1, 2, 7].map((d) => ({ value: addDays(todayIST(), d), label: d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d === 2 ? 'In 2 days' : 'In a week' }))} />
             <Field label="Date (YYYY-MM-DD)" value={adding.eventDate} onChangeText={(v) => setAdding({ ...adding, eventDate: v })} />
             <Field label="Time (HH:MM)" value={adding.eventTime} onChangeText={(v) => setAdding({ ...adding, eventTime: v })} />
@@ -124,37 +155,66 @@ export default function OrdersScreen() {
         ) : null}
       </Sheet>
 
-      <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.customerName ?? ''}>
+      <Sheet open={!!open} onClose={() => setOpen(null)} title={open ? orderTitle(open) : ''}>
         {open ? (
           <>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
               <Chip text={PAY[open.paymentStatus].text} tone={PAY[open.paymentStatus].tone} icon={PAY[open.paymentStatus].icon} />
               <Chip text={STATUS[open.status]} tone="neutral" />
             </View>
-            <Muted>{open.code} · {TYPE_LABEL[open.eventType]} · {prettyDate(String(open.eventDate).slice(0, 10))}{open.eventTime ? ` · ${open.eventTime}` : ''}</Muted>
-            <Muted>{open.locationName}{open.customerPhone ? ` · ${open.customerPhone}` : ''}</Muted>
-            {open.venue ? <Muted>{open.venue}{open.peopleCount ? ` · ${open.peopleCount} people` : ''}</Muted> : null}
-            {open.itemsSummary ? <Text style={{ color: th.ink }}>{open.itemsSummary}</Text> : null}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              {[['Amount', money(open.amount), th.ink], ['Paid', money(open.paidAmount), th.ok.text], ['Balance', money(open.balance), Number(open.balance) > 0 ? th.bad.text : th.ink]].map(([k, v, c]) => (
-                <View key={k as string}><Text style={{ color: th.muted, fontSize: 12 }}>{k}</Text><Text style={{ color: c as string, fontWeight: '800', fontSize: 17, fontVariant: ['tabular-nums'] }}>{v}</Text></View>
+
+            {/* the order: what, when, where, who */}
+            <View style={{ gap: 12, padding: 14, borderRadius: 18, backgroundColor: 'rgba(255,252,247,0.94)', borderWidth: 1, borderColor: 'rgba(113,56,23,0.1)' }}>
+              <OrderLine icon="hash" text={open.code} sub={`${TYPE_LABEL[open.eventType] ?? open.eventType}${open.subEvent ? ` · ${open.subEvent}` : ''}`} />
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1, minWidth: 0 }}><OrderLine icon="user" text={open.customerName} sub={open.customerPhone || undefined} /></View>
+                <View style={{ flex: 1, minWidth: 0 }}><OrderLine icon="calendar" text={prettyDate(String(open.eventDate).slice(0, 10))} sub={open.eventTime ? `at ${open.eventTime}` : undefined} /></View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1, minWidth: 0 }}><OrderLine icon="coffee" text={open.itemsSummary || '—'} /></View>
+                <View style={{ flex: 1, minWidth: 0 }}><OrderLine icon="map-pin" text={open.venue || open.locationName || '—'} sub={open.peopleCount ? `${open.peopleCount} people` : undefined} /></View>
+              </View>
+            </View>
+
+            {/* the money */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {([
+                ['Amount', money(open.amount), th.ink, '#fdecc4'],
+                ['Paid', money(open.paidAmount), '#1f7a35', '#d6f0d9'],
+                ['Balance', money(open.balance), Number(open.balance) > 0 ? '#b91c1c' : '#1f7a35', Number(open.balance) > 0 ? '#fbd9d6' : '#d6f0d9'],
+              ] as const).map(([k, v, c, bg]) => (
+                <View key={k} style={{ flex: 1, minWidth: 0, gap: 2, padding: 10, borderRadius: 16, backgroundColor: bg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)' }}>
+                  <Text style={{ color: '#5a463a', fontSize: 12, fontWeight: '700' }}>{k}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: c, fontWeight: '800', fontSize: 18, fontVariant: ['tabular-nums'] }}>{v}</Text>
+                </View>
               ))}
             </View>
-            <Text style={{ color: th.ink, fontWeight: '700' }}>Payments</Text>
-            {open.payments.length === 0 ? <Muted>No payment yet</Muted> : open.payments.map((p: any) => (
-              <View key={p.id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: th.muted }}>{prettyDate(String(p.paidOn).slice(0, 10))} · {p.mode}{p.reference ? ` · ${p.reference}` : ''}</Text>
-                <Text style={{ color: th.ink, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{money(p.amount)}</Text>
-              </View>
-            ))}
+
+            {/* what has been paid so far */}
+            <View style={{ gap: 4, padding: 14, borderRadius: 18, backgroundColor: 'rgba(255,252,247,0.94)', borderWidth: 1, borderColor: 'rgba(113,56,23,0.1)' }}>
+              <Text style={{ color: th.ink, fontWeight: '800', fontSize: 15, marginBottom: 4 }}>Payments</Text>
+              {open.payments.length === 0 ? <Muted>No payment yet</Muted> : open.payments.map((p: any, i: number) => (
+                <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: th.border }}>
+                  <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: '#f3e6d6', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.mode === 'CASH' ? <MaterialCommunityIcons name="wallet-outline" size={19} color="#6a351c" /> : <Feather name={MODE_ICON[p.mode] ?? 'dollar-sign'} size={17} color="#6a351c" />}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ color: th.ink, fontWeight: '700' }}>{MODES.find((m) => m.value === p.mode)?.label ?? p.mode}{p.reference ? ` · ${p.reference}` : ''}</Text>
+                    <Text style={{ color: th.muted, fontSize: 12 }}>{prettyDate(String(p.paidOn).slice(0, 10))}</Text>
+                  </View>
+                  <Text style={{ color: '#1f7a35', fontWeight: '800', fontVariant: ['tabular-nums'] }}>{money(p.amount)}</Text>
+                </View>
+              ))}
+            </View>
+
             {manage && open.status !== 'CANCELLED' && Number(open.balance) > 0 ? (
-              <>
-                <Text style={{ color: th.ink, fontWeight: '700' }}>Add payment</Text>
+              <View style={{ gap: 12, padding: 14, borderRadius: 18, backgroundColor: 'rgba(255,252,247,0.94)', borderWidth: 1, borderColor: 'rgba(113,56,23,0.1)' }}>
+                <Text style={{ color: th.ink, fontWeight: '800', fontSize: 15 }}>Add payment</Text>
                 <MoneyField label="Amount" value={payment.amount} onChange={(v) => setPayment({ ...payment, amount: v })} hint={`Balance ${money(open.balance)}`} />
                 <Chips label="Paid by" value={payment.mode as any} onChange={(v) => setPayment({ ...payment, mode: v })} options={MODES} />
                 <Field label="Reference (optional)" value={payment.reference} onChangeText={(v) => setPayment({ ...payment, reference: v })} />
-                <Button title="Add payment" onPress={addPayment} loading={busy} disabled={!dec(payment.amount || '0').greaterThan(0)} />
-              </>
+                <Button variant="approve" title="Add payment" icon="plus" onPress={addPayment} loading={busy} disabled={!dec(payment.amount || '0').greaterThan(0)} />
+              </View>
             ) : null}
             <ErrorBox error={formError} />
             {manage && open.status === 'PLANNED' ? (

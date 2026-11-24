@@ -1175,6 +1175,7 @@ model Order {
   customer_name  String   @db.VarChar(100)
   customer_phone String?  @db.VarChar(15)
   event_type     String   @db.VarChar(20) // BUSINESS_MEETING | FUNCTION | PARTY | CORPORATE | OTHER
+  sub_event      String?  @db.VarChar(40) // the kind within the event type: Associate (meeting), Annual Day / Engagement (function), Exports / IT ... (corporate)
   event_date     DateTime @db.Date
   event_time     String?  @db.VarChar(5)
   venue          String?

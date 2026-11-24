@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
+import { webAppUrl } from '@/lib/webApp';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text as PlainText, TextInput, View } from 'react-native';
 import { ThemeBackdrop, ThemeHeaderBg, useBackdropGeometry } from '@/components/ThemeBackdrop';
@@ -105,6 +106,7 @@ function LoginForm() {
 
   const back = () => { setStep('id'); setPassword(''); setOtp(''); setError(null); setWait(0); };
 
+  const webUrl = webAppUrl();
   const masked = isMobile ? `+91 ${id.slice(0, 2)}******${id.slice(-2)}` : id;
 
   return (
@@ -194,6 +196,17 @@ function LoginForm() {
             <Feather name="globe" size={18} color={th.brand} />
             <PlainText style={{ color: th.brand, fontWeight: '700', fontSize: 16 }}>{lang === 'en' ? 'தமிழ்' : 'English'}</PlainText>
           </Pressable>
+
+          {/* only when the app runs in a browser: go to the full web version (the globe link) */}
+          {webUrl ? (
+            <Pressable
+              onPress={() => { window.location.href = `${webUrl}/login?platform=web`; }} accessibilityRole="link" accessibilityLabel="Open the web version"
+              style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 16, opacity: pressed ? 0.7 : 1 })}
+            >
+              <Feather name="globe" size={17} color={th.muted} />
+              <PlainText style={{ color: th.muted, fontWeight: '600', fontSize: 14, textDecorationLine: 'underline' }}>Open web version</PlainText>
+            </Pressable>
+          ) : null}
         </View>
         </ScrollView>
       </KeyboardAvoidingView>

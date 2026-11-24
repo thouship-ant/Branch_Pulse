@@ -190,8 +190,8 @@ export function StockCount({ fixedLocationId, day: outerDay }: { fixedLocationId
           ) : null}
           {count && status === 'SUBMITTED' && can('count:approve') ? (
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Button title="✓ Approve" style={{ flex: 1 }} loading={busy} onPress={() => decide('approve', count.id)} />
-              <Button title="✕ Reject" variant="danger" style={{ flex: 1 }} onPress={() => { setComment(''); setRejecting(count.id); }} />
+              <Button variant="approve" title="✓ Approve" style={{ flex: 1 }} loading={busy} onPress={() => decide('approve', count.id)} />
+              <Button title="✕ Reject" variant="reject" style={{ flex: 1 }} onPress={() => { setComment(''); setRejecting(count.id); }} />
             </View>
           ) : null}
         </>

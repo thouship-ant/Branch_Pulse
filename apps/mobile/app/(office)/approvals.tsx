@@ -4,6 +4,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { Banner, Button, Card, ErrorBox, Field, Heading, Loading, PageTitle, Screen, SegTabs, Sheet } from '@/components/ui';
+import { ClosingModal } from '@/components/ClosingDetailBody';
 import { useTeaHeaderRight } from '@/components/TeaShopHeaderActions';
 import { api, ApiError } from '@/lib/api';
 import { prettyDate } from '@/lib/dates';
@@ -14,6 +15,15 @@ import { useSession } from '@/lib/session';
 import { hideToast, showToast } from '@/lib/toast';
 import { useIsTeaShop, useTheme } from '@/lib/theme';
 import { useLive } from '@/lib/live';
+
+// what the page showed, kept for as long as the app runs: coming back from "View closing" must find the same tab and the same cards open
+const rememberedOpen = new Set<string>();
+let rememberedTab: 'expenses' | 'closing' | 'backdate' = 'expenses';
+function useOpen(id: string): [boolean, () => void] {
+  const [open, setOpen] = useState(() => rememberedOpen.has(id));
+  const flip = () => setOpen((o) => { if (o) rememberedOpen.delete(id); else rememberedOpen.add(id); return !o; });
+  return [open, flip];
+}
 
 function age(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
@@ -70,10 +80,10 @@ function Thumb({ up, onPress, disabled, label, size = 48 }: { up: boolean; onPre
       onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label} hitSlop={6}
       style={({ pressed }) => ({
         width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.45 : pressed ? 0.8 : 1,
-        backgroundColor: up ? '#1f7a35' : th.bad.bg, borderWidth: up ? 0 : 2, borderColor: th.bad.border,
+        backgroundColor: up ? '#1f7a35' : '#c62828',
       })}
     >
-      <Feather name={up ? 'thumbs-up' : 'thumbs-down'} size={size * 0.46} color={up ? '#fff' : th.bad.text} />
+      <Feather name={up ? 'thumbs-up' : 'thumbs-down'} size={size * 0.46} color="#fff" />
     </Pressable>
   );
 }
@@ -82,11 +92,22 @@ const MODE_TONE: Record<string, { bg: string; fg: string }> = {
   CASH: { bg: '#d6f0d9', fg: '#2e7d4f' }, UPI: { bg: '#dce6fb', fg: '#1d4fb8' }, CARD: { bg: '#ebd9f7', fg: '#6b2a98' },
 };
 
+/** Small chevron that opens / closes the details of a card. */
+function ExpandToggle({ open, onPress }: { open: boolean; onPress: () => void }) {
+  const th = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={open ? 'Hide details' : 'Show details'} accessibilityState={{ expanded: open }} hitSlop={8} style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: th.dark ? th.brandLight : '#f3e6d6' }}>
+      <Feather name={open ? 'chevron-up' : 'chevron-down'} size={20} color={th.dark ? th.ink : '#6a351c'} />
+    </Pressable>
+  );
+}
+
 /** Tea-shop look for one expense waiting for approval: icon tile, payment chip, amount, receipt warning and the two decision buttons. */
 function ExpenseCardTea({ e, branchName, picked, onTick, busy, onApprove, onReject }: { e: any; branchName: string; picked: boolean; onTick: () => void; busy: boolean; onApprove: () => void; onReject: () => void }) {
   const th = useTheme();
   const tone = MODE_TONE[String(e.paymentMode).toUpperCase()] ?? { bg: '#f3e6d6', fg: '#6a351c' };
   const noReceipt = e.receiptCount === 0 && Number(e.amount) > 500;
+  const [open, flipOpen] = useOpen(e.id);
   return (
     <View style={{ borderRadius: 22, padding: 14, gap: 10, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: picked ? '#a4501f' : th.border, shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -103,8 +124,9 @@ function ExpenseCardTea({ e, branchName, picked, onTick, busy, onApprove, onReje
           </View>
         </View>
         <Text style={{ color: th.dark ? th.ink : '#54210d', fontWeight: '800', fontSize: 20, fontVariant: ['tabular-nums'] }}>{formatINR(e.amount)}</Text>
+        <ExpandToggle open={open} onPress={flipOpen} />
       </View>
-      <View style={{ gap: 3, paddingLeft: 2 }}>
+      {open ? <View style={{ gap: 3, paddingLeft: 2 }}>
         <Text style={{ color: th.muted, fontSize: 13 }}>{branchName} · {prettyDate(e.businessDate)}{e.payeeName ? ` · ${e.payeeName}` : ''}</Text>
         {e.description ? <Text style={{ color: th.ink, fontSize: 13, fontStyle: 'italic' }}>“{e.description}”</Text> : null}
         {noReceipt ? (
@@ -113,7 +135,7 @@ function ExpenseCardTea({ e, branchName, picked, onTick, busy, onApprove, onReje
             <Text style={{ color: '#b91c1c', fontSize: 11, fontWeight: '800' }}>No receipt above ₹500</Text>
           </View>
         ) : null}
-      </View>
+      </View> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: th.border }}>
         <Text numberOfLines={1} style={{ flex: 1, color: th.faint, fontSize: 12 }}>{e.code} · ⏱ {age(e.createdAt)}{e.receiptCount === 0 && !noReceipt ? ' · No receipt' : ''}</Text>
         <Thumb up size={42} label="Approve" disabled={busy} onPress={onApprove} />
@@ -123,10 +145,67 @@ function ExpenseCardTea({ e, branchName, picked, onTick, busy, onApprove, onReje
   );
 }
 
+/** One label / value line of the expanded closing card. */
+function FigureRow({ label, value, bold, tone }: { label: string; value: string; bold?: boolean; tone?: string }) {
+  const th = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+      <Text style={{ color: bold ? th.ink : th.muted, fontSize: 13, fontWeight: bold ? '800' : '500' }}>{label}</Text>
+      <Text style={{ color: tone ?? th.ink, fontSize: 13, fontWeight: bold ? '800' : '600', fontVariant: ['tabular-nums'] }}>{value}</Text>
+    </View>
+  );
+}
+
+/** The important figures of a submitted closing: sales split, what went out, the cash count, and anything still pending. */
+function ClosingFigures({ d }: { d: any }) {
+  const th = useTheme();
+  const cash = d.cash;
+  const pend = (d.pending?.expenses ?? 0) + (d.pending?.purchases ?? 0) + (d.pending?.wastage ?? 0);
+  const v = cash?.variance != null ? Number(cash.variance) : null;
+  return (
+    <>
+      <FigureRow label="Cash sales" value={formatINR(d.sales?.cashSales)} />
+      <FigureRow label="UPI sales" value={formatINR(d.sales?.upiSales)} />
+      <FigureRow label="Card sales" value={formatINR(d.sales?.cardSales)} />
+      <View style={{ height: 1, backgroundColor: th.border, marginVertical: 2 }} />
+      <FigureRow label={`Expenses (${d.totals?.expenseCount ?? 0})`} value={formatINR(d.totals?.totalExpenses)} />
+      <FigureRow label={`Purchases (${d.totals?.purchaseCount ?? 0})`} value={formatINR(d.totals?.totalPurchases)} />
+      <FigureRow label="Wastage" value={formatINR(d.totals?.totalWastageValue)} />
+      {cash ? (
+        <>
+          <View style={{ height: 1, backgroundColor: th.border, marginVertical: 2 }} />
+          <FigureRow label="Expected cash" value={formatINR(cash.expectedClosing)} />
+          <FigureRow label="Actual cash" value={formatINR(cash.actualClosing)} />
+          <FigureRow bold label={`Variance${cash.varianceLabel ? ` · ${cash.varianceLabel}` : ''}`} value={formatINR(cash.variance)} tone={v && v < 0 ? '#b91c1c' : v && v > 0 ? '#a4501f' : '#2e7d4f'} />
+          {cash.managerExplanation ? <Text style={{ color: th.ink, fontSize: 13, fontStyle: 'italic' }}>“{cash.managerExplanation}”</Text> : null}
+        </>
+      ) : null}
+      {d.closing?.remarks ? <Text style={{ color: th.ink, fontSize: 13 }}><Text style={{ fontWeight: '700' }}>Remarks: </Text>{d.closing.remarks}</Text> : null}
+      {pend > 0 ? (
+        <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: '#fbd9d6' }}>
+          <Feather name="alert-triangle" size={12} color="#b91c1c" />
+          <Text style={{ color: '#b91c1c', fontSize: 11, fontWeight: '800' }}>{pend} item{pend === 1 ? '' : 's'} still waiting for approval</Text>
+        </View>
+      ) : null}
+    </>
+  );
+}
+
 /** Tea-shop look for one closing waiting for approval: branch tile, date and age, sales, cash difference, View + the decision buttons. */
 function ClosingCardTea({ c, picked, onTick, busy, onView, onApprove, onReject }: { c: any; picked: boolean; onTick: () => void; busy: boolean; onView: () => void; onApprove: () => void; onReject: () => void }) {
   const th = useTheme();
   const diff = c.cashVariance != null && Number(c.cashVariance) !== 0 ? Number(c.cashVariance) : null;
+  const [open, flipOpen] = useOpen(c.closingId);
+  // the day's figures are fetched the first time the card is opened
+  const [detail, setDetail] = useState<any | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!open || detail) return;
+    let live = true;
+    setFailed(false);
+    api.get(`/closings/${c.locationId}/${String(c.businessDate).slice(0, 10)}`).then((d) => { if (live) setDetail(d); }).catch(() => { if (live) setFailed(true); });
+    return () => { live = false; };
+  }, [open, detail, c.locationId, c.businessDate]);
   return (
     <View style={{ borderRadius: 22, padding: 14, gap: 10, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: picked ? '#a4501f' : th.border, shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -144,8 +223,14 @@ function ClosingCardTea({ c, picked, onTick, busy, onView, onApprove, onReject }
           <Text style={{ color: th.muted, fontSize: 11 }}>Sales</Text>
           <Text style={{ color: th.dark ? th.ink : '#54210d', fontWeight: '800', fontSize: 20, fontVariant: ['tabular-nums'] }}>{c.totalSales != null ? formatINR(c.totalSales) : '—'}</Text>
         </View>
+        <ExpandToggle open={open} onPress={flipOpen} />
       </View>
-      {diff !== null ? (
+      {open ? (
+        <View style={{ gap: 6, paddingTop: 2 }}>
+          {failed ? <Text style={{ color: th.muted, fontSize: 13 }}>Could not load the details</Text> : !detail ? <Text style={{ color: th.muted, fontSize: 13 }}>Loading…</Text> : <ClosingFigures d={detail} />}
+        </View>
+      ) : null}
+      {open && diff !== null ? (
         <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: diff < 0 ? '#fbd9d6' : '#fdecc4' }}>
           <Feather name="alert-triangle" size={12} color={diff < 0 ? '#b91c1c' : '#a4501f'} />
           <Text style={{ color: diff < 0 ? '#b91c1c' : '#a4501f', fontSize: 11, fontWeight: '800' }}>Cash difference {formatINR(c.cashVariance)}</Text>
@@ -165,6 +250,7 @@ function ClosingCardTea({ c, picked, onTick, busy, onView, onApprove, onReject }
 /** Tea-shop look for one missed-day request: branch tile, the day asked for, who asked, their reason and the decision buttons. */
 function RequestCardTea({ r, busy, onApprove, onReject }: { r: any; busy: boolean; onApprove: () => void; onReject: () => void }) {
   const th = useTheme();
+  const [open, flipOpen] = useOpen(r.id);
   return (
     <View style={{ borderRadius: 22, padding: 14, gap: 10, backgroundColor: th.dark ? th.surface : 'rgba(255,250,244,0.97)', borderWidth: 1, borderColor: th.border, shadowColor: '#45220f', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -178,11 +264,12 @@ function RequestCardTea({ r, busy, onApprove, onReject }: { r: any; busy: boolea
         <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: '#fdecc4' }}>
           <Text style={{ color: '#a4501f', fontSize: 11, fontWeight: '800' }}>⏱ {age(r.createdAt)}</Text>
         </View>
+        <ExpandToggle open={open} onPress={flipOpen} />
       </View>
-      <View style={{ gap: 3, paddingLeft: 2 }}>
+      {open ? <View style={{ gap: 3, paddingLeft: 2 }}>
         <Text style={{ color: th.muted, fontSize: 13 }}>Asked by {r.requestedByName} ({r.requestedByUsername})</Text>
         <Text style={{ color: th.ink, fontSize: 13, fontStyle: 'italic' }}>“{r.reason}”</Text>
-      </View>
+      </View> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: th.border }}>
         <Thumb up size={42} label="Approve" disabled={busy} onPress={onApprove} />
         <Thumb up={false} size={42} label="Reject" disabled={busy} onPress={onReject} />
@@ -239,7 +326,8 @@ export default function ApprovalsScreen() {
   const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
   const [bulkReason, setBulkReason] = useState('');
   const params = useLocalSearchParams<{ tab?: string; reject?: string }>();
-  const [tab, setTab] = useState<'expenses' | 'closing' | 'backdate'>('expenses');
+  const [tab, setTabState] = useState<'expenses' | 'closing' | 'backdate'>(rememberedTab);
+  const setTab = (t: 'expenses' | 'closing' | 'backdate') => { rememberedTab = t; setTabState(t); };
   const [rowsAll, setRows] = useState<any[] | null>(null);
   const [closingsAll, setClosings] = useState<any[] | null>(null);
   // an approval waits 5 seconds so it can be undone: the row leaves the list at once, the server is told when the time is up
@@ -251,6 +339,7 @@ export default function ApprovalsScreen() {
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<{ locationId: string; date: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -366,10 +455,10 @@ export default function ApprovalsScreen() {
                 key={String(up)} disabled={picked.length === 0 || busy !== null} accessibilityRole="button"
                 accessibilityLabel={up ? (allPicked ? 'Approve all' : 'Approve selected') : (allPicked ? 'Reject all' : 'Reject selected')}
                 onPress={() => { setBulkReason(''); setBulk(up ? 'approve' : 'reject'); }}
-                style={{ minWidth: 48, height: 44, paddingHorizontal: 10, borderRadius: 22, flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', opacity: picked.length === 0 ? 0.45 : 1, backgroundColor: up ? (teaShop ? '#1f7a35' : '#059669') : th.bad.bg, borderWidth: up ? 0 : 2, borderColor: th.bad.border }}
+                style={{ minWidth: 48, height: 44, paddingHorizontal: 10, borderRadius: 22, flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', opacity: picked.length === 0 ? 0.45 : 1, backgroundColor: up ? (teaShop ? '#1f7a35' : '#059669') : '#c62828' }}
               >
-                <Feather name={up ? 'thumbs-up' : 'thumbs-down'} size={20} color={up ? '#fff' : th.bad.text} />
-                {picked.length > 0 ? <Text style={{ color: up ? '#fff' : th.bad.text, fontWeight: '800', fontSize: 13 }}>{picked.length}</Text> : null}
+                <Feather name={up ? 'thumbs-up' : 'thumbs-down'} size={20} color="#fff" />
+                {picked.length > 0 ? <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{picked.length}</Text> : null}
               </Pressable>
             ))}
           </View>
@@ -415,7 +504,7 @@ export default function ApprovalsScreen() {
       ) : tab === 'closing' ? (
         !closings ? <Loading /> : closings.length === 0 ? <Banner tone="ok">✓ Nothing waiting for approval</Banner> : closings.map((c) => (teaShop ? (
           <ClosingCardTea key={c.closingId} c={c} picked={picked.includes(c.closingId)} onTick={() => toggle(c.closingId)} busy={busy !== null}
-            onView={() => router.push(`/more/closing/${c.locationId}/${String(c.businessDate).slice(0, 10)}` as any)}
+            onView={() => setViewing({ locationId: c.locationId, date: String(c.businessDate).slice(0, 10) })}
             onApprove={() => approveClosing(c.closingId)}
             onReject={() => { setReason(''); setRejecting({ ...c, id: c.closingId, code: `${c.locationCode} ${String(c.businessDate).slice(0, 10)}` }); }} />
         ) : (
@@ -433,7 +522,7 @@ export default function ApprovalsScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-              <Pressable onPress={() => router.push(`/more/closing/${c.locationId}/${String(c.businessDate).slice(0, 10)}` as any)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, height: 46, borderRadius: 14, backgroundColor: th.brandLight, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.8 : 1 })}>
+              <Pressable onPress={() => setViewing({ locationId: c.locationId, date: String(c.businessDate).slice(0, 10) })} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, height: 46, borderRadius: 14, backgroundColor: th.brandLight, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.8 : 1 })}>
                 <Text style={{ color: th.brand, fontWeight: '800', fontSize: 15 }}>View</Text>
               </Pressable>
               <Thumb up label="Approve" disabled={busy !== null} onPress={() => approveClosing(c.closingId)} />
@@ -462,6 +551,8 @@ export default function ApprovalsScreen() {
           </View>
         </Card>
       )))}
+
+      {viewing ? <ClosingModal view={viewing} onClose={() => setViewing(null)} onDecided={() => { setViewing(null); void load(); }} /> : null}
 
       <Sheet open={!!deciding} onClose={() => setDeciding(null)} title={`${deciding?.approve ? 'Approve' : 'Reject'} · ${deciding ? prettyDate(String(deciding.r.businessDate).slice(0, 10)) : ''}`}>
         <Field label={deciding?.approve ? 'Comment (optional)' : 'Reason'} required={!deciding?.approve} value={note} onChangeText={setNote} multiline />

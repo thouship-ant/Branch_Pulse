@@ -74,8 +74,8 @@ const COLOR_KEY = 'bp.themeColor';
 
 // a tiny shared store, so every screen redraws when the choice changes (works on phone and web alike)
 type BusinessType = 'TEA_SHOP' | 'OTHER';
-interface ThemeState { mode: ThemeMode; businessType: BusinessType; color: ThemeColor | null }
-let current: ThemeState = { mode: 'system', businessType: 'OTHER', color: null };
+interface ThemeState { mode: ThemeMode; businessType: BusinessType; color: ThemeColor | null; companyColor: string | null }
+let current: ThemeState = { mode: 'system', businessType: 'OTHER', color: null, companyColor: null };
 const ThemeBusinessOverride = createContext<BusinessType | null>(null);
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((l) => l());
@@ -84,6 +84,30 @@ export const setBusinessType = (type: string | null | undefined) => {
   const businessType: BusinessType = type === 'TEA_SHOP' ? 'TEA_SHOP' : 'OTHER';
   if (current.businessType !== businessType) { current = { ...current, businessType }; notify(); }
 };
+/** The colour the Super Admin chose for the company (#RRGGBB); it replaces the brand colour of the theme everywhere. */
+export const setCompanyColor = (hex: string | null | undefined) => {
+  const companyColor = hex && /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex.toUpperCase() : null;
+  if (current.companyColor !== companyColor) { current = { ...current, companyColor }; notify(); }
+};
+const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const toHex = (c: number[]) => '#' + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('').toUpperCase();
+const mix = (a: string, b: string, t: number) => { const x = channels(a), y = channels(b); return toHex(x.map((v, i) => v + (y[i] - v) * t)); };
+const brightness = (hex: string) => { const [r, g, b] = channels(hex).map((v) => v / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const branded = new Map<string, Theme>();
+/** The base theme with the company's colour as its brand: a lighter tint for soft fills, a darker shade, and white or dark text on top of it. */
+function withCompanyColor(base: Theme, hex: string): Theme {
+  const key = `${base.dark ? 'd' : 'l'}${base.bg}${hex}`;
+  const hit = branded.get(key);
+  if (hit) return hit;
+  // in the dark theme a very dark colour would vanish against the page, so it is lifted a little
+  const brand = base.dark && brightness(hex) < 0.2 ? mix(hex, '#ffffff', 0.35) : hex;
+  const t: Theme = {
+    ...base, brand, brandDark: base.dark ? mix(brand, '#ffffff', 0.3) : mix(brand, '#000000', 0.2),
+    brandLight: base.dark ? mix(base.surface, brand, 0.25) : mix('#ffffff', brand, 0.12), onBrand: brightness(brand) > 0.6 ? '#1f1209' : '#ffffff',
+  };
+  branded.set(key, t);
+  return t;
+}
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
 const getState = () => current;
 const getMode = () => current.mode;
@@ -98,11 +122,13 @@ export function useTheme(): Theme {
   const state = useSyncExternalStore(subscribe, getState, getState);
   const businessType = useContext(ThemeBusinessOverride) ?? state.businessType;
   const isDark = (state.mode === 'system' ? system === 'dark' : state.mode === 'dark');
-  if (businessType === 'TEA_SHOP') return isDark ? teaShopDark : teaShopLight;
-  const color = state.color ?? defaultColor();
-  if (color === 'red') return isDark ? redDark : redLight;
-  if (color === 'green') return isDark ? teaShopDark : teaShopLight;
-  return isDark ? dark : light;
+  let base: Theme;
+  if (businessType === 'TEA_SHOP') base = isDark ? teaShopDark : teaShopLight;
+  else {
+    const color = state.color ?? defaultColor();
+    base = color === 'red' ? (isDark ? redDark : redLight) : color === 'green' ? (isDark ? teaShopDark : teaShopLight) : isDark ? dark : light;
+  }
+  return state.companyColor ? withCompanyColor(base, state.companyColor) : base;
 }
 
 export function useIsTeaShop(): boolean {

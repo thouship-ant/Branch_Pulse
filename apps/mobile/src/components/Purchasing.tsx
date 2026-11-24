@@ -113,8 +113,8 @@ export function PurchaseList({ period, fixedLocationId }: { period?: Period; fix
             {p.rejectionReason ? <Text style={{ color: th.bad.text, fontSize: 12 }}>✕ {p.rejectionReason}</Text> : null}
             {p.approvalStatus === 'SUBMITTED' && p.status === 'ACTIVE' && can('purchase:approve') ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Button small title="✓ Approve" loading={busy === p.id} onPress={() => act(p.id, 'approve')} />
-                <Button small variant="danger" title="✕ Reject" onPress={() => { setReason(''); setRejecting(p); }} />
+                <Button small variant="approve" title="✓ Approve" loading={busy === p.id} onPress={() => act(p.id, 'approve')} />
+                <Button small variant="reject" title="✕ Reject" onPress={() => { setReason(''); setRejecting(p); }} />
               </View>
             ) : null}
           </Card>

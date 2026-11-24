@@ -9,7 +9,8 @@ import { api, ApiError, API_ORIGIN } from '@/lib/api';
 import { prettyDate, todayIST } from '@/lib/dates';
 import { approvalTone, MODE_LABEL, STATUS_LABEL } from '@/lib/labels';
 import { amt, formatINR } from '@/lib/money';
-import { resolvePeriod, type Period } from '@/lib/period';
+import { type Period } from '@/lib/period';
+import { usePeriodParams } from '@/lib/usePeriodParams';
 import { useSession } from '@/lib/session';
 import { useTheme } from '@/lib/theme';
 import { useBranches, useCategories } from '@/lib/useLookups';
@@ -22,7 +23,7 @@ export default function ExpensesScreen() {
   const today = todayIST();
   const { can } = useSession();
   const [tab, setTab] = useState<Tab>('overview');
-  const [period, setPeriod] = useState<Period>(() => resolvePeriod('month', today));
+  const [period, setPeriod] = usePeriodParams(today);
   const tabs: Array<{ key: Tab; label: string }> = [{ key: 'overview', label: 'Overview' }, { key: 'ledger', label: 'Ledger' }];
   if (can('settings:manage')) tabs.push({ key: 'categories', label: 'Categories' });
   return (
@@ -176,8 +177,8 @@ function Ledger({ period }: { period: Period }) {
                   {e.receiptCount > 0 ? <Button small variant="secondary" icon="file-text" title="Receipt" onPress={() => receipt(e.id)} /> : null}
                   {e.approvalStatus === 'SUBMITTED' && e.status === 'ACTIVE' && can('expense:approve') ? (
                     <>
-                      <Button small title="✓ Approve" loading={busy === e.id} onPress={() => approve(e.id)} />
-                      <Button small variant="danger" title="✕ Reject" disabled={busy !== null} onPress={() => setRejecting(e)} />
+                      <Button small variant="approve" title="✓ Approve" loading={busy === e.id} onPress={() => approve(e.id)} />
+                      <Button small variant="reject" title="✕ Reject" disabled={busy !== null} onPress={() => setRejecting(e)} />
                     </>
                   ) : null}
                 </View>

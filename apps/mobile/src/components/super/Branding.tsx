@@ -2,11 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { API_ORIGIN } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
-import { Button, Chips } from '../ui';
+import { Button, Chips, Field } from '../ui';
 
 /** The typefaces and text sizes a company can choose (same ids as the web form and the server). */
 export const FONT_CHOICES = [
@@ -84,6 +84,45 @@ export function PictureEditor({ kind, value, onChange, onDone }: { kind: 'logo' 
       </Text>
       {error ? <Text accessibilityRole="alert" style={{ color: th.bad.text, fontSize: 13 }}>{error}</Text> : null}
       <Button title="Done" onPress={onDone} />
+    </View>
+  );
+}
+
+/** Ready-made colours for the bottom navigation bar (dark ones keep white icons readable). */
+export const NAV_COLORS = ['#3C1708', '#7C2D12', '#14532D', '#134E4A', '#1E3A8A', '#4C1D95', '#831843', '#1F2937'];
+const HEX = /^#[0-9A-Fa-f]{6}$/;
+
+/** Pick the company's theme colour from the ready-made ones, or type any #RRGGBB; empty = the standard colours of its shop type (shown first, as "Default"). */
+export function NavColorField({ value, onChange, defaultColor = '#3C1708' }: { value: string; onChange: (v: string) => void; defaultColor?: string }) {
+  const th = useTheme();
+  const valid = value === '' || HEX.test(value);
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+        <Pressable onPress={() => onChange('')} accessibilityRole="button" accessibilityLabel="Default colour" accessibilityState={{ selected: value === '' }}
+          style={{ height: 40, paddingHorizontal: 12, borderRadius: 20, backgroundColor: defaultColor, borderWidth: value === '' ? 3 : 1, borderColor: value === '' ? th.brand : th.border, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {value === '' ? <Feather name="check" size={16} color="#fff" /> : null}
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>Default</Text>
+        </Pressable>
+        {NAV_COLORS.map((c) => {
+          const on = value.toUpperCase() === c;
+          return (
+            <Pressable key={c} onPress={() => onChange(c)} accessibilityRole="button" accessibilityLabel={`Navigation colour ${c}`} accessibilityState={{ selected: on }}
+              style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c, borderWidth: on ? 3 : 1, borderColor: on ? th.brand : th.border, alignItems: 'center', justifyContent: 'center' }}>
+              {on ? <Feather name="check" size={18} color="#fff" /> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+      <Field label="Colour code" value={value} onChangeText={(v) => onChange(('#' + v.replace(/[^0-9A-Fa-f]/g, '')).slice(0, 7).toUpperCase().replace(/^#$/, ''))} placeholder="#3C1708" autoCapitalize="characters" autoCorrect={false} maxLength={7} error={valid ? undefined : 'Use 6 characters, like #3C1708'} />
+      {/* how the bar will look */}
+      <View style={{ height: 52, borderRadius: 16, backgroundColor: valid && value ? value : defaultColor, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 10 }}>
+        {(['home', 'check-circle', 'calendar', 'shopping-bag', 'bar-chart-2'] as const).map((i, n) => (
+          <View key={i} style={{ width: 44, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: n === 2 ? 'rgba(255,255,255,0.22)' : 'transparent' }}>
+            <Feather name={i} size={19} color="#fff" />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
